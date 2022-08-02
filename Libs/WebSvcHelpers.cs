@@ -9,7 +9,7 @@ using System.Web;
 using System.Configuration;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Nox.Libs
+namespace Nox
 {
 #if NET
     public enum CacheExpirationEnum

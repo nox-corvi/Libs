@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Principal;
 
-namespace Nox.Libs
+namespace Nox
 {
     //public class Security
     //{

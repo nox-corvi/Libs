@@ -1,4 +1,4 @@
-﻿namespace Nox.Libs.WinForms.Forms.Base
+﻿namespace Nox.WinForms.Forms.Base
 {
     partial class MdiChild
     {

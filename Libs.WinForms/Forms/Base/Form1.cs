@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Nox.Libs.WinForms.Forms.Base
+namespace Nox.WinForms.Forms.Base
 {
     public partial class Form1 : Form
     {

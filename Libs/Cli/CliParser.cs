@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nox.Libs;
-using Nox.Libs.Data;
-using Nox.Libs.Data.SqlServer;
-using Nox.Libs.Buffer;
+using Nox;
+using Nox.Data;
+using Nox.Data.SqlServer;
+using Nox.IO.Buffer;
 
 /// <summary>
 /// 
 /// </summary>
-namespace Nox.Libs.Cli
+namespace Nox.Cli
 {
     public enum SwitchArgType
     {

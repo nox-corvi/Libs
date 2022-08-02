@@ -13,7 +13,7 @@ using System.Runtime.Serialization;
 using System.Xml;
 using System.Security;
 
-namespace Nox.Libs
+namespace Nox
 {
     public static class Helpers
     {

@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading;
 
 
-namespace Nox.Libs
+namespace Nox.WinForms
 {
     public class Vector2
     {
@@ -61,7 +61,6 @@ namespace Nox.Libs
 
         public Color Grid = Color.White;
         public Color Box = Color.Black;
-
     }
 
     public class XGraphics : IDisposable
@@ -209,7 +208,7 @@ namespace Nox.Libs
             return (count % 2 == 1); // Same as (count%2 == 1)
         }
 
-        public void DrawArea(Graphics G, Point[] Points, int BorderWidth, Color FillColor, Color BoundaryColor, Color Hatching)
+        public void DrawArea(Point[] Points, int BorderWidth, Color FillColor, Color BoundaryColor, Color Hatching)
         {
             //Point Left, Top, Right, Bottom;
 
@@ -236,11 +235,11 @@ namespace Nox.Libs
 
             // fill 
             var F = new SolidBrush(FillColor);
-            G.FillPolygon(F, Points);
+            _graphics.FillPolygon(F, Points);
 
             // border
             var B = new Pen(BoundaryColor, BorderWidth);
-            G.DrawPolygon(B, Points);
+            _graphics.DrawPolygon(B, Points);
         }
 
         public void DrawGrid(Point Origin, Size RectSize, int BorderWidth, int Space, Color GridColor)
@@ -275,7 +274,6 @@ namespace Nox.Libs
             
 
         }
-
 
         public XGraphics(Graphics graphics)
             : base() =>

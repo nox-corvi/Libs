@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.Libs
+namespace Nox
 {
     public class Cache<T> : IDisposable
     {

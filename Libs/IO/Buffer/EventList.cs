@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.Libs.Buffer
+namespace Nox.IO.Buffer
 {
     public class EventList<T> : List<T>
     {

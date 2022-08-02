@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace Nox.Libs.IO
+namespace Nox.IO
 {
     public class IO
     {

@@ -5,7 +5,7 @@
     <AssemblyName>Libs</AssemblyName>
     <RootNamespace>Libs</RootNamespace>
     <PackageId>Libs</PackageId>
-    <Company>UniLibs</Company>
+    <Company>Libs</Company>
     <Product>Libs</Product>
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.IO;
 using System.Data;
-using Nox.Libs;
-using Nox.Libs.Data;
-using Nox.Libs.Data.SqlServer;
-using Nox.Libs.Buffer;
+using Nox;
+using Nox.Data;
+using Nox.Data.SqlServer;
+using Nox.IO.Buffer;
 
-namespace Nox.Libs
+namespace Nox
 {
     public enum WebSvcResult
     {
@@ -134,7 +134,7 @@ namespace Nox.Libs
         }
 
         public static uint HashValues(params string[] Values) =>
-            Nox.Libs.Hash.HashFNV1a32(string.Concat(AppDomain.CurrentDomain.FriendlyName, typeof(T).GetHashCode(), Values));
+            Nox.Hash.HashFNV1a32(string.Concat(AppDomain.CurrentDomain.FriendlyName, typeof(T).GetHashCode(), Values));
 
         #region IDisposable Support
         private bool disposedValue = false; // Dient zur Erkennung redundanter Aufrufe.

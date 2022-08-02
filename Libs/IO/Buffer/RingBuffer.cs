@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.Libs.Buffer
+namespace Nox.IO.Buffer
 {
     /// <summary>
     /// Ein einfacher RingBuffer

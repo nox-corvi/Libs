@@ -4,12 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Web;
-using Nox.Libs;
+using Nox;
 using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace Nox.Libs
+namespace Nox
 {
     public class Log4
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.Libs.Cli
+namespace Nox.Cli
 {
     public class ConPrint
     {

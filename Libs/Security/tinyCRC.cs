@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Nox.Libs.Security
+namespace Nox.Security
 {
     public class tinyCRC
     {

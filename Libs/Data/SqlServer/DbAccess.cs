@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Data;
 using System.Data.SqlClient;
 
-namespace Nox.Libs.Data.SqlServer
+namespace Nox.Data.SqlServer
 {
 	public class SqlDbAccess : IDisposable
 	{

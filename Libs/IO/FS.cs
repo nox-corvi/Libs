@@ -34,12 +34,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Security.Cryptography;
-using Nox.Libs;
-using Nox.Libs.Data;
-using Nox.Libs.Data.SqlServer;
-using Nox.Libs.Buffer;
+using Nox;
+using Nox.Data;
+using Nox.Data.SqlServer;
+using Nox.IO.Buffer;
 
-namespace Nox.Libs.IO
+namespace Nox.IO
 {
     public enum FSFlags
     {
@@ -3626,26 +3626,30 @@ namespace Nox.Libs.IO
 
         public ICryptoTransform CreateEncryptor()
         {
-            var AES = new RijndaelManaged()
+            using (var myAes = Aes.Create())
             {
-                BlockSize = 256,
-                KeySize = 256,
-                Padding = PaddingMode.Zeros,
-                FeedbackSize = 256
-            };
-            return AES.CreateEncryptor(_IDXFS_KEY, _IDXFS_IV);
+                myAes.BlockSize = 128;
+                myAes.KeySize = 128;
+                myAes.Padding = PaddingMode.Zeros;
+                myAes.Mode = CipherMode.CBC;
+                myAes.FeedbackSize = 128;
+
+                return myAes.CreateEncryptor(_IDXFS_KEY, _IDXFS_IV);
+            }
         }
 
         public ICryptoTransform CreateDecryptor()
         {
-            var AES = new RijndaelManaged()
+            using (var myAes = Aes.Create())
             {
-                BlockSize = 256,
-                KeySize = 256,
-                Padding = PaddingMode.Zeros,
-                FeedbackSize = 256
-            };
-            return AES.CreateDecryptor(_IDXFS_KEY, _IDXFS_IV);
+                myAes.BlockSize = 128;
+                myAes.KeySize = 128;
+                myAes.Padding = PaddingMode.Zeros;
+                myAes.Mode = CipherMode.CBC;
+                myAes.FeedbackSize = 128;
+
+                return myAes.CreateEncryptor(_IDXFS_KEY, _IDXFS_IV);
+            }
         }
 
         #endregion
