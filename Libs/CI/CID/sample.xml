@@ -1,0 +1,221 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<installer ver="4.03">
+  <server domain="boiegmbh" suffix="local">
+    <application drive="h" id="root">
+      <net domain="boiegmbh">
+        <port_range stage="prod" from="5700" to="5799" />
+        <port_range stage="test" from="5800" to="5899" />
+        <port_range stage="dev0" from="5900" to="5999" />
+      </net>
+      <directories>
+        <folder id="version" parent="root" name="NV_%ver%" />
+        <folder id="stage" parent="version" name="%stage%" />
+
+        <folder id="bmecat" parent="stage" name="BMECat">
+          <share name="%ver%_%stage%_BMECat" >
+            <permission type="group" name="BOIEGMBH\IT" acl="C" />
+            <permission type="embedded" name="service" acl="C" />
+            <permission type="user" name="Jeder" acl="R" />
+          </share>
+          <permission type="embedded" name="service" acl="C" />
+        </folder>
+        <folder id="gwimport" parent="stage" name="GatewayImport">
+          <share name="%ver%_GatewayImport">
+            <permission type="group" name="BOIEGMBH\IT" acl="C" />
+            <permission type="embedded" name="service" acl="C" />
+          </share>
+          <permission type="embedded" name="service" acl="C" />
+        </folder>
+        <folder id="media" parent="stage" name="Media">
+          <share name="%ver%_%stage%_Media">
+            <permission type="group" name="BOIEGMBH\IT" acl="C" />
+            <permission type="embedded" name="service" acl="C" />
+            <permission type="user" name="Jeder" acl="R" />
+          </share>
+          <permission type="embedded" name="service" acl="C" />
+        </folder>
+        <folder id="edi" parent="stage" name="EDI">
+          <share name="%ver%_EDI_%stage%">
+            <permission type="group" name="BOIEGMBH\IT" acl="C" />
+            <permission type="user" name="Inposia" acl="C" />
+          </share>
+          <permission type="user" name="Inposia" acl="C" />
+        </folder>
+
+        <folder id="inbound" parent="edi" name="inbound" />
+        <folder id="inb_data" parent="inbound" name="data" />
+
+        <folder id="inb_ok" parent="inbound" name="ok=" />
+        <folder id="inb_error" parent="inbound" name="error" />
+
+        <folder id="inb_invoic" parent="inbound" name="INVOIC" />
+        <folder id="inb_invoic_ok" parent="inb_invoic" name="Ok" />
+        <folder id="inb_invoic_error" parent="inb_invoic" name="Error" />
+
+        <folder id="inb_offers" parent="inbound" name="OFFERS" />
+        <folder id="inb_offers_ok" parent="inb_offers" name="Ok" />
+        <folder id="inb_offers_error" parent="inb_offers" name="Error" />
+
+        <folder id="inb_ordchg" parent="inbound" name="ORDCHG" />
+        <folder id="inb_ordchg_ok" parent="inb_ordchg" name="Ok" />
+        <folder id="inb_ordchg_error" parent="inb_ordchg" name="Error" />
+
+        <folder id="inb_orders" parent="inbound" name="ORDERS" />
+        <folder id="inb_orders_ok" parent="inb_orders" name="Ok" />
+        <folder id="inb_orders_error" parent="inb_orders" name="Error" />
+
+        <folder id="inb_ordrsp" parent="inbound" name="ORDRSP" />
+        <folder id="inb_ordrsp_ok" parent="inb_ordrsp" name="Ok" />
+        <folder id="inb_ordrso_error" parent="inb_ordrsp" name="Error" />
+
+
+        <folder id="outbound" parent="edi" name="outbound" />
+        <folder id="out_invoice" parent="outbound" name="INVOIC" />
+        <folder id="out_invrpt" parent="outbound" name="INVRPT" />
+        <folder id="out_orders" parent="outbound" name="ORDERS" />
+        <folder id="out_ordrsp" parent="outbound" name="ORDRSP" />
+        <folder id="out_slsrpt" parent="outbound" name="SLSRPT" />
+
+        <folder id="apps" parent="stage" name="App" />
+
+        <folder id="webs" parent="stage" name="Web" />
+        <folder id="nv_cons" parent="webs" name="%ver%_cons" />
+        <folder id="nv_pred" parent="webs" name="%ver%_pred" />
+        <folder id="nv_beta" parent="webs" name="%ver%_beta" />
+        <folder id="nv_help" parent="webs" name="%ver%_help" />
+        <folder id="nv_main" parent="webs" name="%ver%_main" />
+      </directories>
+      <iis>
+        <templates>
+          <template key="nv">
+            <item value="cpu.action:KillW3wp" />
+            <item value="processModel.idleTimeout:00:00:00" />
+            <item value="processModel.pingingEnabled:false" />
+            <item value="failure.rapidFailProtection:false" />
+            <item value="recycling.periodicRestart.time:00:00:00" />
+          </template>
+        </templates>
+
+        <app_pools>
+          <app_pool key="%ver%_%stage%_enventa" template="nv">
+            <identity type="embedded" name="service" />
+          </app_pool>
+          <app_pool key="%ver%_%stage%_common" template="nv">
+            <identity type="embedded" name="service" />
+          </app_pool>
+          <app_pool key="%ver%_%stage%_pool0" template="nv">
+            <identity type="embedded" name="service" />
+          </app_pool>
+          <app_pool key="%ver%_%stage%_pool1" template="nv">
+            <identity type="embedded" name="service" />
+          </app_pool>
+        </app_pools>
+
+        <webs>
+          <web key="%ver%_%stage%_cons" path="nv_cons" app_pool="%ver%_%stage%_pool0" setacl="false">
+            <binding name="%ver%-cons.%stage%.enventa.%fq-domain%" port="+6" />
+          </web>
+          <web key="%ver%_%stage%_pred" path="nv_pred" app_pool="%ver%_%stage%_pool0" setacl="false">
+            <binding name="%ver%-pred.%stage%.enventa.%fq-domain%" port="+14" />
+          </web>
+          <web key="%ver%_%stage%_beta" path="nv_beta" app_pool="%ver%_%stage%_pool1" setacl="false">
+            <binding name="%ver%-beta.%stage%.enventa.%fq-domain%" port="+15" />
+          </web>
+          <web key="%ver%_%stage%_help" path="nv_help" app_pool="%ver%_%stage%_common" setacl="false">
+            <binding name="%ver%-help.%stage%.enventa.%fq-domain%" port="+9" />
+          </web>
+          <web key="%ver%_%stage%_main" path="nv_main" app_pool="%ver%_%stage%_enventa" setacl="false">
+            <binding name="%ver%-main.%stage%.enventa.%fq-domain%" port="+5" />
+          </web>
+        </webs>
+      </iis>
+    </application>
+
+    <requirements key="prerequisite" path="0403REQ">
+      <item key="Crystal Reports" binary="CRRuntime_64bit_13_0_18.msi" crc="2357127495" target="*">
+        <install type="msi" check="uninstall" pattern="SAP Crystal Reports%" arg ="/i %1 /qn" credential="local" />
+      </item>
+      <item key=".net framework" binary="ndp48-x86-x64-allos-enu.exe" target="blub">
+        <install type="exe" check="ndp_detect" pattern="528049" arg="/q /norestart" credential="local" />
+      </item>
+      <item key="Sumatra PDF Viewer" binary="SumatraPDF-3.2-64-install.exe" target="printer">
+        <install type="exe" check="uninstall" pattern="SumatraPDF" arg="/q /s" credential="local" />
+      </item>
+      <item key="Visual C++ 2010  x64 Redistributable" binary="vcredist_x64_2010.exe" target="*">
+        <install type="exe" check="uninstall" pattern="Microsoft Visual C++ 2010  x64 Redistributable%" arg="/q /s" credential="local" />
+      </item>
+      <item key="FS" binary="FS_4.3.4_Fix_1.msi" path="FS" target="*">
+        <install type="msi" check="uninstall" pattern="Framework Studio 4.3" arg="/i %1 /qn" credential="local" />
+      </item>
+    </requirements>
+    <features credential="local">
+      <item key="NetFx4" target="*"/>
+      <item key="NetFx4ServerFeatures" target="*"/>
+
+      <item key="IIS-WebServerRole" target="broker" />
+      <item key="IIS-WebServer" target="broker"/>
+      <item key="IIS-CommonHttpFeatures" target="broker"/>
+      <item key="IIS-HttpErrors" target="broker"/>
+      <item key="IIS-DefaultDocument" target="broker"/>
+      <item key="IIS-StaticContent" target="broker"/>
+      <item key="IIS-HttpRedirect" target="broker"/>
+      <item key="IIS-HttpCompressionStatic" target="broker"/>
+      <item key="IIS-RequestFiltering" target="broker"/>
+      <item key="IIS-Security" target="broker"/>
+      <item key="IIS-DirectoryBrowsing" target="broker"/>
+      <item key="IIS-Performance" target="broker"/>
+      <item key="IIS-BasicAuthentication" target="broker"/>
+      <item key="IIS-WindowsAuthentication" target="broker"/>
+      <item key="IIS-HttpLogging" target="broker"/>
+      <item key="IIS-ApplicationDevelopment" target="broker"/>
+      <item key="NetFx4Extended-ASPNET45" target="broker"/>
+
+      <item key="IIS-NetFxExtensibility45" target="broker"/>
+      <item key="IIS-ISAPIExtensions" target="broker"/>
+      <item key="IIS-ISAPIFilter" target="broker"/>
+      <item key="IIS-ASPNET45" target="broker"/>
+
+      <item key="IIS-HealthAndDiagnostics" target="broker"/>
+
+      <item key="IIS-ManagementConsole" target="broker"/>
+      <item key="IIS-WebServerManagementTools" target="broker"/>
+
+      <item key="RSAT" target="broker"/>
+      <item key="ServerManager-Core-RSAT" target="broker"/>
+      <item key="ServerManager-Core-RSAT-Role-Tools" target="broker"/>
+      <item key="RSAT-AD-Tools-Feature" target="broker"/>
+      <item key="ActiveDirectory-PowerShell" target="broker"/>
+    </features>
+  </server>
+
+  <credential ver="4.03" salt="30F224249093456DA097BD978FB85155" genpasslength="20" domain="BOIEGMBH">
+    <required key="host" user="BOIEGMBH\nv_ci_elevate" pass="TEVxCfF3FAAAAONWQcZQbJ5ViRf7QDqPFXoBA4cnNX3i4VIGmN+dkEmT" />
+    <required key="local" user=".\administrator" pass="TEVWKJgxEAAAAFGGRcx07jy4A2cOMACvaBU=" />
+    <required key="domain" user="BOIEGMBH\nv_ci_domain" pass="TEUfPsmVFAAAAAJYR34K7wsf2PXOs/OwvFFUlZyBSWTBC/jjotApfg0b" />
+
+    <group key="edi" name="%ver%_EDI_ACCESS">
+      <member name="BOIEGMBH\IT" />
+      <member name="BOIEGMBH\SR3" />
+    </group>
+
+    <application key="admin" user="*" pass="*" description="user to administrate the broker" credential="domain">
+      <suffix key="ou" value="OU=OU-HN System,OU=OU-Heilbronn,OU=BOIE,DC=boiegmbh,DC=local" />
+      <membership key="Administratoren" />
+    </application>
+
+    <application key="web" user="*" pass="*" description="user to launch the web applications" credential="domain">
+      <suffix key="ou" value="OU=OU-HN System,OU=OU-Heilbronn,OU=BOIE,DC=boiegmbh,DC=local" />
+      <membership key="Benutzer" />
+    </application>
+
+    <application key="service" user="*" pass="*" description="user to launch the services" credential="domain">
+      <suffix key="ou" value="OU=OU-HN System,OU=OU-Heilbronn,OU=BOIE,DC=boiegmbh,DC=local" />
+      <membership key="Benutzer" />
+    </application>
+
+    <application key="inposia" user="Inposia" pass="TEVolrsyFAAAAEDnKjkvb453GOpumW1q0uRwhg9zIJDRWbMRVFst4iuG" description="rdp-user inposia" credential="local">
+      <membership key="Benutzer" />
+      <membership key="%ver%_EDI_ACCESS" />
+    </application>
+  </credential>
+</installer>
