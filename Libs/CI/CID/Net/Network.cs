@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID.Net
+namespace Nox.CI.CID.Net
 {
     public class Network : CIDBase
     {

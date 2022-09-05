@@ -1,5 +1,4 @@
 ﻿using Nox;
-using Nox.Libs.Security;
 using Nox.Security;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Libs.CI
+namespace Nox.CI
 {
     public class IaCHandler
         : CIBase
@@ -71,7 +70,7 @@ namespace Libs.CI
             }
         }
 
-        private bool ValidateFileCRC(string Filename, string crc32string)
+        public bool ValidateFileCRC(string Filename, string crc32string)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Filename, crc32string);
             _logger?.LogMessage(Message(ResEnum._validate_file_crc, NullStr(crc32string)), Log4.Log4LevelEnum.Debug);
@@ -98,10 +97,10 @@ namespace Libs.CI
             }
         }
 
-        private bool Encode(Stream inputStream, Stream outputStream, string Key, string Salt)
+        public bool Encode(Stream inputStream, Stream outputStream, string Key, string Salt)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, inputStream, outputStream, Key, Salt);
-            _logger?.LogMessage($"encode", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(Message(ResEnum._encode), Log4.Log4LevelEnum.Debug);
 
             try
             {
@@ -110,17 +109,17 @@ namespace Libs.CI
             }
             catch (Exception e)
             {
-                string ErrMsg = "error: encode fail";
+                string ErrMsg = Message(MsgTypeEnum._error, ResEnum._encode_fail);
 
                 _CI.CancelWithMessage(ErrMsg);
                 throw new ApplicationException(ErrMsg, e);
             }
         }
 
-        private bool Decode(Stream inputStream, Stream outputStream, string Key, string Salt)
+        public bool Decode(Stream inputStream, Stream outputStream, string Key, string Salt)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, inputStream, outputStream, Key, Salt);
-            _logger?.LogMessage($"decode", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(Message(ResEnum._decode), Log4.Log4LevelEnum.Debug);
 
             try
             {
@@ -129,17 +128,17 @@ namespace Libs.CI
             }
             catch (Exception e)
             {
-                string ErrMsg = "error: decode fail";
+                string ErrMsg = Message(MsgTypeEnum._error, ResEnum._decode_fail);
 
                 _CI.CancelWithMessage(ErrMsg);
                 throw new ApplicationException(ErrMsg, e);
             }
         }
 
-        private string EncodeString(string Key, string Salt, string Value)
+        public string EncodeString(string Key, string Salt, string Value)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Key, Salt, Value);
-            _logger?.LogMessage($"encode string LAV://{Value ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(Message(ResEnum._encode_laverna, NullStr(Value)), Log4.Log4LevelEnum.Debug);
  
             try
             {
@@ -148,17 +147,17 @@ namespace Libs.CI
             }
             catch (Exception e)
             {
-                string ErrMsg = "error: encode string failed";
+                string ErrMsg = Message(MsgTypeEnum._error, ResEnum._encode_fail);
 
                 _CI.CancelWithMessage(ErrMsg);
                 throw new ApplicationException(ErrMsg, e);
             }
         }
 
-        private string DecodeString(string Key, string Salt, string Value)
+        public string DecodeString(string Key, string Salt, string Value)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Debug, Key, Salt, Value);
-            _logger?.LogMessage($"decode string LAV://{Value ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(Message(ResEnum._decode_laverna, NullStr(Value)), Log4.Log4LevelEnum.Debug);
 
             try
             {
@@ -167,7 +166,7 @@ namespace Libs.CI
             }
             catch (Exception e)
             {
-                string ErrMsg = "error: decode string failed";
+                string ErrMsg = Message(MsgTypeEnum._error, ResEnum._decode_fail);
 
                 _CI.CancelWithMessage(ErrMsg);
                 throw new ApplicationException(ErrMsg, e);

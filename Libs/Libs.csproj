@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <AssemblyName>Libs</AssemblyName>
-    <RootNamespace>Libs</RootNamespace>
+    <AssemblyName>Nox</AssemblyName>
+    <RootNamespace>Nox</RootNamespace>
     <PackageId>Libs</PackageId>
     <Company>Libs</Company>
     <Product>Libs</Product>

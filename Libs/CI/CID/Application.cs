@@ -1,4 +1,5 @@
-﻿using Libs.CI.CID.IIS;
+﻿using Nox.CI.CID.IIS;
+using Nox.CI.CID.Net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID
+namespace Nox.CI.CID
 {
     public class Application : CIDBase
     {
@@ -29,7 +30,7 @@ namespace Libs.CI.CID
                 switch (item.Name.ToString().ToLower())
                 {
                     case "net":
-                        Result.Net = CI.CID.Net.Network.FromXElement(item);
+                        Result.Net = Network.FromXElement(item);
                         break;
                     case "directories":
                         Result.Directories = IO.Directories.FromXElement(item);

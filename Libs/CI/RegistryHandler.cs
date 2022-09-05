@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Libs.CI
+namespace Nox.CI
 {
     public class RegistryHandler 
         : CIBase

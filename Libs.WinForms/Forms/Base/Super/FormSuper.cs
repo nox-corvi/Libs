@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Nox.WinForms.Forms.Base.Super
+namespace Nox.Windows.Forms.Base.Super
 {
     public partial class FormSuper : Form
     {

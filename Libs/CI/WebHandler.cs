@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Libs.CI
+namespace Nox.CI
 {
     public class WebHandler
         : CIBase

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Libs.Hosting
+namespace Nox.Hosting
 {
     public interface IReader
     {

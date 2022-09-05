@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 
-namespace Nox.WinForms.Forms.Base
+namespace Nox.Windows.Forms.Base
 {
     public partial class FormDialog : Super.FormSuper
     {

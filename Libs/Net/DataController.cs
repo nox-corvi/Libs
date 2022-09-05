@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
-namespace Libs.Net
+namespace Nox.Net
 {
     public class DataController<C, T, U> : ControllerBase where C: DbContext where T : class where U : struct
     {

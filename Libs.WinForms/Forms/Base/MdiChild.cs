@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Nox.WinForms.Forms.Base
+namespace Nox.Windows.Forms.Base
 {
     public partial class MdiChild : Super.FormSuper
     {

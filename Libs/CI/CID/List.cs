@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Libs.CI.CID
+namespace Nox.CI.CID
 {
     public class List<T> : CIDBase, IList<T>
     {

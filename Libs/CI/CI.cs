@@ -6,82 +6,82 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Libs.CI
+namespace Nox.CI
 {
-    public class CI
+    public partial class CI
     {
-        private Log4 _logger = null!;
-        private ConPrint _Con1 = null!;
+        protected Log4 _logger = null!;
+        protected ConPrint _Con1 = null!;
 
-        private ProcessHandler _Process1 = null!;
-        private RegistryHandler _Registry1 = null!;
+        protected ProcessHandler _Process1 = null!;
+        protected RegistryHandler _Registry1 = null!;
 
-        private SecurityHandler _Security1 = null!;
+        protected SecurityHandler _Security1 = null!;
 
-        private IaCHandler _IaC1 = null!;
+        protected IaCHandler _IaC1 = null!;
 
-        private Helpers _Helpers1 = null!;
+        protected Helpers _Helpers1 = null!;
 
         #region Properties
-        public ProcessHandler GetProcessHandler
+        public virtual ProcessHandler GetProcessHandler
         {
             get
             {
                 if (_Process1 == null)
                 {
-                    _logger?.LogMessage("create process handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage("create process1 handler", Log4.Log4LevelEnum.Info);
                     _Process1 = new ProcessHandler(this, _logger);
                 }
                 return _Process1;
             }
         }
 
-        public RegistryHandler GetRegistryHandler
+        public virtual RegistryHandler GetRegistryHandler
         {
             get
             {
                 if (_Registry1 == null)
                 {
-                    _logger?.LogMessage("create registry handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage("create registry1 handler", Log4.Log4LevelEnum.Info);
                     _Registry1 = new RegistryHandler(this, _logger);
                 }
                 return _Registry1;
             }
         }
 
-        public SecurityHandler GetSecurityHandler
+        public virtual SecurityHandler GetSecurityHandler
         {
             get
             {
                 if (_Security1 == null)
                 {
-                    _logger?.LogMessage("create security handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage("create security1 handler", Log4.Log4LevelEnum.Info);
                     _Security1 = new SecurityHandler(this, _logger);
                 }
                 return _Security1;
             }
         }
 
-        public IaCHandler GetIaCHandler
+        public virtual IaCHandler GetIaCHandler
         {
             get
             {
                 if (_IaC1 == null)
                 {
-                    _logger?.LogMessage("create iac handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage("create iac1 handler", Log4.Log4LevelEnum.Info);
                     _IaC1 = new IaCHandler(this, _logger);
                 }
                 return _IaC1;
             }
         }
 
-        public Helpers GetHelpers
+        public virtual Helpers GetHelper
         {
             get
             {
                 if (_Helpers1 == null)
                 {
-                    _logger?.LogMessage("create helper object", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage("create helper1 object", Log4.Log4LevelEnum.Info);
                     _Helpers1 = new Helpers(this, _logger);
                 }
 
@@ -122,7 +122,7 @@ namespace Libs.CI
             _none = 0,
 
             // global
-            _invalid_argument = 1, _invalid_argument_A = 2,
+            _invalid_argument = 1, _invalid_argument_A = 2, _invalid_argument_AB = 3, _invalid_argument_ABC = 4,
 
             _b = 0x10,
             _c = 0x20,
@@ -130,7 +130,8 @@ namespace Libs.CI
             // IaC
             _calc_crc = 0x30, _calc_crc_done = 0x31, 
             _validate_file_crc = 0x32,
-            _calc_crc_fail = 0x3A
+            _encode = 0x33, _decode = 0x34, _encode_laverna = 0x35, _decode_laverna = 0x36,
+            _calc_crc_fail = 0x3A, _encode_fail = 0x3B, _decode_fail = 0x3C
         }
 
         protected CI _CI;
@@ -203,8 +204,23 @@ namespace Libs.CI
                         case ResEnum._validate_file_crc:
                             return "validate file crc {0}";
 
+                        case ResEnum._encode:
+                            return "encode";
+                        case ResEnum._decode:
+                            return "decode";
+
+                        case ResEnum._encode_laverna:
+                            return "encode string LAV://{0}";
+                        case ResEnum._decode_laverna:
+                            return "decode string LAV://{0}";
+
+                        // errors
                         case ResEnum._calc_crc_fail:
                             return "calc crc fail";
+                        case ResEnum._encode_fail:
+                            return "encode fail";
+                        case ResEnum._decode_fail:
+                            return "decode fail";
                         default:
                             break;
                     }

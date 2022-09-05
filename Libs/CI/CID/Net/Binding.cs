@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID.Net
+namespace Nox.CI.CID.Net
 {
     public class Binding : CIDBase
     {

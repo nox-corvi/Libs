@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID
+namespace Nox.CI.CID
 {
 
     public class WinFeature : CIDBase

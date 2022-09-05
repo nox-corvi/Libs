@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.WinForms.Controls.Base.Super
+namespace Nox.Windows.Controls.Base.Super
 {
     class TextBox
     {

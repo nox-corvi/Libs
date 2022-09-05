@@ -5,7 +5,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Nox.Libs.Security
+namespace Nox.Security
 {
     /// <summary>
     /// rijndael encryption

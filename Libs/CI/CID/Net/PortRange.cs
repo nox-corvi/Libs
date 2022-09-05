@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID.Net
+namespace Nox.CI.CID.Net
 {
     public class PortRange : CIDBase
     {
@@ -31,7 +31,7 @@ namespace Libs.CI.CID.Net
             var Result = new PortRanges();
 
             foreach (var o in source.Elements(PortRange))
-                Result.Add(CI.CID.Net.PortRange.FromXElement(o));
+                Result.Add(Net.PortRange.FromXElement(o));
 
             return Result;
         }

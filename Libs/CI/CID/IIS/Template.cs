@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID.IIS
+namespace Nox.CI.CID.IIS
 {
     public class Template : CIDBase
     {

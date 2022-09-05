@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading;
 
 
-namespace Nox.WinForms
+namespace Nox.Windows
 {
     public class Vector2
     {

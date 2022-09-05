@@ -1,4 +1,4 @@
-﻿using Libs.CI.CID.Net;
+﻿using Nox.CI.CID.Net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Libs.CI.CID.IIS
+namespace Nox.CI.CID.IIS
 {
     public class Webs : List<Web>
     {
