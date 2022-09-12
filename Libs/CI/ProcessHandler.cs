@@ -69,7 +69,10 @@ namespace Nox.CI
                     _logger?.LogMessage($"redirect standard output", Log4.Log4LevelEnum.Trace);
                     myProcess.StartInfo.RedirectStandardOutput = true;
                     myProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
+                    {
+                        _logger?.LogMessage($"receive data on output-stream: {e.Data ?? ""}", Log4.Log4LevelEnum.Trace);
                         standardOutput.WriteLine(e.Data);
+                    };
                 }
 
                 if (standardInput != null)
@@ -82,8 +85,11 @@ namespace Nox.CI
                 {
                     _logger?.LogMessage($"redirect standard error", Log4.Log4LevelEnum.Trace);
                     myProcess.StartInfo.RedirectStandardError = true;
-                    myProcess.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+                    myProcess.ErrorDataReceived += (object sender, DataReceivedEventArgs e) => 
+                    {
+                        _logger?.LogMessage($"receive data on error-stream: {e.Data ?? ""}", Log4.Log4LevelEnum.Trace);
                         standardError.WriteLine(e.Data);
+                    };
                 }
 
                 myProcess.Start();

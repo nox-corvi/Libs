@@ -17,6 +17,7 @@ namespace Nox.Windows.Controls.Base.Super
         }
 
         public Button()
+            : base()
         {
             InitializeComponents();    
         }
