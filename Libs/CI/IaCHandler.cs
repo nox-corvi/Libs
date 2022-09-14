@@ -70,7 +70,7 @@ namespace Nox.CI
             }
         }
 
-        public bool ValidateFileCRC(string Filename, string crc32string)
+        private bool ValidateFileCRC(string Filename, string crc32string)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Filename, crc32string);
             _logger?.LogMessage(Message(ResEnum._validate_file_crc, NullStr(crc32string)), Log4.Log4LevelEnum.Debug);

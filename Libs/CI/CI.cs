@@ -14,7 +14,6 @@ namespace Nox.CI
         protected ConPrint _Con1 = null!;
 
         protected ProcessHandler _Process1 = null!;
-        protected RegistryHandler _Registry1 = null!;
 
         protected SecurityHandler _Security1 = null!;
 
@@ -33,19 +32,6 @@ namespace Nox.CI
                     _Process1 = new ProcessHandler(this, _logger);
                 }
                 return _Process1;
-            }
-        }
-
-        public virtual RegistryHandler GetRegistryHandler
-        {
-            get
-            {
-                if (_Registry1 == null)
-                {
-                    _logger?.LogMessage("create registry1 handler", Log4.Log4LevelEnum.Info);
-                    _Registry1 = new RegistryHandler(this, _logger);
-                }
-                return _Registry1;
             }
         }
 

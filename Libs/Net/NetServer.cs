@@ -23,7 +23,7 @@ namespace Nox.Net
         public abstract int Port { get; }
 
         private TcpListener _Listener = null;
-        private List<SocketListener> _ListOfListener;
+        private Dictionary<Guid, SocketListener> _ListOfListener;
 
         private Thread _ServerThread;
         private Thread _PurgeThread;
@@ -41,7 +41,7 @@ namespace Nox.Net
 
             _Listener = new TcpListener(new IPEndPoint(IPAddress.Parse(IP), Port));
 
-            _ListOfListener = new List<SocketListener>();
+            _ListOfListener = new Dictionary<Guid, SocketListener>();
 
             _Listener.Start();
             _ServerThread = new Thread(new ThreadStart(ServerThreadStart));
@@ -102,7 +102,7 @@ namespace Nox.Net
                         _SocketListener = (T)Activator.CreateInstance(typeof(T), _ClientSocket);
                         lock (_ListOfListener)
                         {
-                            _ListOfListener.Add(_SocketListener);
+                            _ListOfListener.Add(_SocketListener.Id, _SocketListener);
                         }
 
                         _SocketListener.StartListener();
@@ -123,14 +123,13 @@ namespace Nox.Net
             {
                 lock (_ListOfListener)
                 {
-                    for (int i = _ListOfListener.Count - 1; i > 0; i--)
-                    {
-                        if (_ListOfListener[i].Delete)
+                    var Keys = _ListOfListener.Keys.ToArray();
+                    for (int i = 0; i <  Keys.Length; i++)
+                        if (_ListOfListener[Keys[i]].Delete)
                         {
-                            _ListOfListener[i].StopListener();
-                            _ListOfListener.RemoveAt(i);
+                            _ListOfListener[Keys[i]].StopListener();
+                            _ListOfListener.Remove(Keys[i]);
                         }
-                    }
                 }
 
                 Thread.Sleep(500);
@@ -197,6 +196,7 @@ namespace Nox.Net
 
         private DateTime _LastResponse = DateTime.UtcNow;
 
+        public Guid Id { get; } = Guid.NewGuid();
 
         public bool IsConnected =>
             _Socket?.Connected ?? false;
@@ -300,79 +300,77 @@ namespace Nox.Net
 
     }
 
-    public abstract class MessageBlock<T> where T : Message
-    {
+    //public abstract class MessageBlock<T> where T : Message
+    //{
+    //    private MemoryStream _Stream;
 
-        private MemoryStream _Stream;
+    //    private bool _Dirty = false;
 
-        private bool _Dirty = false;
+    //    public virtual void Read()
+    //    {
+    //        try
+    //        {       
+    //            var CryptoStream = new CryptoStream(_Stream, FSBase.CreateDecryptor(), CryptoStreamMode.Read);
+    //            BinaryReader Reader = new BinaryReader(CryptoStream);
 
-        public virtual void Read()
-        {
-            try
-            {       
-                var CryptoStream = new CryptoStream(_Stream, FSBase.CreateDecryptor(), CryptoStreamMode.Read);
-                BinaryReader Reader = new BinaryReader(CryptoStream);
+    //            ReadUserData(Reader);
+    //            _Dirty = false;
+    //        }
+    //        catch (FSException)
+    //        {
+    //            // pass through
+    //            throw;
+    //        }
+    //        catch (IOException IOe)
+    //        {
+    //            throw new FSException(IOe.Message);
+    //        }
+    //        catch (Exception e)
+    //        {
+    //            throw new FSException(e.Message);
+    //        }
+    //    }
 
-                ReadUserData(Reader);
-                _Dirty = false;
-            }
-            catch (FSException)
-            {
-                // pass through
-                throw;
-            }
-            catch (IOException IOe)
-            {
-                throw new FSException(IOe.Message);
-            }
-            catch (Exception e)
-            {
-                throw new FSException(e.Message);
-            }
-        }
+    //    public abstract void ReadUserData(BinaryReader Reader);
 
-        public abstract void ReadUserData(BinaryReader Reader);
+    //    public virtual void Write()
+    //    {
+    //        if (Dirty)
+    //        {
+    //            try
+    //            {
+    //                FSBase.Handle.Position = (FSBase.Header.ClusterSize * Cluster) + FSBase.Header.FirstClusterOffset;
 
-        public virtual void Write()
-        {
-            if (Dirty)
-            {
-                try
-                {
-                    FSBase.Handle.Position = (FSBase.Header.ClusterSize * Cluster) + FSBase.Header.FirstClusterOffset;
+    //                var CryptoStream = new CryptoStream(FSBase.Handle, FSBase.CreateEncryptor(), CryptoStreamMode.Write);
+    //                BinaryWriter Writer = new BinaryWriter(CryptoStream);
 
-                    var CryptoStream = new CryptoStream(FSBase.Handle, FSBase.CreateEncryptor(), CryptoStreamMode.Write);
-                    BinaryWriter Writer = new BinaryWriter(CryptoStream);
+    //                WriteUserData(Writer);
 
-                    WriteUserData(Writer);
+    //                // Leeren des Schreib-Puffers erzwingen
+    //                Writer.Flush();
 
-                    // Leeren des Schreib-Puffers erzwingen
-                    Writer.Flush();
+    //                // CryptoStream gefüllt, Puffer leeren
+    //                CryptoStream.Flush();
 
-                    // CryptoStream gefüllt, Puffer leeren
-                    CryptoStream.Flush();
+    //                // und abschliessen
+    //                CryptoStream.FlushFinalBlock();
 
-                    // und abschliessen
-                    CryptoStream.FlushFinalBlock();
-
-                    Dirty = false;
-                }
-                catch (FSException)
-                {
-                    // pass through
-                    throw;
-                }
-                catch (IOException IOe)
-                {
-                    throw new FSException(IOe.Message);
-                }
-                catch (Exception e)
-                {
-                    throw new FSException(e.Message);
-                }
-            }
-        }
-    }
-
+    //                Dirty = false;
+    //            }
+    //            catch (FSException)
+    //            {
+    //                // pass through
+    //                throw;
+    //            }
+    //            catch (IOException IOe)
+    //            {
+    //                throw new FSException(IOe.Message);
+    //            }
+    //            catch (Exception e)
+    //            {
+    //                throw new FSException(e.Message);
+    //            }
+    //        }
+    //    }
+    //}
 }

@@ -1,13 +1,22 @@
 ﻿using Nox;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.DirectoryServices;
+using System.DirectoryServices.ActiveDirectory;
+using System.DirectoryServices.AccountManagement;
+using Nox.CI;
+using System.Diagnostics;
 
-namespace Nox.CI
+namespace Nox.CI.Windows
 {
-    public class RegistryHandler 
+    public class RegistryHandler
         : CIBase
     { 
 
@@ -21,7 +30,7 @@ namespace Nox.CI
             string OutMessage, ErrMessage;
             try
             {
-                var Result = _CI
+                var Result = (_CI as Windows.CI)
                     .GetProcessHandler
                     .RunCliApplication("regquery.exe", $"query --root:{RegRoot} --key \"{Key}\" --value {Value} \"{Pattern}\"", Credential, out OutMessage, out ErrMessage);
 
@@ -46,10 +55,10 @@ namespace Nox.CI
         #endregion
 
 
-        public RegistryHandler(CI CI) 
+        public RegistryHandler(Nox.CI.CI CI) 
             : base(CI) { }
 
-        public RegistryHandler(CI CI, Log4 logger) 
+        public RegistryHandler(Nox.CI.CI CI, Log4 logger) 
             : base(CI, logger) { }
     }
 }
