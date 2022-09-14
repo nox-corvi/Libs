@@ -1,16 +1,19 @@
 ﻿using Nox.CI;
 using Nox.Component;
 using Nox.IO;
+using Nox.Security;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +34,7 @@ namespace Nox.Net
         private bool _StopServer = false;
         private bool _StopPurge = false;
 
+        public Guid Id { get; } = Guid.NewGuid();
 
         public int ClientConnectionCount =>
             _ListOfListener?.Count() ?? 0;
@@ -77,8 +81,9 @@ namespace Nox.Net
 
         private void StopAllListers()
         {
+            var Keys = _ListOfListener.Keys.ToArray();
             for (int i = 0; i < _ListOfListener.Count; i++)
-                _ListOfListener[i].StopListener();
+                _ListOfListener[Keys[i]].StopListener();
 
             _ListOfListener.Clear();
             _ListOfListener = null;
@@ -150,6 +155,11 @@ namespace Nox.Net
         private SocketListener _Listener;
         private TcpClient _Client;
 
+        private string _ServerIP = "";
+
+        public Guid Id { get; } = Guid.NewGuid();
+        public string ServerIP { get { return _ServerIP; } }
+
         public bool IsConnected =>
            _Listener?.IsConnected ?? false;
 
@@ -161,6 +171,8 @@ namespace Nox.Net
             _Client.Connect(new IPEndPoint(IPAddress.Parse(IP), Port));
             _Listener = (T)Activator.CreateInstance(typeof(T), _Client.Client);
             _Listener.StartListener();
+
+            _ServerIP = IP;
         }
 
         public void SendBuffer(byte[] byteBuffer) =>
@@ -173,6 +185,7 @@ namespace Nox.Net
                 _Listener.StopListener(); ;
                 _Listener = null;
             }
+            _ServerIP = "";
         }
 
         public void Dispose() =>
@@ -271,27 +284,79 @@ namespace Nox.Net
             StopListener();
     }
 
-    public class Message : ObservableObject
+    public abstract class Message : ObservableObject
     {
-        private bool _Dirty = false;
+        private byte[] Signature = null;
         private Guid _Id = Guid.NewGuid();
 
+        private bool _Dirty = false;
+
+        private Laverna laverna;
+        
         #region Properties
         public Guid Id { get => _Id; set => SetProperty(ref _Id, value); }
         #endregion
 
-        public void Read(BinaryReader r)
-        {
+        public abstract byte[] MessageSignature();
 
+        public void ReadFromByteArray(byte[] data)
+        {
+            var CryptoStream = new CryptoStream(
+                new MemoryStream(data),
+                laverna.createEncryptorTransformObject(), 
+                CryptoStreamMode.Read);
+
+            BinaryReader Reader = new BinaryReader(CryptoStream);
+
+            var f = MessageSignature();
+            Signature = Reader.ReadBytes(f.Length);
+
+            if (!Signature.SequenceEqual(f))
+                throw new Exception("invalid signature");
+
+            Id = new Guid(Reader.ReadBytes(16));
+            ReadUserData(Reader);
+            
+            _Dirty = false;
         }
 
-        public void Write(BinaryWriter w)
-        {
+        public abstract void ReadUserData(BinaryReader Reader);
 
+        public byte[] ToByteArray()
+        {
+            MemoryStream result;
+            var CryptoStream = new CryptoStream(
+                result = new MemoryStream(), 
+                laverna.createEncryptorTransformObject(), 
+                CryptoStreamMode.Write);
+
+            BinaryWriter Writer = new BinaryWriter(CryptoStream);
+
+            Writer.Write(Id.ToByteArray());
+            WriteUserData(Writer);
+
+            // Leeren des Schreib-Puffers erzwingen
+            Writer.Flush();
+
+            // CryptoStream gefüllt, Puffer leeren
+            CryptoStream.Flush();
+
+            // und abschliessen
+            CryptoStream.FlushFinalBlock();
+            
+            _Dirty = false;
+
+            return result.ToArray();
         }
 
-        public Message() =>
-            this.PropertyChanged += (object? sender, PropertyChangedEventArgs e) =>
+        public abstract void WriteUserData(BinaryWriter Writer);
+
+        public Message(Laverna laverna)
+            : this() =>
+            this.laverna = laverna;
+
+        private Message() =>
+            this.PropertyChanged += (object sender, PropertyChangedEventArgs e) =>
                 _Dirty = true;
     }
 
