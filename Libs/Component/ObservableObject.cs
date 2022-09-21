@@ -58,7 +58,7 @@ namespace Nox.Component
             return true;
         }
 
-        protected bool SetProperty<T>(T oldValue, T newValue, Action<T> callback, [CallerMemberName] string? propertyName = null)
+        protected bool SetProperty<T>(T oldValue, T newValue, Action<T> callback, [CallerMemberName] string propertyName = null)
         {
             ArgumentNullException.ThrowIfNull(callback);
 
@@ -71,7 +71,7 @@ namespace Nox.Component
             return true;
         }
 
-        protected bool SetProperty<T>(T oldValue, T newValue, IEqualityComparer<T> comparer, Action<T> callback, [CallerMemberName] string? propertyName = null)
+        protected bool SetProperty<T>(T oldValue, T newValue, IEqualityComparer<T> comparer, Action<T> callback, [CallerMemberName] string propertyName = null)
         {
             ArgumentNullException.ThrowIfNull(comparer);
             ArgumentNullException.ThrowIfNull(callback);
