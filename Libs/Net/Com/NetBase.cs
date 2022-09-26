@@ -8,7 +8,12 @@ namespace Nox.Net.Com
 {
     public class NetBase : IDisposable
     {
-        public uint _Signature1;
+        private uint _Signature1;
+
+        #region Properties
+        public uint Signature1 =>
+            _Signature1;
+        #endregion
 
         public virtual void Dispose() { }
         

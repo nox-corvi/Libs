@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com
 {
-    public abstract class NetClient<T> 
+    public class NetClient<T> 
         : NetBase where T : SocketListener
     {
         private SocketListener _Listener;
@@ -16,11 +16,13 @@ namespace Nox.Net.Com
 
         private string _ServerIP = "";
 
+        #region Properties
         public Guid Id { get; } = Guid.NewGuid();
         public string ServerIP { get { return _ServerIP; } }
 
         public bool IsConnected =>
            _Listener?.IsConnected ?? false;
+        #endregion
 
         public virtual void Connect(string IP, int Port)
         {
@@ -28,17 +30,12 @@ namespace Nox.Net.Com
 
             _Client = new TcpClient();
             _Client.Connect(new IPEndPoint(IPAddress.Parse(IP), Port));
-            _Listener = (T)Activator.CreateInstance(typeof(T), _Client.Client);
+
+            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client);
             _Listener.StartListener();
 
             _ServerIP = IP;
         }
-
-        public void SendBuffer(byte[] byteBuffer) =>
-            _Listener.SendBuffer(byteBuffer);
-
-        public void SendDataBlock(DataBlock data) =>
-            SendBuffer(data.Write());
 
         public void StopClient()
         {
@@ -49,6 +46,27 @@ namespace Nox.Net.Com
             }
             _ServerIP = "";
         }
+
+        public bool SendBuffer(byte[] byteBuffer)
+        {
+            try
+            {
+                if (_Listener.IsConnected)
+                {
+                    _Listener.SendBuffer(byteBuffer);
+                    return true;
+                }
+                else
+                    return true;
+            }
+            catch (KeyNotFoundException)
+            {
+                return false;
+            }
+        }
+            
+        public bool SendDataBlock(DataBlock data) =>
+            SendBuffer(data.Write());
 
         public override void Dispose() =>
             StopClient();

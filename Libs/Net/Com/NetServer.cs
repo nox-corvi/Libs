@@ -23,11 +23,11 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com
 {
-    public abstract class NetServer<T> 
+    public class NetServer<T> 
         : NetBase where T : SocketListener
     {
-        public abstract string IP { get; }
-        public abstract int Port { get; }
+        private string _ServerIP = "";
+        private int _ServerPort = -1;
 
         private TcpListener _Listener = null;
         private Dictionary<Guid, SocketListener> _ListOfListener;
@@ -38,15 +38,21 @@ namespace Nox.Net.Com
         private bool _StopServer = false;
         private bool _StopPurge = false;
 
+        #region Properties
+        public string ServerIP => _ServerIP;
+        public int ServerPort => _ServerPort;
+
         public Guid Id { get; } = Guid.NewGuid();
 
         public int ClientConnectionCount =>
             _ListOfListener?.Count() ?? 0;
+        #endregion
 
-        public void Initialize()
+        public void Bind(string IP, int Port)
         {
             StopServer();
 
+            _ServerIP = IP; _ServerPort = Port;
             _Listener = new TcpListener(new IPEndPoint(IPAddress.Parse(IP), Port));
 
             _ListOfListener = new Dictionary<Guid, SocketListener>();
@@ -108,7 +114,7 @@ namespace Nox.Net.Com
                         _ClientSocket = _Listener.AcceptSocket();
 
                         // create using abstract method
-                        _SocketListener = (T)Activator.CreateInstance(typeof(T), _ClientSocket);
+                        _SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, _ClientSocket);
                         lock (_ListOfListener)
                         {
                             _ListOfListener.Add(_SocketListener.Id, _SocketListener);
@@ -145,9 +151,45 @@ namespace Nox.Net.Com
             }
         }
 
+        public bool SendBufferTo(Guid Id, byte[] byteBuffer)
+        {
+            try
+            {
+                var l = _ListOfListener[Id];
+
+                if (l.IsConnected)
+                {
+                    l.SendBuffer(byteBuffer);
+                    return true;
+                } else
+                    return true;
+            }
+            catch (KeyNotFoundException)
+            {
+                return false;
+            }
+        }
+
+        public int SendBuffer(byte[] byteBuffer)
+        {
+            int Result = 0;
+
+            foreach (var item in _ListOfListener)
+                if (item.Value?.IsConnected ?? false)
+                    if (SendBufferTo(item.Key, byteBuffer))
+                        Result++;
+
+            return Result;
+        }
+
+        public void SendDataBlockTo(Guid Id, DataBlock data) =>
+            SendBufferTo(Id, data.Write());
+
+        public int SendDataBlock(DataBlock data) =>
+            SendBuffer(data.Write());
+
         public override void Dispose() =>
             StopServer();
-
 
         public NetServer(uint Signature1)
             : base(Signature1) { }

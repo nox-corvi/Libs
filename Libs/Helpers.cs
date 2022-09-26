@@ -95,6 +95,29 @@ namespace Nox
                 return False();
         }
 
+        public static int OnXExec(params Action[] Methods)
+        {
+            int Result = 0;
+            for (int i = 0; i < Methods.Length; i++)
+                try
+                {
+                    Methods[i].Invoke();
+                    Result++;
+                }
+                catch
+                {
+                    //
+                }
+
+            return Result;
+        }
+
+        public static T OnResult<T>(Action f, T Result)
+        {
+            f.Invoke();
+            return Result;
+        }
+
         ///// <summary>
         ///// Ersetzt einen Wert bei Übereinstimmung mit einem Ersatzwert
         ///// </summary>

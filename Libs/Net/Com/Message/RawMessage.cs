@@ -22,6 +22,8 @@ namespace Nox.Net.Com.Message
     /// <typeparam name="T"></typeparam>
     public abstract class RawMessage
     {
+        private const uint EOM = 0xFEFE;
+
         protected uint _signature1;
         protected uint _signature2;
 
@@ -38,6 +40,9 @@ namespace Nox.Net.Com.Message
         }
 
         public uint Hash => _hash;
+
+        public byte[] Data { get  => _data; set => _data = value; } 
+
         #endregion
 
         public void Read(byte[] data)
@@ -63,6 +68,10 @@ namespace Nox.Net.Com.Message
                 if (CreateDataHash(raw) != hash)
                     throw new Exception("hash invalid");
 
+                var Last = Reader.ReadUInt32();
+                if (Last != EOM)
+                    throw new Exception("0xfefe not found at end of message");
+
                 _hash = hash;
                 _data = raw;
             }
@@ -79,10 +88,12 @@ namespace Nox.Net.Com.Message
                 Writer.Write(_signature1);
                 Writer.Write(_signature2);
 
-                Writer.Write(_hash);
+                Writer.Write(_hash = CreateDataHash(_data));
                 Writer.Write((ushort)_data.Length);
 
                 Writer.Write(_data);
+
+                Writer.Write(EOM);
 
                 // Leeren des Schreib-Puffers erzwingen
                 Writer.Flush();
