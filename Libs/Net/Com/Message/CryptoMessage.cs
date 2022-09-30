@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public abstract class CryptoMessage
-        : RawMessage
+    public abstract class CryptoMessage<T> 
+        : RawMessage<T> where T : IDataBlock
     {
         private Laverna laverna;
 
         public byte[] Decode()
         {
-            using (var Source = new MemoryStream(_data))
+            using (var Source = new MemoryStream(_user_data))
             using (var Dest = new MemoryStream())
             {
                 var Result = laverna.Decode(Source, Dest);
@@ -31,7 +31,7 @@ namespace Nox.Net.Com.Message
             using (var Dest = new MemoryStream())
             {
                 var Result = laverna.Encode(Source, Dest);
-                _data = Dest.ToArray();
+                _user_data = Dest.ToArray();
             }
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,7 +21,8 @@ namespace Nox.Net.Com.Message
     /// Reserved Signature2 Namespaces: 0xFCA0 - 0xFCFF
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class RawMessage
+    public class RawMessage<T>
+        where T : IDataBlock 
     {
         private const uint EOM = 0xFEFE;
 
@@ -28,26 +30,36 @@ namespace Nox.Net.Com.Message
         protected uint _signature2;
 
         protected uint _hash;
-        protected byte[] _data = null;
+        protected byte[] _user_data = null;
+
+        private IDataBlock _dataBlock;
 
         #region Properties
+        /// <summary>
+        /// signature 1 associates the packet to the application
+        /// </summary>
         public uint Signature1 => _signature1;
-        
+
+        /// <summary>
+        /// signature 2 identifies the packet type
+        /// </summary>
         public uint Signature2
         {
-            get => _signature2;
-            set => _signature2 = value;
+            get => _dataBlock?.Signature2 ?? throw new ArgumentNullException("dataBlock cannot be null to retrieve Signature2");
         }
 
-        public uint Hash => _hash;
+        public byte[] UserData { get => _user_data; set => _user_data = value; }
 
-        public byte[] Data { get  => _data; set => _data = value; } 
+        public T DataBlock => (T)_dataBlock;
 
         #endregion
 
-        public void Read(byte[] data)
+        private IDataBlock CreateDataBlock(uint Signature2) =>
+            (T)Activator.CreateInstance(typeof(T), Signature2);
+
+        public virtual void Read(byte[] raw)
         {
-            using (var Stream = new MemoryStream(data))
+            using (var Stream = new MemoryStream(raw))
             using (var Reader = new BinaryReader(Stream))
             {
                 var s1 = Reader.ReadUInt32();
@@ -62,10 +74,14 @@ namespace Nox.Net.Com.Message
                 var length = Reader.ReadUInt16();
 
                 // data
-                var raw = Reader.ReadBytes(length);
+                _user_data = Reader.ReadBytes(length);
+                _dataBlock = CreateDataBlock(Signature2);
+
+                // read byte data in datablock
+                _dataBlock.Read(_user_data);
 
                 // and validate
-                if (CreateDataHash(raw) != hash)
+                if (CreateDataHash(_user_data) != hash)
                     throw new Exception("hash invalid");
 
                 var Last = Reader.ReadUInt32();
@@ -73,25 +89,26 @@ namespace Nox.Net.Com.Message
                     throw new Exception("0xfefe not found at end of message");
 
                 _hash = hash;
-                _data = raw;
             }
         }
 
-        public byte[] Write()
+        public virtual byte[] Write()
         {
             using (var Stream = new MemoryStream())
             using (var Writer = new BinaryWriter(Stream))
             {
-                var l = (ushort)_data.Length;
-                var t = CreateDataHash(_data);
+                _user_data = _dataBlock.Write();
 
-                Writer.Write(_signature1);
-                Writer.Write(_signature2);
+                var l = (ushort)_user_data.Length;
+                var t = CreateDataHash(_user_data);
 
-                Writer.Write(_hash = CreateDataHash(_data));
-                Writer.Write((ushort)_data.Length);
+                Writer.Write(Signature1);
+                Writer.Write(Signature2);
 
-                Writer.Write(_data);
+                Writer.Write(_hash = CreateDataHash(_user_data));
+                Writer.Write((ushort)_user_data.Length);
+
+                Writer.Write(_user_data);
 
                 Writer.Write(EOM);
 
@@ -118,6 +135,9 @@ namespace Nox.Net.Com.Message
 
         public RawMessage(uint Signature1) =>
             this._signature1 = Signature1;
-    }
 
+        public RawMessage(uint Signature1, uint Signature2) 
+            : this(Signature1) =>
+            _dataBlock = CreateDataBlock(Signature2);
+    }
 }

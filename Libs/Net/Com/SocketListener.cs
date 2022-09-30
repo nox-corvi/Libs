@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Nox.Net.Com.Message.Defaults;
+using Nox.Threading;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -15,15 +16,13 @@ namespace Nox.Net.Com
         private const int RECEIVE_BUFFER_SIZE = 32768;
         private const uint EOM = 0xFEFE;
 
-        private BackgroundWorker _Listener;
-        private BackgroundWorker _MessageProcess;
+        private BetterBackgroundWorker _Listener = null!;
+        private BetterBackgroundWorker _MessageProcess = null!;
 
         private Socket _Socket = null;
-        private Thread _ListenerThread = null;
-        private bool _StopClient = false;
 
-        private bool _Delete = false;
-        private int _ReceiveTimeout = 15;
+        private bool _Remove = false;
+        private int _ReceiveTimeout = 0;
 
         private DateTime _LastResponse = DateTime.UtcNow;
 
@@ -36,158 +35,99 @@ namespace Nox.Net.Com
         public bool IsConnected =>
             _Socket?.Connected ?? false;
 
-        public bool Delete =>
-            _Delete;
+        public bool Remove =>
+            _Remove;
 
         public int ReceiveTimeout =>
             _ReceiveTimeout;
+
+        public int ReceiveBufferLength
+        {
+            get
+            {
+                lock(_ReceiveBuffer)
+                {
+                    return _ReceiveBuffer.Count;
+                }
+            }
+        }
+
+        public int MessageCount
+        {
+            get
+            {
+                lock (_MessageBuffer)
+                {
+                    return _MessageBuffer.Count;
+                }
+            }
+        }
         #endregion
 
+        private bool AlreadStarted = false;
         public void StartListener()
         {
-            if (_Socket != null)
-                (_ListenerThread = new Thread(new ThreadStart(ListenerThreadStart))).Start();
+            // check, socket must not be null
+            if ((_Socket != null) & (!AlreadStarted))
+            {
+                _Listener = new BetterBackgroundWorker();
+                _Listener.DoWork += new DoWorkEventHandler(Listener_DoWork);
+                _Listener.Run();
+
+                _MessageProcess = new BetterBackgroundWorker();
+                _MessageProcess.DoWork += new DoWorkEventHandler(MessageProcess_DoWork);
+                _MessageProcess.Run();
+
+                AlreadStarted = true;
+            }
         }
 
-        private void ListenerThreadStart()
+        private void Listener_DoWork(object sender, DoWorkEventArgs e)
         {
-            int size = 0;
-            byte[] byteBuffer = new byte[BUFFER_SIZE];
+            var worker = sender as BetterBackgroundWorker;
 
-            _LastResponse = DateTime.UtcNow;
-
-            using (Timer t = new Timer(t =>
+            while (!worker.CancellationPending)
             {
-                // stop if timout reached
-                if (ReceiveTimeout != 0 && DateTime.UtcNow.Subtract(_LastResponse).TotalSeconds > ReceiveTimeout)
-                    StopListener();
+                int size = 0;
+                byte[] byteBuffer = new byte[BUFFER_SIZE];
 
-            }, null, ReceiveTimeout, ReceiveTimeout))
-            {
-                while (!_StopClient)
+                try
                 {
-                    try
+                    // only if data available
+                    if (_Socket.Available > 0)
                     {
-                        if (_Socket.Available > 0)
+                        // read
+                        size = _Socket.Receive(byteBuffer);
+
+                        // update response
+                        _LastResponse = DateTime.UtcNow;
+                        lock (_ReceiveBuffer)
                         {
-                            size = _Socket.Receive(byteBuffer);
-
-                            _LastResponse = DateTime.Now;
-                            lock (_ReceiveBuffer)
-                            {
-                                _ReceiveBuffer.AddRange(byteBuffer);
-                                ParseReceiveBuffer();
-                            }
+                            _ReceiveBuffer.AddRange(byteBuffer);
+                            ParseReceiveBuffer();
                         }
-                        Thread.Sleep(0);
                     }
-                    catch (SocketException)
+
+                    // test if timeout occured
+                    if (ReceiveTimeout != 0 && DateTime.UtcNow.Subtract(_LastResponse).TotalSeconds > ReceiveTimeout)
                     {
-                        _StopClient = true;
-                        _Delete = true;
+                        e.Cancel = true;
+                        break;
                     }
+
+                    // wait 
+                    Thread.Sleep(10);
                 }
-
-                t.Change(Timeout.Infinite, Timeout.Infinite);
-            }
-        }
-
-        private void ListenerThreadStart()
-        {
-            int size = 0;
-            byte[] byteBuffer = new byte[BUFFER_SIZE];
-
-            _LastResponse = DateTime.UtcNow;
-
-            using (Timer t = new Timer(t =>
-            {
-                // stop if timout reached
-                if (ReceiveTimeout != 0 && DateTime.UtcNow.Subtract(_LastResponse).TotalSeconds > ReceiveTimeout)
-                    StopListener();
-
-            }, null, ReceiveTimeout, ReceiveTimeout))
-            {
-                while (!_StopClient)
+                catch (SocketException)
                 {
-                    try
-                    {
-                        if (_Socket.Available > 0)
-                        {
-                            size = _Socket.Receive(byteBuffer);
+                    _Remove = true;
 
-                            _LastResponse = DateTime.Now;
-                            lock (_ReceiveBuffer)
-                            {
-                                _ReceiveBuffer.AddRange(byteBuffer);
-                                ParseReceiveBuffer();
-                            }
-                        }
-                        Thread.Sleep(0);
-                    }
-                    catch (SocketException)
-                    {
-                        _StopClient = true;
-                        _Delete = true;
-                    }
+                    // exit if an error occured
+                    break;
                 }
-
-                t.Change(Timeout.Infinite, Timeout.Infinite);
             }
-        }
 
-        public void StopListener()
-        {
-            if (_Socket != null)
-            {
-                _StopClient = true;
-                _Socket.Close();
-
-                _ListenerThread?.Join(1000);
-                _ListenerThread = null;
-
-                _Socket = null;
-                _Delete = true;
-            }
-        }
-
-        public void SendBuffer(byte[] byteButter) =>
-            _Socket.Send(byteButter);
-
-        public void SendDataBlock(DataBlock data) =>
-            SendBuffer(data.Write());
-
-        public void ParseMessage(byte[] Message)
-        {
-
-        }
-
-        private void PreParseMessage(byte[] Message)
-        {
-            //int i = 0, p = sizeof(uint);
-            //uint Sig1 = BitConverter.ToUInt32(Message, i);
-            //if (Sig1 != Signature1)
-            //    throw new Exception("invalid signature");
-
-            //i += p;
-            //uint Sig2 = BitConverter.ToUInt32(Message, i);
-
-            //switch (Sig2)
-            //{
-            //    case 0x3001:
-            //        // client ping
-            //        var cp = new ClientPingMessage(Signature1);
-            //        cp.Read(Message);
-            //        var cpd = new ClientPing(Signature1, "127.0.0.1");
-            //        cpd.Read(cp.Data);
-            //        break;
-            //}
-        }
-
-
-
-        public void ParseMessage(byte[] Message)
-        {
-
+            e.Cancel = true;
         }
 
         public void ParseReceiveBuffer()
@@ -211,14 +151,17 @@ namespace Nox.Net.Com
                     if (End > Start)
                     {
                         byte[] Message = new byte[End - Start + 4];
-                        
+
                         _ReceiveBuffer.CopyTo(Start, Message, 0, Message.Length);
 
                         // remove message block, give up leading data 
-                        _ReceiveBuffer.RemoveRange(Start, End+4);
+                        _ReceiveBuffer.RemoveRange(Start, End + 4);
 
-                        // parse 
-                        ParseMessage(Message);
+                        // add message 
+                        lock (_MessageBuffer)
+                        {
+                            _MessageBuffer.Add(Message);
+                        }
 
                         break;
                     }
@@ -234,13 +177,122 @@ namespace Nox.Net.Com
                 _ReceiveBuffer.RemoveRange(0, _ReceiveBuffer.Count - RECEIVE_BUFFER_SIZE);
         }
 
+        private void MessageProcess_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var worker = sender as BetterBackgroundWorker;
+
+            while (!worker.CancellationPending)
+            {
+                byte[] Message = null;
+
+                lock (_MessageBuffer)
+                {
+                    if (_MessageBuffer.Count > 0)
+                    {
+                        Message = _MessageBuffer.First();
+                        _MessageBuffer.RemoveAt(0);
+                    }
+                }
+
+                // test if message assigned
+                if (Message != null)
+                    // proceed outside of the lock
+                    // if message is not a default message type
+                    if (!PreParseMessage(Message))
+                        // user-defined message processing
+                        ParseMessage(Message);
+
+                Thread.Sleep(10);
+            }
+        }
+
+        public void StopListener()
+        {
+            // stop listener - no more messages
+            if (_Listener.IsBusy)
+            {
+                _Listener.Cancel();
+
+                while (_Listener.IsBusy)
+                    Thread.Sleep(100);
+
+                _Socket?.Close();
+            }
+
+            // wait messages proceed
+            if (_MessageProcess.IsBusy)
+            {
+                int c = 0;
+                while (MessageCount > 0) { Thread.Sleep(100); } ;
+
+                _MessageProcess.Cancel();
+                while (_MessageProcess.IsBusy)
+                    Thread.Sleep(100);
+            }
+            _Remove = true;
+        }
+
+        public void SendBuffer(byte[] byteButter) =>
+            _Socket.Send(byteButter);
+
+        public void SendDataBlock(DataBlock data) =>
+            SendBuffer(data.Write());
+
+        private bool PreParseMessage(byte[] Message)
+        {
+            uint Signature2 = BitConverter.ToUInt32(Message, sizeof(uint));
+
+            var Response = new RESP(Signature1);
+            switch (Signature2)
+            {
+                case (uint)DefaultMessageTypeEnum.EHLO:
+                    var EHLO = new EHLO(Signature1);
+                    EHLO.Read(Message);
+
+                    Response.DataBlock.Response1 = 250;
+                    SendBuffer(Response.Write());
+
+                    return true;
+                case (uint)DefaultMessageTypeEnum.KEXC:
+                    var KEXC = new KEXC(Signature1);
+
+                    Response.DataBlock.Response1 = 250;
+                    SendBuffer(Response.Write());
+
+                    return true;
+                case (uint)DefaultMessageTypeEnum.KEYV:
+                    var KEYV = new KEYV(Signature1);
+
+                    Response.DataBlock.Response1 = 250;
+                    SendBuffer(Response.Write());
+
+                    return true;
+                case (uint)DefaultMessageTypeEnum.RESP:
+                    var RESP = new RESP(Signature1);
+
+                    RESP.Read(Message);
+                    switch (RESP.DataBlock.Response1)
+                    {
+                        case 250:
+                            break;
+
+                    }
+
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public abstract void ParseMessage(byte[] Message);
+
+
         public SocketListener(uint Signature1, Socket Socket)
             : base(Signature1) =>
-            this._Socket = Socket;           
+            this._Socket = Socket;
 
         public SocketListener(uint Signature1, Socket Socket, int ReceiveTimeout)
             : this(Signature1, Socket) => this._ReceiveTimeout = ReceiveTimeout;
-
 
         ~SocketListener() =>
             StopListener();

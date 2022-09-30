@@ -10,40 +10,29 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message.Defaults
 {
-    public class KEXC : RawMessage
+    public class kexc_data
+        : DataBlock
     {
-        private ECDHPublicKey _PublicKey = null;
+        private byte[] _PublicKey;
 
         #region Properties
-        public byte[] PublicKey
-        {
-            get => _PublicKey.ToByteArray();
-            set
-            {
-                ArgumentNullException.ThrowIfNull(value);
-
-                _PublicKey = new(value);
-
-                // get vars
-                var len = (ushort)(value.Length);
-                var p = sizeof(ushort);
-                
-                // resize message
-                _data = new byte[len + p];
-
-                // and copy to data
-                Array.Copy(BitConverter.GetBytes(len), 0, _data, 0, p);
-                Array.Copy(value, p, _data, p, len);
-            }
-        }
+        public byte[] PublicKey { get => _PublicKey; set => _PublicKey = value; }
         #endregion
 
-        public KEXC(uint Signature1)
-            : base(Signature1) =>
-            this.Signature2 = 0xFCA1;
+        public override void Read(byte[] data) =>
+            _PublicKey = data;
 
-        public KEXC(uint Signature1, ECDHPublicKey PublicKey)
-            : this(Signature1) => 
-            this._PublicKey = PublicKey;
+        public override byte[] Write() =>
+            _PublicKey;
+
+        public kexc_data(uint Signature2)
+            : base(Signature2) { }
+    }
+
+    public class KEXC
+       : RawMessage<kexc_data>
+    {
+        public KEXC(uint Signature1)
+            : base(Signature1, (uint)DefaultMessageTypeEnum.KEXC) { }
     }
 }

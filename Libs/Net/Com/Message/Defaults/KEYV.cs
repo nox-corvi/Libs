@@ -8,38 +8,29 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message.Defaults
 {
-    public class KEYV : RawMessage
+    public class keyv_data
+        : DataBlock
     {
-        private byte[] _KeyHash = null;
+        private byte[] _PublicKey;
 
         #region Properties
-        public byte[] KeyHash
-        {
-            get => _KeyHash;
-            set
-            {
-                ArgumentNullException.ThrowIfNull(value);
-
-                // get vars
-                var len = (ushort)(value.Length);
-                var p = sizeof(ushort);
-
-                // resize message
-                _data = new byte[len + p];
-
-                // and copy to data
-                Array.Copy(BitConverter.GetBytes(len), 0, _data, 0, p);
-                Array.Copy(value, p, _data, p, len);
-            }
-        }
+        public byte[] PublicKey { get => _PublicKey; set => _PublicKey = value; }
         #endregion
 
-        public KEYV(ushort Signature1)
-            : base(Signature1) =>
-            this.Signature2 = 0xFCA2;
+        public override void Read(byte[] data) =>
+            _PublicKey = data;
 
-        public KEYV(ushort Signature1, byte[] keyHash)
-            : this(Signature1) =>
-            this._KeyHash = keyHash;
+        public override byte[] Write() =>
+            _PublicKey;
+
+        public keyv_data(uint Signature2)
+            : base(Signature2) { }
+    }
+
+    public class KEYV
+       : RawMessage<keyv_data>
+    {
+        public KEYV(uint Signature1)
+            : base(Signature1, (uint)DefaultMessageTypeEnum.KEYV) { }
     }
 }
