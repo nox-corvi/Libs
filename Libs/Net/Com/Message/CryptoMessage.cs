@@ -1,14 +1,9 @@
 ﻿using Nox.Security;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public abstract class CryptoMessage<T> 
+    public abstract class CryptoMessage<T>
         : RawMessage<T> where T : IDataBlock
     {
         private Laverna laverna;
@@ -38,7 +33,7 @@ namespace Nox.Net.Com.Message
         public CryptoMessage(uint Signature1, uint Signature2, Laverna laverna)
             : base(Signature1)
         {
-            this.laverna = laverna; 
+            this.laverna = laverna;
             this._signature2 = Signature2;
         }
     }

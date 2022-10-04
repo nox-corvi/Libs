@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net.Sockets;
 
 namespace Nox.Net.Com
 {
-    public class NetClient<T> 
+    public class NetClient<T>
         : NetBase where T : SocketListener
     {
         private SocketListener _Listener;
@@ -64,7 +61,7 @@ namespace Nox.Net.Com
                 return false;
             }
         }
-            
+
         public bool SendDataBlock(DataBlock data) =>
             SendBuffer(data.Write());
 

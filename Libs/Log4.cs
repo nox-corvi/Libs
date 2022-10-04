@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Web;
-using Nox;
-using System.Linq;
 using System.Text;
 using System.Threading;
 

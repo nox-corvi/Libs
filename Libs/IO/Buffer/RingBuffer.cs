@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox.IO.Buffer
 {
@@ -12,11 +8,11 @@ namespace Nox.IO.Buffer
     /// <typeparam name="T">Ein beliebiger Datentyp</typeparam>
     public class RingBuffer<T> where T : class
     {
-        private T[]         _Buffer;
-        private int[]       _freqRead;
+        private T[] _Buffer;
+        private int[] _freqRead;
 
-        private int         _last;
-        private int         _index;
+        private int _last;
+        private int _index;
 
         #region Properties
 

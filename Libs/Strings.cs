@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox
 {
@@ -55,7 +53,7 @@ namespace Nox
                 return _default;
         }
 
-       
+
         /// <summary>
         /// Method that returns a string afore a first matching search-argument
         /// </summary>

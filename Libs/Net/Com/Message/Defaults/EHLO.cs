@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nox;
+﻿using System.Text;
 
 namespace Nox.Net.Com.Message.Defaults
 {
@@ -13,19 +8,19 @@ namespace Nox.Net.Com.Message.Defaults
         public const int MAX_LENGTH = 64;
 
         private string _Message = "";
-        private ASCIIEncoding ASC = new();
+        private ASCIIEncoding ASC = new ASCIIEncoding();
 
         #region Properties
         public string Message { get => _Message; set => _Message = value.LimitLength(MAX_LENGTH); }
         #endregion
 
         public override void Read(byte[] data) =>
-            _Message = ASC.GetString(data).LimitLength(MAX_LENGTH).Trim(); 
+            _Message = ASC.GetString(data).LimitLength(MAX_LENGTH).Trim();
 
         public override byte[] Write() =>
             ASC.GetBytes(_Message.LimitLength(MAX_LENGTH));
 
-        public ehlo_data(uint Signature2) 
+        public ehlo_data(uint Signature2)
             : base(Signature2) { }
     }
 

@@ -1,17 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Reflection;
-using System.Xml.Schema;
-using System.Xml.Serialization;
-using System.Runtime;
-using System.Runtime.Serialization;
-using System.Xml;
-using System.Security;
+using System.Text;
 
 namespace Nox
 {
@@ -69,7 +59,7 @@ namespace Nox
             }
         }
 
-        public static void OnXParse<T>(string Value, Action<T> Success, Action<string> Error) where T: IComparable 
+        public static void OnXParse<T>(string Value, Action<T> Success, Action<string> Error) where T : IComparable
         {
             T Result;
 
@@ -203,7 +193,7 @@ namespace Nox
                      * http://stackoverflow.com/questions/1667169/why-do-i-get-invalidcastexception-when-casting-a-double-to-decimal
                      */
                     if (typeof(T) == typeof(double))
-                        return (T)TypeDescriptor.GetConverter(typeof(T)).ConvertFromInvariantString(Arg.ToString());   
+                        return (T)TypeDescriptor.GetConverter(typeof(T)).ConvertFromInvariantString(Arg.ToString());
                     else
                         return (T)TypeDescriptor.GetConverter(typeof(T)).ConvertFromString(Arg.ToString());
                 }
@@ -259,7 +249,7 @@ namespace Nox
             do
             {
                 string CounterString = Counter == 0 ? String.Empty : String.Concat('_', Counter.ToString().PadRight(3, '0'));
-                string UniqueFilename = String.Concat(Path, Prefix, Helpers.UTC, CounterString,Extension);
+                string UniqueFilename = String.Concat(Path, Prefix, Helpers.UTC, CounterString, Extension);
 
                 if (!File.Exists(UniqueFilename))
                     Result = UniqueFilename;

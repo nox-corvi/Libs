@@ -1,28 +1,14 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using Nox.Component;
-using Nox.IO;
-using Nox.Security;
-using Nox.Threading;
+﻿using Nox.Threading;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nox.Net.Com
 {
-    public class NetServer<T> 
+    public class NetServer<T>
         : NetBase where T : SocketListener
     {
         private string _ServerIP = "";
@@ -33,7 +19,7 @@ namespace Nox.Net.Com
 
         private BetterBackgroundWorker _Server;
         private int _ServerWaitTime = 10;
-        
+
         private BetterBackgroundWorker _Purge;
         private int _PurgeWaitTime = 100;
 
@@ -107,7 +93,7 @@ namespace Nox.Net.Com
             {
                 lock (_ListOfListener)
                 {
-                    for (int i = _ListOfListener.Count - 1; i >= 0 ; i++)
+                    for (int i = _ListOfListener.Count - 1; i >= 0; i++)
                         if (_ListOfListener[i].Remove)
                         {
                             _ListOfListener[i].StopListener();
@@ -162,7 +148,8 @@ namespace Nox.Net.Com
                 {
                     _ListOfListener[Index].SendBuffer(byteBuffer);
                     return true;
-                } else
+                }
+                else
                     return true;
             }
             catch (KeyNotFoundException)

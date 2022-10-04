@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace Nox.Security
@@ -33,7 +31,7 @@ namespace Nox.Security
             Push(Raw, 0, Raw.Length);
         }
 
-        public void Push (string Value)
+        public void Push(string Value)
         {
             var Raw = Encoding.UTF8.GetBytes(Value);
             Push(Raw, 0, Raw.Length);

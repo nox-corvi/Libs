@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox.IO.Buffer
 {
@@ -22,7 +18,7 @@ namespace Nox.IO.Buffer
             base.Add(Item);
         }
 
-        
+
 
         public new bool Remove(T Item)
         {

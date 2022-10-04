@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
@@ -22,7 +17,7 @@ namespace Nox.Net.Com.Message
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class RawMessage<T>
-        where T : IDataBlock 
+        where T : IDataBlock
     {
         private const uint EOM = 0xFEFE;
 
@@ -136,7 +131,7 @@ namespace Nox.Net.Com.Message
         public RawMessage(uint Signature1) =>
             this._signature1 = Signature1;
 
-        public RawMessage(uint Signature1, uint Signature2) 
+        public RawMessage(uint Signature1, uint Signature2)
             : this(Signature1) =>
             _dataBlock = CreateDataBlock(Signature2);
     }

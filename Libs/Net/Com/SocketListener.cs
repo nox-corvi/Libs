@@ -4,9 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nox.Net.Com
 {
@@ -16,8 +14,8 @@ namespace Nox.Net.Com
         private const int RECEIVE_BUFFER_SIZE = 32768;
         private const uint EOM = 0xFEFE;
 
-        private BetterBackgroundWorker _Listener = null!;
-        private BetterBackgroundWorker _MessageProcess = null!;
+        private BetterBackgroundWorker _Listener = null;
+        private BetterBackgroundWorker _MessageProcess = null;
 
         private Socket _Socket = null;
 
@@ -26,8 +24,8 @@ namespace Nox.Net.Com
 
         private DateTime _LastResponse = DateTime.UtcNow;
 
-        private List<byte> _ReceiveBuffer = new();
-        private List<byte[]> _MessageBuffer = new();
+        private List<byte> _ReceiveBuffer = new List<byte>();
+        private List<byte[]> _MessageBuffer = new List<byte[]>();
 
         #region Properties
         public Guid Id { get; } = Guid.NewGuid();
@@ -45,7 +43,7 @@ namespace Nox.Net.Com
         {
             get
             {
-                lock(_ReceiveBuffer)
+                lock (_ReceiveBuffer)
                 {
                     return _ReceiveBuffer.Count;
                 }
@@ -223,7 +221,7 @@ namespace Nox.Net.Com
             if (_MessageProcess.IsBusy)
             {
                 int c = 0;
-                while (MessageCount > 0) { Thread.Sleep(100); } ;
+                while (MessageCount > 0) { Thread.Sleep(100); };
 
                 _MessageProcess.Cancel();
                 while (_MessageProcess.IsBusy)

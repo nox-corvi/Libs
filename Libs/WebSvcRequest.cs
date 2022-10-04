@@ -1,16 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
-using System.IO;
-using System.Data;
-using Nox;
-using Nox.Data;
-using Nox.Data.SqlServer;
-using Nox.IO.Buffer;
 
 namespace Nox
 {
@@ -157,11 +151,11 @@ namespace Nox
     }
 
     public class WebCacheBuffer<T> : IDisposable where T : WebSessionCacheObj<WebSvcResponseSeed>
-    {    
-                       
+    {
+
 
         #region IDisposable Support
-            private bool disposedValue = false; // Dient zur Erkennung redundanter Aufrufe.
+        private bool disposedValue = false; // Dient zur Erkennung redundanter Aufrufe.
 
         protected virtual void Dispose(bool disposing)
         {

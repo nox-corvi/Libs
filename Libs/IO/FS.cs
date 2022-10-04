@@ -23,21 +23,15 @@
  * 
 */
 
+using Nox.IO.Buffer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using M = System.Math;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel;
 using System.Security.Cryptography;
-using Nox;
-using Nox.Data;
-using Nox.Data.SqlServer;
-using Nox.IO.Buffer;
+using System.Text;
+using M = System.Math;
 
 namespace Nox.IO
 {
@@ -186,7 +180,7 @@ namespace Nox.IO
 
                     // CryptoStream gefüllt, Puffer leeren
                     CryptoStream.Flush();
-                    
+
                     // und abschliessen
                     CryptoStream.FlushFinalBlock();
 
@@ -260,8 +254,8 @@ namespace Nox.IO
     {
         public const int FREE = -1;
 
-        private T[]     Clusters;
-        private int     Index;
+        private T[] Clusters;
+        private int Index;
 
         #region Cache-Methods
         /// <summary>
@@ -383,10 +377,10 @@ namespace Nox.IO
 
     public class FSClusterMap : FSCluster
     {
-        private const int   DEFAULT_SIGNATURE = 0x1494BFDA;
+        private const int DEFAULT_SIGNATURE = 0x1494BFDA;
 
-        private int         _Signature = DEFAULT_SIGNATURE;
-        private uint[]      _Map;
+        private int _Signature = DEFAULT_SIGNATURE;
+        private uint[] _Map;
 
         // Felder
         private int _SlotCount;
@@ -462,7 +456,7 @@ namespace Nox.IO
         /// <summary>
         /// Liefert die Anzahl an belegten Slots zurück
         /// </summary>
-        public int SlotsUsed 
+        public int SlotsUsed
         {
             get
             {
@@ -544,7 +538,7 @@ namespace Nox.IO
 
     public class FSClusterMaps : FSContainer
     {
-        private FSClusterMap[]   _Map;
+        private FSClusterMap[] _Map;
 
         #region Properties
         /// <summary>
@@ -729,15 +723,15 @@ namespace Nox.IO
 
     public class FSDataCluster : FSCluster
     {
-        private const uint  DEFAULT_SIGNATURE = 0xFAD53F33;
+        private const uint DEFAULT_SIGNATURE = 0xFAD53F33;
 
-        private uint    _Signature;
+        private uint _Signature;
 
-        private int     _Previous;
-        private int     _Next;
+        private int _Previous;
+        private int _Next;
 
-        private byte[]  _Data;
-        private uint    _CRC;
+        private byte[] _Data;
+        private uint _CRC;
 
         #region Properties
         /// <summary>
@@ -916,10 +910,10 @@ namespace Nox.IO
 
     public class FSDirectory
     {
-        private FSNode                  _Node;
+        private FSNode _Node;
 
-        private EventList<FSDirectory>  _Directories;
-        private EventList<FSNode>       _Files;
+        private EventList<FSDirectory> _Directories;
+        private EventList<FSNode> _Files;
 
         #region Properties
         /// <summary>
@@ -1033,30 +1027,30 @@ namespace Nox.IO
     public class FSHeader : FSContainer
     {
         // Konstanten
-        private const uint      DEFAULT_SIGNATURE   = 0x3F534652;
-        private const ushort    CURRENT_VERSION     = 0x10A0;
-        private const int       MAPCLUSTER_THRESHOLD= 4;
-        private const ushort    NODE_SIZE           = 128;
+        private const uint DEFAULT_SIGNATURE = 0x3F534652;
+        private const ushort CURRENT_VERSION = 0x10A0;
+        private const int MAPCLUSTER_THRESHOLD = 4;
+        private const ushort NODE_SIZE = 128;
 
         // Felder
-        private uint        _Signature;
+        private uint _Signature;
 
-        private int         _Version;
-        private int         _Build;
+        private int _Version;
+        private int _Build;
 
-        private byte[]      _Name;
+        private byte[] _Name;
 
-        private DateTime    _Created;
-        private DateTime    _Modified;
+        private DateTime _Created;
+        private DateTime _Modified;
 
-        private int         _ClusterSize;
-        private int[]       _ClusterMaps;
+        private int _ClusterSize;
+        private int[] _ClusterMaps;
 
-        private uint        _CRC;
+        private uint _CRC;
 
         // Variablen
-        private int         _ClusterMapThreshold;
-        private int         _NodesPerBlock = -1;
+        private int _ClusterMapThreshold;
+        private int _NodesPerBlock = -1;
 
         #region Properties
         /// <summary>
@@ -1418,7 +1412,7 @@ namespace Nox.IO
 
     public class FSMap : FSElement
     {
-        private byte[]      _Map;
+        private byte[] _Map;
 
         private int _SlotCount;
         private int _SlotsFree;
@@ -1571,28 +1565,28 @@ namespace Nox.IO
     public class FSNode : FSElement
     {
         // Konstanten
-        private const uint  DEFAULT_SIGNATURE = 0xA0BA0700;
+        private const uint DEFAULT_SIGNATURE = 0xA0BA0700;
 
         // Vars
-        private uint        _Signature;
+        private uint _Signature;
 
-        private uint        _Id;
-        private uint        _Parent;
+        private uint _Id;
+        private uint _Parent;
 
-        private uint        _Flags;
+        private uint _Flags;
 
-        private byte[]      _Name;
+        private byte[] _Name;
 
-        private int         _FileSize;
-        private int         _ClusterCount;
+        private int _FileSize;
+        private int _ClusterCount;
 
-        private DateTime    _Created;
-        private DateTime    _Modified;
+        private DateTime _Created;
+        private DateTime _Modified;
 
-        private int         _FirstCluster;
-        private int         _LastCluster;
+        private int _FirstCluster;
+        private int _LastCluster;
 
-        private uint        _CRC;
+        private uint _CRC;
 
         #region Properties
         /// <summary>
@@ -1996,17 +1990,17 @@ namespace Nox.IO
     public class FSNodeCluster : FSCluster
     {
         // Konstanten
-        private const uint  DEFAULT_SIGNATURE       = 0x6CD353FA;
+        private const uint DEFAULT_SIGNATURE = 0x6CD353FA;
 
-        private uint        _Signature = DEFAULT_SIGNATURE;
+        private uint _Signature = DEFAULT_SIGNATURE;
 
-        private int         _NextBlock;
-        private byte[]      _Reserved;
+        private int _NextBlock;
+        private byte[] _Reserved;
 
-        private FSMap      _NodeMap;
-        private FSNode[]   _Nodes;
+        private FSMap _NodeMap;
+        private FSNode[] _Nodes;
 
-        private FS           _IDXFS;
+        private FS _IDXFS;
 
         #region Properties
         /// <summary>
@@ -2267,16 +2261,16 @@ namespace Nox.IO
 
     public class FSStream : System.IO.Stream
     {
-        private FS               _FSBase;
-        private FSNode           _Node;
+        private FS _FSBase;
+        private FSNode _Node;
 
-        private FSDataCluster    _CurrentCluster;
-        private int             _CurrentIndex;
+        private FSDataCluster _CurrentCluster;
+        private int _CurrentIndex;
 
-        private long            _ClusterStart;
-        private long            _ClusterEnd;
+        private long _ClusterStart;
+        private long _ClusterEnd;
 
-        private long            _CurrentPosition = 0;
+        private long _CurrentPosition = 0;
 
         #region Properties
         public override bool CanRead
@@ -2689,7 +2683,7 @@ namespace Nox.IO
 
     public class FS
     {
-        public const string    DEFAULT_EXT = ".vfs";
+        public const string DEFAULT_EXT = ".vfs";
 
         public struct DirectoryInfo
         {
@@ -2709,25 +2703,25 @@ namespace Nox.IO
         }
 
         // Variablen
-        private string                  _Filename = "";
-        private FileStream              _FileHandle = null;
+        private string _Filename = "";
+        private FileStream _FileHandle = null;
 
-        private FSHeader                _Header = null;
-        private FSClusterMaps           _Maps;
-        private List<FSNodeCluster>     _NodeBlocks;
+        private FSHeader _Header = null;
+        private FSClusterMaps _Maps;
+        private List<FSNodeCluster> _NodeBlocks;
 
-        private FSTree                   _Root;
-        private uint                    rootID;
+        private FSTree _Root;
+        private uint rootID;
 
-        private FSDirectory             _CurrentFolder;
+        private FSDirectory _CurrentFolder;
 
-        private FSCache<FSDataCluster>  _Cache;
+        private FSCache<FSDataCluster> _Cache;
 
-        private byte[]              _IDXFS_KEY = {  0x72, 0x7A, 0x62, 0x45, 0x66, 0x5A, 0x55, 0x31,
+        private byte[] _IDXFS_KEY = {  0x72, 0x7A, 0x62, 0x45, 0x66, 0x5A, 0x55, 0x31,
                                                     0x59, 0x63, 0x32, 0x37, 0x61, 0x44, 0x73, 0x37,
                                                     0x51, 0x75, 0x62, 0x4C, 0x64, 0xA7, 0x71, 0x6F,
                                                     0x67, 0x41, 0x75, 0x43, 0x55, 0x31, 0x75, 0x4B };
-        private byte[]              _IDXFS_IV = {   0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8,
+        private byte[] _IDXFS_IV = {   0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8,
                                                     0xD7, 0xE6, 0xF5, 0x04, 0x5F, 0x6E, 0x7D, 0x8C,
                                                     0x9B, 0xAA, 0xB9, 0xC8, 0xD7, 0xE6, 0xF5, 0x04,
                                                     0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8 };
@@ -3611,8 +3605,8 @@ namespace Nox.IO
         /// <returns>der Hashwert</returns>
         internal uint HashFilename(string Filename)
         {
-            const uint OFFSET   = 2166136261U;
-            const uint PRIME    = 16777619;
+            const uint OFFSET = 2166136261U;
+            const uint PRIME = 16777619;
 
             uint Result = OFFSET;
             foreach (var Item in Filename)
@@ -3660,7 +3654,7 @@ namespace Nox.IO
             rootID = HashFilename("ROOT");
         }
     }
-    
+
     public class CRC
     {
         private UInt32[] crc32Table;

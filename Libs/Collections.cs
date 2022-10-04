@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
-using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox
 {
@@ -33,7 +28,7 @@ namespace Nox
                 {
                     if (Expiration == CacheExpirationEnum.SlidingExpiration)
                         _LastAccess = DateTime.Now;
-                    
+
                     return _Value;
                 }
                 set => _Value = value;
@@ -50,7 +45,7 @@ namespace Nox
             {
                 if (_CacheExpiration == CacheExpirationEnum.NoExpiration)
                     return false;
-                else 
+                else
                     return (_LastAccess.AddSeconds(ExpirationTime) < DateTime.Now);
             }
 
@@ -60,7 +55,7 @@ namespace Nox
 
         private Dictionary<string, CacheItem> _Cache = new Dictionary<string, CacheItem>();
         private bool disposedValue;
-       
+
         #region Properties
         public int CacheExpirationTime { get; set; } = 300; // in Seconds, 5min default time
 
@@ -97,7 +92,7 @@ namespace Nox
                 else
                 {
                     _Log.LogMessage($"Get from Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
-                    
+
                     switch (Value.Expiration)
                     {
                         case CacheExpirationEnum.NoExpiration:
@@ -126,7 +121,7 @@ namespace Nox
             }
         }
 
-        public T SetCacheValue(string Key, Func<T> ValueFunc) 
+        public T SetCacheValue(string Key, Func<T> ValueFunc)
         {
             try
             {
@@ -168,7 +163,7 @@ namespace Nox
             }
         }
 
-        public T GetCacheValue(string Key, T DefaultValue = default(T)) 
+        public T GetCacheValue(string Key, T DefaultValue = default(T))
         {
             try
             {
@@ -178,7 +173,8 @@ namespace Nox
                     _Log.LogMessage($"Get from Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
 
                     return Value.Value;
-                } else
+                }
+                else
                     return DefaultValue;
             }
             catch (Exception ex)

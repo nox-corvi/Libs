@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox
 {
@@ -16,8 +12,8 @@ namespace Nox
         /// <returns>Ein hashwert mit 32-Bit</returns>
         public static uint HashFNV1a32(string value)
         {
-            uint hash   = 2166136261U;
-            uint prime  = 16777619;
+            uint hash = 2166136261U;
+            uint prime = 16777619;
 
             foreach (var Item in value)
                 hash = (hash ^ (byte)Item) * prime;
@@ -32,7 +28,7 @@ namespace Nox
         /// <returns>Ein hashwert mit 64-Bit</returns>
         public static ulong HashFNV1a64(string value)
         {
-            ulong hash  = 14695981039346656037UL;
+            ulong hash = 14695981039346656037UL;
             ulong prime = 1099511628211UL;
 
             foreach (var Item in value)

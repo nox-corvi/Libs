@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace rrdb
+﻿namespace rrdb
 {
     public class rrdb
     {

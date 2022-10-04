@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message.Defaults
 {
     public class resp_data
         : DataBlock
-    {     
+    {
         private const int MAX_LENGTH = 64;
 
         private uint _Response1 = 0;
@@ -38,20 +35,20 @@ namespace Nox.Net.Com.Message.Defaults
 
         public override byte[] Write()
         {
-            List<byte> Result = new();
+            List<byte> Result = new List<byte>();
 
             Result.AddRange(BitConverter.GetBytes(_Response1));
             Result.AddRange(BitConverter.GetBytes(_Response2));
             Result.AddRange(BitConverter.GetBytes(_Response3));
 
-            return Result.ToArray();    
+            return Result.ToArray();
         }
 
         public resp_data(uint Signature2)
             : base(Signature2) { }
 
         public resp_data(uint Signature2, uint Response1, uint Response2 = 0, uint Response3 = 0)
-            : this(Signature2) 
+            : this(Signature2)
         {
             _Response1 = Response1;
             _Response2 = Response2;

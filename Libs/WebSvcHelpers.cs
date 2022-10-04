@@ -1,15 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
-using System.IO;
-using System.Web;
-using System.Configuration;
-using Microsoft.Extensions.Caching.Memory;
-
-namespace Nox
+﻿namespace Nox
 {
 #if NET
     public enum CacheExpirationEnum
