@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Nox.IO
 {
@@ -74,108 +76,7 @@ namespace Nox.IO
 
         public static FileStream CreateTempFile(string ArchiveFilename)
         {
-            return File.Open(GetDirectoryOnly(ArchiveFilename) + Guid.NewGuid().ToString().Replace("-", ""), FileMode.Create);
-        }
-
-        public static string GetDirectoryOnly(string Filename)
-        {
-            if (!Filename.EndsWith("\\"))
-            {
-                if (!Filename.Contains("\\"))
-                    return "";
-
-                var Result = Filename;
-                while (!Result.EndsWith("\\"))
-                    if (Result.Length > 0)
-                        Result = Result.Substring(0, Result.Length - 1);
-
-                return Result;
-            }
-            else
-                return Filename;
-        }
-
-        public static string DirectoryOnly(string Filename)
-        {
-            if (!Filename.EndsWith("\\"))
-            {
-                if (!Filename.Contains("\\"))
-                    return "";
-
-                var Result = Filename;
-                while (!Result.EndsWith("\\"))
-                    if (Result.Length > 0)
-                        Result = Result.Substring(0, Result.Length - 1);
-
-                return Result;
-            }
-            else
-                return Filename;
-        }
-        public static string FilenameOnly(string Filename)
-        {
-            var Result = Filename; int i = 0;
-            while ((i = Result.IndexOf("\\")) > -1)
-                Result = Result.Substring(i + 1);
-
-            return Result;
-        }
-        public static string PathOnly(string Filename)
-        {
-            var Result = Filename; int i = 0;
-            while ((i = Result.IndexOf("\\")) > -1)
-                Result = Result.Substring(i + 1);
-
-            return Filename.Substring(0, Filename.Length - Result.Length);
-        }
-
-        public static string ExtensionOnly(string Filename)
-        {
-            var Result = FilenameOnly(Filename);
-            int i = -1, j = -1;
-
-            // find last .
-            while ((j = Result.IndexOf('.', j + 1)) > i)
-                i = j;
-
-            if (i > -1) // return with .
-                return Result.Substring(i);
-            else
-                return "";
-        }
-
-        public static string RemoveExtension(string Filename)
-        {
-            string Result = Filename;
-            int i = -1, j = -1;
-
-            while ((j = Result.IndexOf('.')) > i)
-                i = j;
-
-            if (i > -1)
-                return Filename.Substring(0, i);
-            else
-                return Filename;
-        }
-        public static string RemoveExtensions(string Filename)
-        {
-            string Result = Filename, R2 = Filename;
-
-            while ((R2 = RemoveExtension(Result)) != Result)
-                Result = R2;
-
-            return Result;
-        }
-
-        public static string AddBS(string Path)
-        {
-            return string.Concat(Path, Path.EndsWith("\\") ? ' ' : '\\');
-        }
-
-        public static string FullPath(string Path)
-        {
-            var Info = new DirectoryInfo(Path);
-            return Info.FullName;
+            return File.Open(ArchiveFilename.GetDirectoryOnly() + Guid.NewGuid().ToString().Replace("-", ""), FileMode.Create);
         }
 
     }

@@ -2974,7 +2974,7 @@ namespace Nox.IO
         {
             Close();
 
-            _Filename = IO.RemoveExtension(Filename);
+            _Filename = Filename.RemoveExtension();
             if ((File.Exists(this.Filename + DEFAULT_EXT)) & (!ForceOverwrite))
                 throw new FSException("file already exists");
 
@@ -3001,7 +3001,7 @@ namespace Nox.IO
         {
             Close();
 
-            _Filename = IO.RemoveExtension(Filename);
+            _Filename = Filename.RemoveExtension();
             if (!File.Exists(Filename + DEFAULT_EXT))
                 throw new FSException("file not found");
 
@@ -3373,7 +3373,7 @@ namespace Nox.IO
                     {
                         using (FileStream Source = File.Open(SourceFilePath, FileMode.Open))
                         {
-                            string SourceExtension = IO.ExtensionOnly(SourceFilePath).ToLower();
+                            string SourceExtension = SourceFilePath.ExtensionOnly().ToLower();
                             FileStream SourceAtLast = Source;
                             if (Transform != null)
                                 if (SourceExtension == ((Transform.Extension.StartsWith(".") ? String.Concat(".", Transform.Extension) : Transform.Extension).ToLower()))
@@ -3412,7 +3412,7 @@ namespace Nox.IO
             if (!File.Exists(SourceFile))
                 throw new FSException("SOURCEFILE NOT FOUND");
 
-            using (var Dest = GetFileStream(Touch(IO.FilenameOnly(SourceFile))))
+            using (var Dest = GetFileStream(Touch(SourceFile.FilenameOnly())))
             {
                 try
                 {

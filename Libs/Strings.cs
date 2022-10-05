@@ -100,6 +100,16 @@ namespace Nox
                 return source + add;
         }
 
+        /// <summary>
+        /// appends a string if source does not end with it
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="add"></param>
+        /// <returns></returns>
+        public static string AddIfMiss(this string source, char add) =>
+            source.AddIfMiss(add.ToString());
+        
+
         public static bool IsLike(this string s, string pattern)
         {
             // Characters matched so far
