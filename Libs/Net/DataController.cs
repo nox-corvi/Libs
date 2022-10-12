@@ -113,7 +113,7 @@ namespace Nox.Net
                 else
                     return r;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return BadRequest();
             }

@@ -1,10 +1,14 @@
 ﻿using Nox.Component;
+using System;
 
 namespace Nox.Net.Com
 {
     public interface IDataBlock
     {
         uint Signature2 { get; }
+
+        Guid Id { get; }
+
         void Read(byte[] data);
         byte[] Write();
     }
@@ -12,16 +16,20 @@ namespace Nox.Net.Com
     public abstract class DataBlock : ObservableObject, IDataBlock
     {
         protected bool _dirty = false;
+        protected Guid _Id = Guid.NewGuid();
 
         #region Properties
         public bool Dirty => _dirty;
+
+        public Guid Id => _Id;
         #endregion
 
         public uint Signature2 { get; private set; }
 
         public abstract void Read(byte[] data);
-        public abstract byte[] Write();
 
+        public abstract byte[] Write();
+        
         public DataBlock(uint Signature2)
             : this() =>
             this.Signature2 = Signature2;
@@ -30,7 +38,6 @@ namespace Nox.Net.Com
             PropertyChanged += (sender, e) =>
                 _dirty = true;
     }
-
 
     // to make rawMessage a pure byte Message
     public class ByteDataBlock : DataBlock

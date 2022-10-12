@@ -14,14 +14,18 @@ namespace Nox.Net.Com.Message.Defaults
         private uint _Response3 = 0;
 
         #region Properties
-        public uint Response1 { get { return _Response1; } set { _Response1 = value; } }
-        public uint Response2 { get { return _Response2; } set { _Response2 = value; } }
-        public uint Response3 { get { return _Response3; } set { _Response3 = value; } }
+        public uint Response1 { get { return _Response1; } set { SetProperty(ref _Response1, value); } }
+        public uint Response2 { get { return _Response2; } set { SetProperty(ref _Response2, value); } }
+        public uint Response3 { get { return _Response3; } set { SetProperty(ref _Response3, value); } }
         #endregion
 
         public override void Read(byte[] data)
         {
-            int i = 0;
+            var Result = new List<byte>();
+
+            _Id = new Guid(data);
+
+            int i = 16;
             _Response1 = BitConverter.ToUInt32(data, i);
             i += Marshal.SizeOf(_Response1.GetType());
 
@@ -32,11 +36,11 @@ namespace Nox.Net.Com.Message.Defaults
             i += Marshal.SizeOf(_Response1.GetType());
         }
 
-
         public override byte[] Write()
         {
             List<byte> Result = new List<byte>();
 
+            Result.AddRange(_Id.ToByteArray());
             Result.AddRange(BitConverter.GetBytes(_Response1));
             Result.AddRange(BitConverter.GetBytes(_Response2));
             Result.AddRange(BitConverter.GetBytes(_Response3));

@@ -8,8 +8,12 @@ using System.Threading;
 
 namespace Nox.Net.Com
 {
+    
+
     public abstract class SocketListener : NetBase
     {
+        public event EventHandler<EHLOReplyEventHandler> EHLOReply;
+
         private const int BUFFER_SIZE = 1024;
         private const int RECEIVE_BUFFER_SIZE = 32768;
         private const uint EOM = 0xFEFE;
@@ -87,15 +91,15 @@ namespace Nox.Net.Com
             while (!worker.CancellationPending)
             {
                 int size = 0;
-                byte[] byteBuffer = new byte[BUFFER_SIZE];
 
                 try
                 {
                     // only if data available
-                    if (_Socket.Available > 0)
+                    if ((size = _Socket.Available) > 0)
                     {
-                        // read
-                        size = _Socket.Receive(byteBuffer);
+
+                        byte[] byteBuffer = new byte[size];
+                        _Socket.Receive(byteBuffer, size, SocketFlags.None);
 
                         // update response
                         _LastResponse = DateTime.UtcNow;
@@ -220,7 +224,7 @@ namespace Nox.Net.Com
             // wait messages proceed
             if (_MessageProcess.IsBusy)
             {
-                int c = 0;
+                //int c = 0;
                 while (MessageCount > 0) { Thread.Sleep(100); };
 
                 _MessageProcess.Cancel();
@@ -247,8 +251,12 @@ namespace Nox.Net.Com
                     var EHLO = new EHLO(Signature1);
                     EHLO.Read(Message);
 
-                    Response.DataBlock.Response1 = 250;
-                    SendBuffer(Response.Write());
+                    var Reply = new RPLY(Signature1);
+                    Reply.DataBlock.EhloId = EHLO.DataBlock.Id;
+                    Reply.DataBlock.EhloTime = EHLO.DataBlock.Timestamp;
+
+                    Reply.DataBlock.Message = $"{nameof(EHLO)} {EHLO.DataBlock.Id}";
+                    SendBuffer(Reply.Write());
 
                     return true;
                 case (uint)DefaultMessageTypeEnum.KEXC:
@@ -275,6 +283,16 @@ namespace Nox.Net.Com
                             break;
 
                     }
+
+                    return true;
+                case (uint)DefaultMessageTypeEnum.RPLY:
+                    var RPLY = new RPLY(Signature1);
+
+                    RPLY.Read(Message);
+                    EHLOReply.Invoke(this, new EHLOReplyEventHandler(RPLY.DataBlock.EhloId,
+                        RPLY.DataBlock.EhloTime,
+                        RPLY.DataBlock.RplyTime,
+                        RPLY.DataBlock.Message));
 
                     return true;
                 default:

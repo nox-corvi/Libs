@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nox.Net.Com.Message.Defaults;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -8,6 +9,8 @@ namespace Nox.Net.Com
     public class NetClient<T>
         : NetBase where T : SocketListener
     {
+        public event EventHandler<EHLOReplyEventHandler> EHLOReply;
+
         private SocketListener _Listener;
         private TcpClient _Client;
 
@@ -29,6 +32,11 @@ namespace Nox.Net.Com
             _Client.Connect(new IPEndPoint(IPAddress.Parse(IP), Port));
 
             _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client);
+
+            // pass through
+            _Listener.EHLOReply += (object sender, EHLOReplyEventHandler e) =>
+                EHLOReply.Invoke(sender, e);
+
             _Listener.StartListener();
 
             _ServerIP = IP;
