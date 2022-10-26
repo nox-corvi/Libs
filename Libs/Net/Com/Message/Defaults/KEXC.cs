@@ -6,6 +6,8 @@ namespace Nox.Net.Com.Message.Defaults
     public class kexc_data
         : DataBlock
     {
+        private Guid _Id;
+
         private byte[] _PublicKey;
 
         #region Properties

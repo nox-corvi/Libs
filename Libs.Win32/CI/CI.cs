@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.CI.Windows
+namespace Nox.CI.Win32
 {
     public class CI
         : Nox.CI.CI

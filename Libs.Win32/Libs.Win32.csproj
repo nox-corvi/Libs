@@ -4,8 +4,8 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RootNamespace>Nox.Windows</RootNamespace>
-    <AssemblyName>Nox.Windows</AssemblyName>
+    <RootNamespace>Nox.Win32</RootNamespace>
+    <AssemblyName>Nox.Win32</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

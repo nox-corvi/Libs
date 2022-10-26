@@ -14,7 +14,7 @@ using System.DirectoryServices.AccountManagement;
 using Nox.CI;
 using System.Diagnostics;
 
-namespace Nox.CI.Windows
+namespace Nox.CI.Win32
 {
     public class RegistryHandler
         : CIBase
@@ -30,7 +30,7 @@ namespace Nox.CI.Windows
             string OutMessage, ErrMessage;
             try
             {
-                var Result = (_CI as Windows.CI)
+                var Result = (_CI as Win32.CI)
                     .GetProcessHandler
                     .RunCliApplication("regquery.exe", $"query --root:{RegRoot} --key \"{Key}\" --value {Value} \"{Pattern}\"", Credential, out OutMessage, out ErrMessage);
 

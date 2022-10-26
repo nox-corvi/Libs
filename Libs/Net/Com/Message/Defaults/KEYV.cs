@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System;
 using System.Collections.Generic;
 
 namespace Nox.Net.Com.Message.Defaults
@@ -6,6 +7,7 @@ namespace Nox.Net.Com.Message.Defaults
     public class keyv_data
         : DataBlock
     {
+        private Guid _Id;
         private byte[] _PublicKey;
 
         #region Properties

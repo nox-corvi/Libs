@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Nox.Windows.Forms.Base
+namespace Nox.Win32.Forms.Base
 {
     public partial class FormFree : Super.FormSuper
     {

@@ -7,8 +7,6 @@ namespace Nox.Net.Com
     {
         uint Signature2 { get; }
 
-        Guid Id { get; }
-
         void Read(byte[] data);
         byte[] Write();
     }
@@ -16,12 +14,10 @@ namespace Nox.Net.Com
     public abstract class DataBlock : ObservableObject, IDataBlock
     {
         protected bool _dirty = false;
-        protected Guid _Id = Guid.NewGuid();
 
         #region Properties
         public bool Dirty => _dirty;
 
-        public Guid Id => _Id;
         #endregion
 
         public uint Signature2 { get; private set; }

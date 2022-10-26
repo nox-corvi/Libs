@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace Nox
 {
@@ -84,6 +85,18 @@ namespace Nox
             else
                 return False();
         }
+
+        public static void OnXCond(Func<bool> Condition, Action True, Action False = null)
+        {
+            if (Condition())
+                True?.Invoke();
+            else
+                False?.Invoke();
+        }
+
+        public static T OnXFunc<T>(Func<T> f) => f.Invoke();
+        
+
 
         public static int OnXExec(params Action[] Methods)
         {
@@ -262,6 +275,38 @@ namespace Nox
             } while (Result.Equals(String.Empty));
 
             return Result;
+        }
+
+        public static Guid ExtractGuid(byte[] data, int Offset)
+        {
+            byte[] buffer1 = new byte[16];
+            Array.Copy(data, Offset, buffer1, 0, 16);
+
+            return new Guid(buffer1);
+        }
+
+        public static string SerializeToXml<T>(T obj)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                var ser = new XmlSerializer(typeof(T));
+                ser.Serialize(memoryStream, obj);
+
+                memoryStream.Position = 0;
+                using (var r = new StreamReader(memoryStream))
+                    return r.ReadToEnd();
+            }
+        }
+
+        public static T DeserializeFromXml<T>(string xml)
+        {
+            T result;
+            var ser = new XmlSerializer(typeof(T));
+            using (var tr = new StringReader(xml))
+            {
+                result = (T)ser.Deserialize(tr);
+            }
+            return result;
         }
     }
 }

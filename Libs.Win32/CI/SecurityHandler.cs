@@ -13,7 +13,7 @@ using System.DirectoryServices.ActiveDirectory;
 using System.DirectoryServices.AccountManagement;
 using Nox.CI;
 
-namespace Nox.CI.Windows
+namespace Nox.CI.Win32
 {
     public class SecurityHandler 
         : Nox.CI.SecurityHandler
@@ -48,7 +48,7 @@ namespace Nox.CI.Windows
             try
             {
                 string ErrMessage, OutMessage;
-                int Result = (_CI as Nox.CI.Windows.CI)
+                int Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
 
@@ -157,7 +157,7 @@ namespace Nox.CI.Windows
                 }
 
                 _logger?.LogMessage("umodexec with " + Command, Log4.Log4LevelEnum.Trace);
-                if ((Result = (_CI as Nox.CI.Windows.CI)
+                if ((Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
@@ -215,7 +215,7 @@ namespace Nox.CI.Windows
                         throw new ApplicationException(ErrMsg);
                 }
 
-                if ((Result = (_CI as Nox.CI.Windows.CI)
+                if ((Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
@@ -275,7 +275,7 @@ namespace Nox.CI.Windows
 
 
                 string line;
-                Result = (_CI as Nox.CI.Windows.CI)
+                Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
 
@@ -322,7 +322,7 @@ namespace Nox.CI.Windows
 
                 string line;
 
-                Result = (_CI as Nox.CI.Windows.CI)
+                Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
                 switch (Result)
@@ -369,7 +369,7 @@ namespace Nox.CI.Windows
 
                 string line;
 
-                Result = (_CI as Nox.CI.Windows.CI)
+                Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
                 switch (Result)
@@ -412,7 +412,7 @@ namespace Nox.CI.Windows
 
                 string line;
 
-                Result = (_CI as Nox.CI.Windows.CI)
+                Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
                 switch (Result)
@@ -475,7 +475,7 @@ namespace Nox.CI.Windows
                         throw new ApplicationException(ErrMsg);
                 }
 
-                if ((Result = (_CI as Nox.CI.Windows.CI)
+                if ((Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
@@ -559,7 +559,7 @@ namespace Nox.CI.Windows
                         throw new ApplicationException(ErrMsg);
                 }
 
-                if ((Result = (_CI as Nox.CI.Windows.CI)
+                if ((Result = (_CI as Nox.CI.Win32.CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {

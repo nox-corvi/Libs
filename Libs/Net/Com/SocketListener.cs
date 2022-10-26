@@ -12,11 +12,17 @@ namespace Nox.Net.Com
 
     public abstract class SocketListener : NetBase
     {
-        public event EventHandler<EHLOReplyEventHandler> EHLOReply;
+        public event EventHandler<PingEventArgs> OnPingMessage;
+        public event EventHandler<EchoEventArgs> OnEchoMessage;
+        public event EventHandler<EhloEventArgs> OnEhloMessage;
+        public event EventHandler<RplyEventArgs> OnRplyMessage;
+        public event EventHandler<RespEventArgs> OnRespMessage;     
 
         private const int BUFFER_SIZE = 1024;
         private const int RECEIVE_BUFFER_SIZE = 32768;
         private const uint EOM = 0xFEFE;
+
+        private string _SocketMessage = "";
 
         private BetterBackgroundWorker _Listener = null;
         private BetterBackgroundWorker _MessageProcess = null;
@@ -33,6 +39,8 @@ namespace Nox.Net.Com
 
         #region Properties
         public Guid Id { get; } = Guid.NewGuid();
+
+        public string SocketMessage { get => _SocketMessage; set => _SocketMessage = value; }
 
         public bool IsConnected =>
             _Socket?.Connected ?? false;
@@ -97,7 +105,6 @@ namespace Nox.Net.Com
                     // only if data available
                     if ((size = _Socket.Available) > 0)
                     {
-
                         byte[] byteBuffer = new byte[size];
                         _Socket.Receive(byteBuffer, size, SocketFlags.None);
 
@@ -135,44 +142,47 @@ namespace Nox.Net.Com
         public void ParseReceiveBuffer()
         {
             int Start = 0, End = -1;
+            int Length = _ReceiveBuffer.Count;
 
-            for (int i = 0; i < _ReceiveBuffer.Count; i++)
-            {
-                try
+            while (Start < Length)
+                for (int i = 0; i < _ReceiveBuffer.Count; i++)
                 {
-                    // get 4 bytes
-                    var p = new byte[sizeof(uint)];
-                    _ReceiveBuffer.CopyTo(i, p, 0, p.Length);
-
-                    if (BitConverter.ToUInt32(p, 0) == Signature1)
-                        Start = i;
-
-                    if (BitConverter.ToUInt32(p, 0) == EOM)
-                        End = i;
-
-                    if (End > Start)
+                    try
                     {
-                        byte[] Message = new byte[End - Start + 4];
+                        // get 4 bytes
+                        var p = new byte[sizeof(uint)];
+                        _ReceiveBuffer.CopyTo(i, p, 0, p.Length);
 
-                        _ReceiveBuffer.CopyTo(Start, Message, 0, Message.Length);
+                        if (BitConverter.ToUInt32(p, 0) == Signature1)
+                            Start = i;
 
-                        // remove message block, give up leading data 
-                        _ReceiveBuffer.RemoveRange(Start, End + 4);
+                        if (BitConverter.ToUInt32(p, 0) == EOM)
+                            End = i;
 
-                        // add message 
-                        lock (_MessageBuffer)
+                        if (End > Start)
                         {
-                            _MessageBuffer.Add(Message);
-                        }
+                            byte[] Message = new byte[End - Start + 4];
 
-                        break;
+                            _ReceiveBuffer.CopyTo(Start, Message, 0, Message.Length);
+
+                            // remove message block, give up leading data 
+                            _ReceiveBuffer.RemoveRange(Start, End + 4);
+                            Length = _ReceiveBuffer.Count;
+
+                            // add message 
+                            lock (_MessageBuffer)
+                            {
+                                _MessageBuffer.Add(Message);
+                            }
+
+                            break;
+                        }
+                    }
+                    catch (System.ArgumentException)
+                    {
+                        return;
                     }
                 }
-                catch (System.ArgumentException)
-                {
-                    return;
-                }
-            }
 
             // remove leading data to keep receivebuffer in range
             while (_ReceiveBuffer.Count > RECEIVE_BUFFER_SIZE)
@@ -247,18 +257,53 @@ namespace Nox.Net.Com
             var Response = new RESP(Signature1);
             switch (Signature2)
             {
+                case (uint)DefaultMessageTypeEnum.PING:
+                    var PING = new PING(Signature1);
+                    PING.Read(Message);
+
+                    OnPingMessage?.Invoke(this, new PingEventArgs(PING.DataBlock.Id, PING.DataBlock.Timestamp));
+
+                    var PingResponse = new ECHO(Signature1);
+                    PingResponse.DataBlock.PingId = PING.DataBlock.Id;
+                    PingResponse.DataBlock.PingTime = PING.DataBlock.Timestamp;
+                    SendBuffer(PingResponse.Write());
+
+                    return true;
+
+                case (uint)DefaultMessageTypeEnum.ECHO:
+                    var ECHO = new ECHO(Signature1);
+                    ECHO.Read(Message);
+
+                    OnEchoMessage?.Invoke(this, new EchoEventArgs(ECHO.DataBlock.PingId, ECHO.DataBlock.PingTime, ECHO.DataBlock.Timestamp));
+
+                    return true;
                 case (uint)DefaultMessageTypeEnum.EHLO:
                     var EHLO = new EHLO(Signature1);
                     EHLO.Read(Message);
 
-                    var Reply = new RPLY(Signature1);
-                    Reply.DataBlock.EhloId = EHLO.DataBlock.Id;
-                    Reply.DataBlock.EhloTime = EHLO.DataBlock.Timestamp;
+                    OnEhloMessage?.Invoke(this, new EhloEventArgs(EHLO.DataBlock.Id,EHLO.DataBlock.Message));
 
-                    Reply.DataBlock.Message = $"{nameof(EHLO)} {EHLO.DataBlock.Id}";
-                    SendBuffer(Reply.Write());
+                    var EhloResponse = new RPLY(Signature1);
+                    EhloResponse.DataBlock.EhloId = EHLO.DataBlock.Id;
+                    EhloResponse.DataBlock.Message = SocketMessage;
+                    SendBuffer(EhloResponse.Write());
 
                     return true;
+                case (uint)DefaultMessageTypeEnum.RPLY:
+                    var RPLY = new RPLY(Signature1);
+                    RPLY.Read(Message);
+
+                    OnRplyMessage?.Invoke(this, new RplyEventArgs(RPLY.DataBlock.EhloId, RPLY.DataBlock.Message));
+
+                    return true;
+                case (uint)DefaultMessageTypeEnum.RESP:
+                    var RESP = new RESP(Signature1);
+                    RESP.Read(Message);
+
+                    OnRespMessage?.Invoke(this, new RespEventArgs(RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
+
+                    return true;
+
                 case (uint)DefaultMessageTypeEnum.KEXC:
                     var KEXC = new KEXC(Signature1);
 
@@ -271,28 +316,6 @@ namespace Nox.Net.Com
 
                     Response.DataBlock.Response1 = 250;
                     SendBuffer(Response.Write());
-
-                    return true;
-                case (uint)DefaultMessageTypeEnum.RESP:
-                    var RESP = new RESP(Signature1);
-
-                    RESP.Read(Message);
-                    switch (RESP.DataBlock.Response1)
-                    {
-                        case 250:
-                            break;
-
-                    }
-
-                    return true;
-                case (uint)DefaultMessageTypeEnum.RPLY:
-                    var RPLY = new RPLY(Signature1);
-
-                    RPLY.Read(Message);
-                    EHLOReply.Invoke(this, new EHLOReplyEventHandler(RPLY.DataBlock.EhloId,
-                        RPLY.DataBlock.EhloTime,
-                        RPLY.DataBlock.RplyTime,
-                        RPLY.DataBlock.Message));
 
                     return true;
                 default:

@@ -2,9 +2,13 @@
 {
     public enum DefaultMessageTypeEnum
     {
-        EHLO = 0xFCA0,
-        RPLY = 0xFCA1,
-        RESP = 0xFCA2,
+        PING = 0xFCA0,  // Ping
+        ECHO = 0xFCA1,  // Reply to Ping
+        EHLO = 0xFCA2,  // Hello, Fingerprint and Message
+        RPLY = 0xFCA3,  // Reply to EHLO
+
+        RESP = 0xFCAF,  // generic response 
+        
         KEXC = 0xFCB1,
         KEYV = 0xFCB2,
     }

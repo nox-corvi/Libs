@@ -7,7 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 
 
-namespace Nox.Windows.Controls.Base.Super
+namespace Nox.Win32.Controls.Base.Super
 {
     public class Button : System.Windows.Forms.Button
     {

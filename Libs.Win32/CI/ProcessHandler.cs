@@ -14,7 +14,7 @@ using System.DirectoryServices.AccountManagement;
 using Nox.CI;
 using System.Diagnostics;
 
-namespace Nox.CI.Windows
+namespace Nox.CI.Win32
 {
     public class ProcessHandler
         : Nox.CI.ProcessHandler

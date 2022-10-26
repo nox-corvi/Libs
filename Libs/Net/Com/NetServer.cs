@@ -1,4 +1,5 @@
-﻿using Nox.Threading;
+﻿using Nox.Net.Com.Message.Defaults;
+using Nox.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,12 @@ namespace Nox.Net.Com
     public class NetServer<T>
         : NetBase where T : SocketListener
     {
+        public event EventHandler<PingEventArgs> OnPingMessage;
+        public event EventHandler<EchoEventArgs> OnEchoMessage;
+        public event EventHandler<EhloEventArgs> OnEhloMessage;
+        public event EventHandler<RplyEventArgs> OnRplyMessage;
+        public event EventHandler<RespEventArgs> OnRespMessage;
+
         private string _ServerIP = "";
         private int _ServerPort = -1;
 
@@ -29,8 +36,33 @@ namespace Nox.Net.Com
 
         public Guid Id { get; } = Guid.NewGuid();
 
+        public string SocketMessage { get; set; }
+
         public int ClientConnectionCount =>
             _ListOfListener?.Count() ?? 0;
+
+        public int ReceiveBufferLength
+        {
+            get
+            {
+                int r = 0;
+                for (int i = 0; i < _ListOfListener.Count; i++)
+                    r += _ListOfListener[i]?.ReceiveBufferLength ?? 0;
+
+                return r;
+            }
+        }
+        public int MessageCount
+        {
+            get
+            {
+                int r = 0;
+                for (int i = 0; i < _ListOfListener.Count; i++)
+                    r += _ListOfListener[i]?.MessageCount ?? 0;
+
+                return r;
+            }
+        }
         #endregion
 
         public void Bind(string IP, int Port)
@@ -66,6 +98,18 @@ namespace Nox.Net.Com
 
                         // create using abstract method
                         var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket);
+                        SocketListener.SocketMessage = SocketMessage;
+
+                        SocketListener.OnPingMessage += (object sender, PingEventArgs e) =>
+                            OnPingMessage?.Invoke(sender, e);
+                        SocketListener.OnEchoMessage += (object sender, EchoEventArgs e) =>
+                            OnEchoMessage?.Invoke(sender, e);
+                        SocketListener.OnEhloMessage += (object sender, EhloEventArgs e) =>
+                            OnEhloMessage?.Invoke(sender, e);
+                        SocketListener.OnRplyMessage += (object sender, RplyEventArgs e) =>
+                            OnRplyMessage?.Invoke(sender, e);
+                        SocketListener.OnRespMessage += (object sender, RespEventArgs e) =>
+                            OnRespMessage?.Invoke(sender, e);
 
                         lock (_ListOfListener)
                         {
