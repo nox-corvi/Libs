@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Nox.Hosting
 {
-
     public class Config
     {
         public string Filename { get; set; } = "";

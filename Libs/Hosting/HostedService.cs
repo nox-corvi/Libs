@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Nox.Hosting
 {
-    public class HostedConsole<T> : IHostedService
+    public class HostedService<T> : IHostedService
         where T : class, IReader
     {
         public EventHandler<HostedServiceEventArgs> Initialize;
@@ -64,7 +64,7 @@ namespace Nox.Hosting
         //public HostedConsole(HostedServiceConfiguration hostedConfig) =>
             
 
-        public HostedConsole(HostedServiceConfiguration hostedConfig, IReader reader, IConfiguration configuration, IHostApplicationLifetime hostLifetime, ILogger<T> logger)
+        public HostedService(HostedServiceConfiguration hostedConfig, IReader reader, IConfiguration configuration, IHostApplicationLifetime hostLifetime, ILogger<T> logger)
         {
             Initialize += (sender, args) => 
                 hostedConfig?.Initialize?.Invoke(sender, args);
@@ -115,7 +115,7 @@ namespace Nox.Hosting
 
                 services.AddScoped<HostedServiceConfiguration>(c => hostedConfig);
 
-                services.AddHostedService<HostedConsole<T>>();
+                services.AddHostedService<HostedService<T>>();
                 services.AddSingleton<IReader, T>(implementationFactory);
             })
             .ConfigureLogging((hostingContext, logging) =>
