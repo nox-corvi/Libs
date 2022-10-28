@@ -21,23 +21,23 @@ namespace Nox.Hosting
         public bool AddEnvironmentVariables { get; set; } = true;
     }
 
-    public class HostedServiceConfiguration
+    public class HostedConfiguration
     {
-        public EventHandler<HostedServiceEventArgs> Initialize;
+        public EventHandler<HostedEventArgs> Initialize;
 
         public Config Config { get; } = new();
         public Environment Environment { get; } = new();
 
         public string[] CommandlineArgs { get; set; }
 
-        public HostedServiceConfiguration() { }
-        public HostedServiceConfiguration(Config config)
+        public HostedConfiguration() { }
+        public HostedConfiguration(Config config)
             : this() =>
             this.Config = config;
 
-        public HostedServiceConfiguration(Config config, Action<object, HostedServiceEventArgs> initialize)
+        public HostedConfiguration(Config config, Action<object, HostedEventArgs> initialize)
             : this(config) =>
-            this.Initialize += (object sender, HostedServiceEventArgs e) =>
+            this.Initialize += (object sender, HostedEventArgs e) =>
                 initialize?.Invoke(sender, e);
             
     }

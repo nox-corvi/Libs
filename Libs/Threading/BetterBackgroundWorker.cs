@@ -5,7 +5,8 @@ namespace Nox.Threading
 {
     public delegate void DoWorkEventHandler(object sender, DoWorkEventArgs e);
 
-    public class BetterBackgroundWorker
+    public class BetterBackgroundWorker 
+        : IBetterBackgroundWorker
     {
         public event DoWorkEventHandler DoWork;
         //public delegate void RunWorkerCompletedEventHandler(object sender, RunWorkerCompletedEventArgs e);

@@ -13,98 +13,58 @@ namespace UserMod
         //<check type="reg" key="HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall" value="DisplayName" match="*SAP Crystal Reports*" />
         private static MiruParseDescriptor CliDescription = new MiruParseDescriptor("USERMOD",
             @"tiny util to create, change and modify local and ad user, change group memberships and much more",
-            new CommandDesc[]
-            {
+            CommandDesc.Create(
                 new CommandDesc("query")
                 {
-                    SubCommands = new CommandDesc[]
-                    {
+                    SubCommands = CommandDesc.Create(
                         new CommandDesc("user", "get some user information")
                         {
-                            Arguments = new ArgDesc[]
-                            {
-                                new ArgDesc("user", "user to search for"),
-                            },
-                            Switches = new SwitchDesc[]
-                            {
-                                new SwitchDesc("show-membership", "if set, the groups will print out using the given search pattern")
-                                {
-                                    SwitchValueType = SwitchValueTypeEnum._string
-                                }
-                            }
-                        },
-                    },
+                            Arguments = ArgDesc.Create(new ArgDesc("user", "user to search for")),
+                            Switches = SwitchDesc.Create(new SwitchDesc("show-membership", "if set, the groups will print out using the given search pattern") { SwitchValueType = SwitchValueTypeEnum._string })
+                        }),
                 },
                 new CommandDesc("alter")
                 {
-                    SubCommands = new CommandDesc[]
-                    {
+                    SubCommands = CommandDesc.Create(
                         new CommandDesc("user")
                         {
-                            Switches = new SwitchDesc[]
-                            {
+                            Switches = SwitchDesc.Create(
                                 new SwitchDesc("set-pass", "change the pass of the user")
                                 {
-                                    SwitchArguments = new SwitchArgDesc[]
-                                    {
-                                        new SwitchArgDesc("user", "user to change"),
-                                        new SwitchArgDesc("pass", "pass to set"),
-                                    }
-                                }
-                            }
-                        },
-                    }
+                                    SwitchArguments = SwitchArgDesc.Create(new SwitchArgDesc("user", "user to change"), new SwitchArgDesc("pass", "pass to set"))
+                                })
+                        }),
                 },
                 new CommandDesc("create")
                 {
-                    SubCommands = new CommandDesc[]
-                    {
+                    SubCommands = CommandDesc.Create(
                         new CommandDesc("user", "create a new user")
                         {
-                            Arguments = new ArgDesc[]
-                            {
-                                new ArgDesc("name", "name of the user"),
-                                new ArgDesc("displayname", "displayname of the user"),
-                            },
-                            Switches = new SwitchDesc[]
-                            {
+                            Arguments = ArgDesc.Create(new ArgDesc("name", "name of the user"), new ArgDesc("displayname", "displayname of the user")),
+                            Switches = SwitchDesc.Create(
                                 new SwitchDesc("ou", "if set, the user is created in the following ou (ignored without --domain)")
                                 {
-                                    SwitchArguments = new SwitchArgDesc[]
-                                    {
-                                        new SwitchArgDesc("fqdn", "fqdn of the users target")
-                                    }
+                                    SwitchArguments = SwitchArgDesc.Create(new SwitchArgDesc("fqdn", "fqdn of the users target"))
                                 },
                                 new SwitchDesc("set-pass", "password of the user")
                                 {
-                                    SwitchArguments = new SwitchArgDesc[]
-                                    {
-                                        new SwitchArgDesc("password", "if set, the pass of the user will changed")
-                                    }
+                                    SwitchArguments = SwitchArgDesc.Create(new SwitchArgDesc("password", "if set, the pass of the user will changed")),
                                 }
-                            },
+                            ),
                         }
-                    }
+                    )
                 },
                 new CommandDesc("validate")
                 {
-                    Arguments = new ArgDesc[]
-                    {
-                        new RequiredArgDesc("user", "user to validate"),
-                        new RequiredArgDesc("password", "password to validate")
-                    },
-                }
-            })
+                    Arguments = ArgDesc.Create(new RequiredArgDesc("user", "user to validate"), new RequiredArgDesc("password", "password to validate")),
+                }))
         {
-            Switches = new SwitchDesc[]
-            {
+            Switches = SwitchDesc.Create(
                 new SwitchDesc("domain", "performs the process for domain controllers")
                 {
                     SwitchValueType = SwitchValueTypeEnum._string,
-                },
-
-            },
-            ExitCodes = new ExitCodeDesc[]
+                }),
+            ExitCodes = new()
             {
                 new ExitCodeDesc(-1, "if there is no result"),
                 new ExitCodeDesc(-2, "if the search pattern gives an ambiguous result"),

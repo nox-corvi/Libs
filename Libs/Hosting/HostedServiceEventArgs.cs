@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Nox.Hosting
 {
-    public class HostedServiceEventArgs
+    public class HostedEventArgs
         : EventArgs
     {
         public IConfiguration Configuration { get; }
 
-        public HostedServiceEventArgs(IConfiguration configuration)
+        public HostedEventArgs(IConfiguration configuration)
             : base() => Configuration = configuration;
     }
 }

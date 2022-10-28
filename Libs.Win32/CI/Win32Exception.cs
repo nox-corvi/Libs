@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.CI.Win32
+namespace Nox.Win32.CI
 {
     public class Win32Exception
         : Exception

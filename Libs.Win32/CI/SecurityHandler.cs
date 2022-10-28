@@ -12,8 +12,9 @@ using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using System.DirectoryServices.AccountManagement;
 using Nox.CI;
+using Nox.CI.CID;
 
-namespace Nox.CI.Win32
+namespace Nox.Win32.CI
 {
     public class SecurityHandler 
         : Nox.CI.SecurityHandler
@@ -48,7 +49,7 @@ namespace Nox.CI.Win32
             try
             {
                 string ErrMessage, OutMessage;
-                int Result = (_CI as Nox.CI.Win32.CI)
+                int Result = (_CI as CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
 
@@ -70,7 +71,7 @@ namespace Nox.CI.Win32
             }
         }
 
-        public ProcessCredential GetProcessCredentials(CID.CID CID, string Key, string Credential)
+        public ProcessCredential GetProcessCredentials(CID CID, string Key, string Credential)
         {
             // Log
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Credential);
@@ -127,7 +128,7 @@ namespace Nox.CI.Win32
             }
         }
 
-        public bool UserExists(CID.CID CID, ProcessCredential CR, CredentialType Type, string User)
+        public bool UserExists(CID CID, ProcessCredential CR, CredentialType Type, string User)
         {
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CID, CR, Type, User);
             _logger?.LogMessage($"check if user {User ?? "<null>"} exists ", Log4.Log4LevelEnum.Debug);
@@ -157,7 +158,7 @@ namespace Nox.CI.Win32
                 }
 
                 _logger?.LogMessage("umodexec with " + Command, Log4.Log4LevelEnum.Trace);
-                if ((Result = (_CI as Nox.CI.Win32.CI)
+                if ((Result = (_CI as CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
@@ -182,7 +183,7 @@ namespace Nox.CI.Win32
             }
         }
 
-        public string GetUserSID(CID.CID CID, ProcessCredential CR, CredentialType Type, string User)
+        public string GetUserSID(CID CID, ProcessCredential CR, CredentialType Type, string User)
         {
             // Log
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CID, CID, Type, User);
@@ -215,7 +216,7 @@ namespace Nox.CI.Win32
                         throw new ApplicationException(ErrMsg);
                 }
 
-                if ((Result = (_CI as Nox.CI.Win32.CI)
+                if ((Result = (_CI as CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
@@ -275,7 +276,7 @@ namespace Nox.CI.Win32
 
 
                 string line;
-                Result = (_CI as Nox.CI.Win32.CI)
+                Result = (_CI as CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
 
@@ -322,7 +323,7 @@ namespace Nox.CI.Win32
 
                 string line;
 
-                Result = (_CI as Nox.CI.Win32.CI)
+                Result = (_CI as CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
                 switch (Result)
@@ -369,7 +370,7 @@ namespace Nox.CI.Win32
 
                 string line;
 
-                Result = (_CI as Nox.CI.Win32.CI)
+                Result = (_CI as CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
                 switch (Result)
@@ -412,7 +413,7 @@ namespace Nox.CI.Win32
 
                 string line;
 
-                Result = (_CI as Nox.CI.Win32.CI)
+                Result = (_CI as CI)
                     .GetHelper
                     .NetExec(Command, Credential, out OutMessage, out ErrMessage);
                 switch (Result)
@@ -442,7 +443,7 @@ namespace Nox.CI.Win32
             }
         }
 
-        public void ChangePass(CID.CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
+        public void ChangePass(CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
         {
             // Log
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, User, _CI.GetHelper.MaskPass(Pass), Credential);
@@ -475,7 +476,7 @@ namespace Nox.CI.Win32
                         throw new ApplicationException(ErrMsg);
                 }
 
-                if ((Result = (_CI as Nox.CI.Win32.CI)
+                if ((Result = (_CI as CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
@@ -492,7 +493,7 @@ namespace Nox.CI.Win32
             }
         }
 
-        public bool ValidatePass(CID.CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
+        public bool ValidatePass(CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
         {
             // Log
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, User, _CI.GetHelper.MaskPass(Pass), Credential);
@@ -525,7 +526,7 @@ namespace Nox.CI.Win32
             }
         }
 
-        public void CreateUser(CID.CID CID, ProcessCredential CR, CredentialType Type, string User, string DisplayName, string Pass, string OU)
+        public void CreateUser(CID CID, ProcessCredential CR, CredentialType Type, string User, string DisplayName, string Pass, string OU)
         {
             // Log
             _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CR, Type, User, DisplayName, _CI.GetHelper.MaskPass(Pass), OU);
@@ -559,7 +560,7 @@ namespace Nox.CI.Win32
                         throw new ApplicationException(ErrMsg);
                 }
 
-                if ((Result = (_CI as Nox.CI.Win32.CI)
+                if ((Result = (_CI as CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
                 {
