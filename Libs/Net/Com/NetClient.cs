@@ -1,4 +1,5 @@
 ﻿using Nox.Net.Com.Message.Defaults;
+using Nox.Security;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -30,6 +31,8 @@ namespace Nox.Net.Com
         public bool IsConnected =>
            _Listener?.IsConnected ?? false;
 
+        public tinyKey publicKey { get; set; } = null!;
+
 
         public int ReceiveBufferLength => _Listener?.ReceiveBufferLength ?? 0;
         public int MessageCount => _Listener?.MessageCount ?? 0;
@@ -44,6 +47,8 @@ namespace Nox.Net.Com
 
             _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client);
             _Listener.SocketMessage = SocketMessage;
+            _Listener.publicKey = publicKey;
+
 
             // pass through
             _Listener.OnPingMessage += (object sender, PingEventArgs e) =>
@@ -95,7 +100,6 @@ namespace Nox.Net.Com
 
         public override void Dispose() =>
             StopClient();
-
 
         public NetClient(uint Signature1)
             : base(Signature1) { }

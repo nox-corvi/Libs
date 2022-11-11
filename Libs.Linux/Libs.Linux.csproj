@@ -18,4 +18,8 @@
     <ProjectReference Include="..\Libs\Libs.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Security\" />
+  </ItemGroup>
+
 </Project>

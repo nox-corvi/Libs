@@ -1,4 +1,5 @@
 ﻿using Nox.Net.Com.Message.Defaults;
+using Nox.Security;
 using Nox.Threading;
 using System;
 using System.Collections.Generic;
@@ -37,19 +38,18 @@ namespace Nox.Net.Com
         private List<byte> _ReceiveBuffer = new List<byte>();
         private List<byte[]> _MessageBuffer = new List<byte[]>();
 
+        public tinyKey publicKey { get; set; } = null;
+
         #region Properties
         public Guid Id { get; } = Guid.NewGuid();
 
         public string SocketMessage { get => _SocketMessage; set => _SocketMessage = value; }
 
-        public bool IsConnected =>
-            _Socket?.Connected ?? false;
+        public bool IsConnected => _Socket?.Connected ?? false;
 
-        public bool Remove =>
-            _Remove;
+        public bool Remove => _Remove;
 
-        public int ReceiveTimeout =>
-            _ReceiveTimeout;
+        public int ReceiveTimeout => _ReceiveTimeout;
 
         public int ReceiveBufferLength
         {
@@ -261,7 +261,8 @@ namespace Nox.Net.Com
                     var PING = new PING(Signature1);
                     PING.Read(Message);
 
-                    OnPingMessage?.Invoke(this, new PingEventArgs(PING.DataBlock.Id, PING.DataBlock.Timestamp));
+                    OnPingMessage?.Invoke(this, 
+                        new PingEventArgs(PING.DataBlock.Id, PING.DataBlock.Timestamp));
 
                     var PingResponse = new ECHO(Signature1);
                     PingResponse.DataBlock.PingId = PING.DataBlock.Id;
@@ -274,33 +275,41 @@ namespace Nox.Net.Com
                     var ECHO = new ECHO(Signature1);
                     ECHO.Read(Message);
 
-                    OnEchoMessage?.Invoke(this, new EchoEventArgs(ECHO.DataBlock.PingId, ECHO.DataBlock.PingTime, ECHO.DataBlock.Timestamp));
+                    OnEchoMessage?.Invoke(this, 
+                        new EchoEventArgs(ECHO.DataBlock.PingId, ECHO.DataBlock.PingTime, ECHO.DataBlock.Timestamp));
 
                     return true;
                 case (uint)DefaultMessageTypeEnum.EHLO:
                     var EHLO = new EHLO(Signature1);
                     EHLO.Read(Message);
 
-                    OnEhloMessage?.Invoke(this, new EhloEventArgs(EHLO.DataBlock.Id,EHLO.DataBlock.Message));
+                    if (publicKey != null)
+                    {
+                        OnEhloMessage?.Invoke(this,
+                            new EhloEventArgs(EHLO.DataBlock.Id, EHLO.DataBlock.Key, EHLO.DataBlock.Message));
 
-                    var EhloResponse = new RPLY(Signature1);
-                    EhloResponse.DataBlock.EhloId = EHLO.DataBlock.Id;
-                    EhloResponse.DataBlock.Message = SocketMessage;
-                    SendBuffer(EhloResponse.Write());
+                        var EhloResponse = new RPLY(Signature1);
+                        EhloResponse.DataBlock.EhloId = EHLO.DataBlock.Id;
+                        EhloResponse.DataBlock.Key = publicKey;
+                        EhloResponse.DataBlock.Message = SocketMessage;
+                        SendBuffer(EhloResponse.Write());
+                    }
 
                     return true;
                 case (uint)DefaultMessageTypeEnum.RPLY:
                     var RPLY = new RPLY(Signature1);
                     RPLY.Read(Message);
 
-                    OnRplyMessage?.Invoke(this, new RplyEventArgs(RPLY.DataBlock.EhloId, RPLY.DataBlock.Message));
+                    OnRplyMessage?.Invoke(this, 
+                        new RplyEventArgs(RPLY.DataBlock.EhloId, RPLY.DataBlock.Message));
 
                     return true;
                 case (uint)DefaultMessageTypeEnum.RESP:
                     var RESP = new RESP(Signature1);
                     RESP.Read(Message);
 
-                    OnRespMessage?.Invoke(this, new RespEventArgs(RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
+                    OnRespMessage?.Invoke(this, 
+                        new RespEventArgs(RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
 
                     return true;
 

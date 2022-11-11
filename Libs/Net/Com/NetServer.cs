@@ -1,4 +1,5 @@
 ﻿using Nox.Net.Com.Message.Defaults;
+using Nox.Security;
 using Nox.Threading;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,8 @@ namespace Nox.Net.Com
         public Guid Id { get; } = Guid.NewGuid();
 
         public string SocketMessage { get; set; }
+
+        public tinyKey publicKey { get; set; } = null!;
 
         public int ClientConnectionCount =>
             _ListOfListener?.Count() ?? 0;
@@ -99,6 +102,7 @@ namespace Nox.Net.Com
                         // create using abstract method
                         var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket);
                         SocketListener.SocketMessage = SocketMessage;
+                        SocketListener.publicKey = publicKey;
 
                         SocketListener.OnPingMessage += (object sender, PingEventArgs e) =>
                             OnPingMessage?.Invoke(sender, e);
@@ -137,8 +141,8 @@ namespace Nox.Net.Com
             {
                 lock (_ListOfListener)
                 {
-                    for (int i = _ListOfListener.Count - 1; i >= 0; i++)
-                        if (_ListOfListener[i].Remove)
+                    for (int i = _ListOfListener.Count - 1; i >= 0; i--)
+                        if (_ListOfListener[i]?.Remove ?? false)
                         {
                             _ListOfListener[i].StopListener();
                             _ListOfListener.RemoveAt(i);

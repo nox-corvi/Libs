@@ -12,12 +12,19 @@ namespace Nox.Security
             nistP521
         }
 
-        private byte[] _PK;
+        private tinyKey _PK;
         private ECDiffieHellman _DH;
 
         #region Properties 
-        public byte[] PublicKey { get => _PK; }
+        public tinyKey PublicKey { get => _PK; }
         #endregion
+
+
+
+        public void b()
+        {
+            //_DH.DeriveKeyMaterial();
+        }
 
         public byte[] ExtractDerivedKey(byte[] rawForeignKey)
         {
@@ -43,7 +50,7 @@ namespace Nox.Security
             }
 
             // retrieve public key
-            _PK = _DH.PublicKey.ToByteArray();
+            _PK = new tinyKey(_DH.PublicKey.ToByteArray());
         }
 
         public void Dispose() =>
