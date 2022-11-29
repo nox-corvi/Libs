@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -14,14 +15,14 @@ namespace Nox
         public static string LimitLength(this string source, int maxLength)
         {
             if (source != null)
-                return source;
-            else
             {
                 if (source.Length <= maxLength)
                     return source;
                 else
                     return source.Substring(0, maxLength);
             }
+            else
+                return string.Empty;
         }
 
         public static string RemoveQMarks(this string source)
@@ -223,6 +224,22 @@ namespace Nox
                 else set.Add(charList[i]);
             }
             return set;
+        }
+
+        public static string RandomChars(int Length, bool Hex = false)
+        {
+            string HEX = "0123456789ABCDEF";
+            var r = new Random(DateTime.Now.Millisecond);
+
+            var Result = new StringBuilder();
+            for (int i = 0; i < Length; i++)
+                if (Hex)
+                    Result.Append(HEX.Substring(r.Next(HEX.Length - 1)));
+                else
+                    Result.Append((char)r.Next(127));
+
+            return Result.ToString();
+
         }
 
 

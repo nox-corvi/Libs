@@ -5,28 +5,25 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.Net.Com.Message.Defaults
+namespace Nox.Net.Com.Message
 {
-    public class PingEventArgs: EventArgs
+    public class MessagePingEventArgs: EventArgs
     {
         public Guid Id { get; }
-
         public DateTime Timestamp { get; }
 
-        public PingEventArgs(Guid Id, DateTime Timestamp)
+        public MessagePingEventArgs(Guid Id, DateTime Timestamp)
         {
             this.Id = Id;
             this.Timestamp = Timestamp;
         }
     }
 
-    public class PingData
+    public class MessagePingData
         : DataBlock
     {
         private Guid _Id = Guid.NewGuid();
         private DateTime _Timestamp = DateTime.UtcNow;
-
-        private ASCIIEncoding ASC = new ASCIIEncoding();
 
         #region Properties
         public Guid Id { get => _Id; }
@@ -50,14 +47,14 @@ namespace Nox.Net.Com.Message.Defaults
             return Result.ToArray();
         }
 
-        public PingData(uint Signature2)
+        public MessagePingData(uint Signature2)
             : base(Signature2) { }
     }
 
-    public class PING
-       : RawMessage<PingData>
+    public class MessagePing
+       : RawMessage<MessagePingData>
     {
-        public PING(uint Signature1)
-            : base(Signature1, (uint)DefaultMessageTypeEnum.PING) { }
+        public MessagePing(uint Signature1)
+            : base(Signature1, (uint)MessageTypeEnum.PING) { }
     }
 }

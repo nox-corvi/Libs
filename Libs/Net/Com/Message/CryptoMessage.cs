@@ -34,7 +34,7 @@ namespace Nox.Net.Com.Message
             : base(Signature1)
         {
             this.laverna = laverna;
-            this._signature2 = Signature2;
+            _signature2 = Signature2;
         }
     }
 }

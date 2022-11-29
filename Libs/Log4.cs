@@ -30,9 +30,9 @@ namespace Nox
         private bool _Echo = false;
 
         #region Properties
-        public string LogFile => _LogFile;
+        public string LogFile { get => _LogFile; }
 
-        public Log4LevelEnum LogLevel => _LogLevel;
+        public Log4LevelEnum LogLevel { get => _LogLevel; set => _LogLevel = value; }
 
         public bool Echo => _Echo;
         #endregion
@@ -337,6 +337,10 @@ namespace Nox
         }
 
         public bool TestLogWriteable(string Filename) => AppendLogFile("", Filename);
+
+
+        public static Log4 Create(Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
+            new Log4($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
 
         public Log4(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
             : this(LogFile, LogLevel)

@@ -1,4 +1,4 @@
-﻿using Nox.Net.Com.Message.Defaults;
+﻿using Nox.Net.Com.Message;
 using Nox.Security;
 using Nox.Threading;
 using System;
@@ -11,13 +11,11 @@ using System.Threading;
 namespace Nox.Net.Com
 {
     public class NetServer<T>
-        : NetBase where T : SocketListener
+        : NetBase
+        where T : SocketListener
+
     {
-        public event EventHandler<PingEventArgs> OnPingMessage;
-        public event EventHandler<EchoEventArgs> OnEchoMessage;
-        public event EventHandler<EhloEventArgs> OnEhloMessage;
-        public event EventHandler<RplyEventArgs> OnRplyMessage;
-        public event EventHandler<RespEventArgs> OnRespMessage;
+        private Log4 Log = Log4.Create();
 
         private string _ServerIP = "";
         private int _ServerPort = -1;
@@ -39,7 +37,7 @@ namespace Nox.Net.Com
 
         public string SocketMessage { get; set; }
 
-        public tinyKey publicKey { get; set; } = null!;
+        public byte[] publicKey { get; set; } = null!;
 
         public int ClientConnectionCount =>
             _ListOfListener?.Count() ?? 0;
@@ -70,6 +68,8 @@ namespace Nox.Net.Com
 
         public void Bind(string IP, int Port)
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
+
             StopServer();
 
             _ServerIP = IP; _ServerPort = Port;
@@ -89,6 +89,8 @@ namespace Nox.Net.Com
 
         private void Server_DoWork(object sender, DoWorkEventArgs e)
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
+
             var worker = sender as BetterBackgroundWorker;
 
             while (!worker.CancellationPending)
@@ -101,19 +103,31 @@ namespace Nox.Net.Com
 
                         // create using abstract method
                         var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket);
-                        SocketListener.SocketMessage = SocketMessage;
-                        SocketListener.publicKey = publicKey;
 
-                        SocketListener.OnPingMessage += (object sender, PingEventArgs e) =>
-                            OnPingMessage?.Invoke(sender, e);
-                        SocketListener.OnEchoMessage += (object sender, EchoEventArgs e) =>
-                            OnEchoMessage?.Invoke(sender, e);
-                        SocketListener.OnEhloMessage += (object sender, EhloEventArgs e) =>
-                            OnEhloMessage?.Invoke(sender, e);
-                        SocketListener.OnRplyMessage += (object sender, RplyEventArgs e) =>
-                            OnRplyMessage?.Invoke(sender, e);
-                        SocketListener.OnRespMessage += (object sender, RespEventArgs e) =>
-                            OnRespMessage?.Invoke(sender, e);
+                        SocketListener.PingMessage += (object sender, MessagePingEventArgs e) =>
+                            OnPingMessage(sender, e);
+                        SocketListener.EchoMessage += (object sender, MessageEchoEventArgs e) =>
+                            OnEchoMessage(sender, e);
+                        SocketListener.EhloMessage += (object sender, MessageEhloEventArgs e) =>
+                            OnEhloMessage(sender, e);
+                        SocketListener.RplyMessage += (object sender, MessageRplyEventArgs e) =>
+                            OnRplyMessage(sender, e);
+                        SocketListener.SigxMessage += (object sender, MessageSigxEventArgs e) =>
+                            OnSigxMessage(sender, e);
+                        SocketListener.SigvMessage += (object sender, MessageSigvEventArgs e) =>
+                            OnSigvMessage(sender, e);
+                        SocketListener.RespMessage += (object sender, MessageRespEventArgs e) =>
+                            OnRespMessage(sender, e);
+
+                        SocketListener.ObtainMessage += (object sender, ObtainMessageEventArgs e) =>
+                            OnObtainMessage(sender, e);
+                        SocketListener.ObtainPublicKey += (object sender, ObtainPublicKeyEventArgs e) =>
+                            OnObtainPublicKey(sender, e);
+
+                        SocketListener.CloseSocket += (object sender, CloseSocketEventArgs e) =>
+                            OnCloseSocket(sender, e);
+                        SocketListener.Message += (object sender, MessageEventArgs e) =>
+                            OnMessage(sender, e);
 
                         lock (_ListOfListener)
                         {
@@ -135,6 +149,8 @@ namespace Nox.Net.Com
 
         private void Purge_DoWork(object sender, DoWorkEventArgs e)
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
+
             var worker = sender as BetterBackgroundWorker;
 
             while (!worker.CancellationPending)
@@ -155,6 +171,8 @@ namespace Nox.Net.Com
 
         public void StopServer()
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+
             // no further more connections
             if (_Server?.IsBusy ?? false)
             {
@@ -177,6 +195,8 @@ namespace Nox.Net.Com
 
         private void StopAllListers()
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+
             if (_ListOfListener != null)
             {
                 for (int i = 0; i < _ListOfListener.Count; i++)
@@ -190,6 +210,8 @@ namespace Nox.Net.Com
 
         public bool SendBufferTo(int Index, byte[] byteBuffer)
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, Index, byteBuffer);
+
             try
             {
                 if (_ListOfListener[Index].IsConnected)
@@ -208,6 +230,8 @@ namespace Nox.Net.Com
 
         public int SendBuffer(byte[] byteBuffer)
         {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
+
             int Result = 0;
 
             for (int i = 0; i < _ListOfListener.Count; i++)
@@ -218,19 +242,32 @@ namespace Nox.Net.Com
             return Result;
         }
 
-        public void SendDataBlockTo(int Index, DataBlock data) =>
+        public void SendDataBlockTo(int Index, DataBlock data)
+        {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, Index, data);
+
             SendBufferTo(Index, data.Write());
+        }
 
-        public int SendDataBlock(DataBlock data) =>
-            SendBuffer(data.Write());
+        public int SendDataBlock(DataBlock data)
+        {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, data);
+            return SendBuffer(data.Write());
+        }
 
-        public override void Dispose() =>
+        public override void Dispose()
+        {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopServer();
+        }
 
-        public NetServer(uint Signature1)
+            public NetServer(uint Signature1)
             : base(Signature1) { }
 
-        ~NetServer() =>
+        ~NetServer()
+        {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace); 
             StopServer();
+        }
     }
 }

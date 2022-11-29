@@ -1,42 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Nox.Net.Com.Message.Defaults
+namespace Nox.Net.Com.Message
 {
-    public class RespEventArgs 
+    public class MessageRespEventArgs
         : EventArgs
     {
+        public Guid SequenceId { get; }
         public uint Response1 { get; }
         public uint Response2 { get; }
         public uint Response3 { get; }
 
-        public RespEventArgs(uint Response1, uint Response2, uint Response3)
+        public MessageRespEventArgs(Guid SequenceId, uint Response1, uint Response2, uint Response3)
+            : base()
         {
+            this.SequenceId = SequenceId;
             this.Response1 = Response1;
             this.Response2 = Response2;
             this.Response3 = Response3;
-        }   
+        }
     }
 
-    public class RespData
+    public class MessageRespData
         : DataBlock
     {
         private const int MAX_LENGTH = 64;
 
+        private Guid _SequenceId = Guid.Empty;
         private uint _Response1 = 0;
         private uint _Response2 = 0;
         private uint _Response3 = 0;
 
         #region Properties
-        public uint Response1 { get { return _Response1; } set { SetProperty(ref _Response1, value); } }
-        public uint Response2 { get { return _Response2; } set { SetProperty(ref _Response2, value); } }
-        public uint Response3 { get { return _Response3; } set { SetProperty(ref _Response3, value); } }
+        public Guid SequenceId { get => _SequenceId; set => SetProperty(ref _SequenceId, value); }
+        public uint Response1 { get => _Response1; set => SetProperty(ref _Response1, value); }
+        public uint Response2 { get => _Response2; set => SetProperty(ref _Response2, value); }
+        public uint Response3 { get => _Response3; set => SetProperty(ref _Response3, value); }
         #endregion
 
         public override void Read(byte[] data)
         {
-            int i = 0;
+            _SequenceId = Helpers.ExtractGuid(data, 0);
+
+            int i = 16;
             _Response1 = BitConverter.ToUInt32(data, i);
             i += Marshal.SizeOf(_Response1.GetType());
 
@@ -58,10 +68,10 @@ namespace Nox.Net.Com.Message.Defaults
             return Result.ToArray();
         }
 
-        public RespData(uint Signature2)
+        public MessageRespData(uint Signature2)
             : base(Signature2) { }
 
-        public RespData(uint Signature2, uint Response1, uint Response2 = 0, uint Response3 = 0)
+        public MessageRespData(uint Signature2, uint Response1, uint Response2 = 0, uint Response3 = 0)
             : this(Signature2)
         {
             _Response1 = Response1;
@@ -70,10 +80,10 @@ namespace Nox.Net.Com.Message.Defaults
         }
     }
 
-    public class RESP
-       : RawMessage<RespData>
+    public class MessageResp
+       : RawMessage<MessageRespData>
     {
-        public RESP(uint Signature1)
-            : base(Signature1, (uint)DefaultMessageTypeEnum.RESP) { }
+        public MessageResp(uint Signature1)
+            : base(Signature1, (uint)SecureMessageTypeEnum.RESP) { }
     }
 }

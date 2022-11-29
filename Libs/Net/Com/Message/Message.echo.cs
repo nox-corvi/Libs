@@ -4,16 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nox.Net.Com.Message.Defaults
+namespace Nox.Net.Com.Message
 {
-    public class EchoEventArgs : EventArgs
+    public class MessageEchoEventArgs : EventArgs
     {
         public Guid PingId { get; }
-
         public DateTime PingTime { get; }
         public DateTime Timestamp { get; }
 
-        public EchoEventArgs(Guid PingId, DateTime PingTime, DateTime Timestamp)
+        public MessageEchoEventArgs(Guid PingId, DateTime PingTime, DateTime Timestamp)
         {
             this.PingId = PingId;
             this.PingTime = PingTime;
@@ -21,7 +20,7 @@ namespace Nox.Net.Com.Message.Defaults
         }
     }
 
-    public class EchoData
+    public class MessageEchoData
         : DataBlock
     {
         private Guid _PingId;
@@ -55,14 +54,14 @@ namespace Nox.Net.Com.Message.Defaults
             return Result.ToArray();
         }
 
-        public EchoData(uint Signature2)
+        public MessageEchoData(uint Signature2)
             : base(Signature2) { }
     }
 
-    public class ECHO
-       : RawMessage<EchoData>
+    public class MessageEcho
+       : RawMessage<MessageEchoData>
     {
-        public ECHO(uint Signature1)
-            : base(Signature1, (uint)DefaultMessageTypeEnum.ECHO) { }
+        public MessageEcho(uint Signature1)
+            : base(Signature1, (uint)MessageTypeEnum.ECHO) { }
     }
 }

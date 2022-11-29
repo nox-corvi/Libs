@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -13,42 +15,16 @@ namespace Nox.Security
         private const int KEY_SIZE = 4096;
 
         private RSA _rsa;
-
-        //private tinyKey _publicKey;
-        //private tinyKey _privateKey;
+        private RSAParameters _parameters = new RSAParameters();
 
         #region Properties
-        //public tinyKey PublicKey =>
-        //    _publicKey;
+        public RSASignaturePadding SigningPadding { get; set; } = RSASignaturePadding.Pkcs1;
+        public RSAEncryptionPadding EncryptionPadding { get; set; } = RSAEncryptionPadding.OaepSHA512;
 
-        //public tinyKey PrivateKey =>
-        //    _privateKey;
+        public HashAlgorithmName UsedHashAlgorithm { get; set; } = HashAlgorithmName.SHA384;
 
-        public int DefaultPassLength { get; set; } = 32;
+        
         #endregion
-
-        private tinyRSA(int KeySizeInBytes, byte[] privateKey, byte[] publicKey)
-        {
-            int read = 0;
-
-            _rsa = RSA.Create(KeySizeInBytes);
-            _rsa.ImportRSAPrivateKey(privateKey, out read);
-            _rsa.ImportRSAPublicKey(publicKey, out read);   
-        }
-
-        public void b()
-        {
-            //_rsa.ImportEncryptedPkcs8PrivateKey()
-        }
-
-        public tinyKey ExportPrivateKey(ReadOnlySpan<byte> passwordBytes, PbeParameters pbeParameters) =>
-            new tinyKey(_rsa.ExportEncryptedPkcs8PrivateKey(passwordBytes, pbeParameters));
-
-        public tinyKey ExportPrivateKey() =>
-            new tinyKey(_rsa.ExportRSAPrivateKey());
-
-        public tinyKey ExportPublicKeyPlain() =>
-            new tinyKey(_rsa.ExportRSAPublicKey());
 
         //TODO:Optimize
         private int FindBestMatchKeySize(int KeySize)
@@ -78,6 +54,29 @@ namespace Nox.Security
             return bestMatch;
         }
 
+        #region Constructors
+        /// <summary>
+        /// new instance with best match approximate key length
+        /// </summary>
+        public tinyRSA()
+            : this(KEY_SIZE) { }
+
+        /// <summary>
+        /// new instance importing private  / public key bundle
+        /// </summary>
+        /// <param name="privateKey"></param>
+        public tinyRSA(byte[] privateKey)
+        {
+            int read = 0;
+
+            _rsa = RSA.Create();
+            _rsa.ImportRSAPrivateKey(privateKey, out read);
+        }
+
+        /// <summary>
+        /// new instance with best match approximate key length
+        /// </summary>
+        /// <param name="keysize"></param>
         public tinyRSA(int keysize)
         {
             _rsa = RSA.Create();
@@ -85,8 +84,28 @@ namespace Nox.Security
 
             _rsa.KeySize = bestMatchKeySize;
         }
-        public tinyRSA()
-            : this(KEY_SIZE) { }
+        #endregion
+
+        public byte[] Encrypt(byte[] data) =>
+            _rsa.Encrypt(data, EncryptionPadding);
+
+        public byte[] Decrypt(byte[] data) =>
+            _rsa.Decrypt(data, EncryptionPadding);
+
+        public byte[] ExportPrivateKey(ReadOnlySpan<byte> passwordBytes, PbeParameters pbeParameters) =>
+            _rsa.ExportEncryptedPkcs8PrivateKey(passwordBytes, pbeParameters);
+
+        public byte[] ExportPrivateKey() =>
+            _rsa.ExportRSAPrivateKey();
+
+        public byte[] ExportPublicKey() =>
+            _rsa.ExportRSAPublicKey();
+
+        public int ImportPublicKey(byte[] bytes)
+        {
+            _rsa.ImportRSAPublicKey(bytes, out int readBytes);
+            return readBytes;
+        }
 
         public void Dispose() =>
             _rsa.Clear();

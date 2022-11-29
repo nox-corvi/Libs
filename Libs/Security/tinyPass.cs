@@ -31,6 +31,9 @@ namespace Nox.Security
 
         public ReadOnlySpan<byte> Gen(int Length = 32) =>
             new ReadOnlySpan<byte>(_2898.GetBytes(Length));
+            
+        public void Reset() => 
+            _2898.Reset();
 
         public void Dispose() =>
             _2898.Dispose();

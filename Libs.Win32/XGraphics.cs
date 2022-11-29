@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -52,27 +53,45 @@ namespace Nox.Win32
 
     public class Leyout
     {
-        public Color Back = Color.CornflowerBlue;
+        //public Color Back = Color.CornflowerBlue;
 
-        public Color FrameLight = Color.Azure;
-        public Color FrameDark = Color.DarkSlateBlue;
-        
-        public Color FixedBorder = Color.SkyBlue;
+        //public Color FrameLight = Color.Azure;
+        //public Color FrameDark = Color.DarkSlateBlue;
 
-        public Color Grid = Color.White;
-        public Color Box = Color.Black;
+        ////public Color FixedBorder = Color.SkyBlue;
+
+        //public Color Grid = Color.White;
+        //public Color Box = Color.Black;
+
+        private Color Back1 = Color.FromArgb(int.Parse("ff0b597d", System.Globalization.NumberStyles.HexNumber));
+        private Color Back2 = Color.FromArgb(int.Parse("ff10151b", System.Globalization.NumberStyles.HexNumber));
+
+        private Color FrameLight = Color.FromArgb(int.Parse("ff1880b7", System.Globalization.NumberStyles.HexNumber));
+        private Color FrameDark = Color.FromArgb(int.Parse("ff242b33", System.Globalization.NumberStyles.HexNumber));
+
+        private Color FixedBorder = Color.FromArgb(int.Parse("ff0899b4", System.Globalization.NumberStyles.HexNumber));
+
+        private Color Grid = Color.FromArgb(int.Parse("ffd7edf8", System.Globalization.NumberStyles.HexNumber));
+        private Color Box = Color.Black;
+    }
+
+    public class LeyoutWinFormExtender
+        : Leyout
+    {
+
     }
 
     public class XGraphics : IDisposable
     {
-        private Leyout Leyout = new Leyout();
+        private Leyout _Leyout = new Leyout();
 
         private Graphics _graphics;
 
 
         #region Properties
-        public Graphics Graphics =>
-            _graphics;
+        public Leyout Leyout { get => Leyout; set => _Leyout = value; }
+
+        public Graphics Graphics { get => _graphics; }
         #endregion
 
         public void DrawBorderBox(Rectangle f, int BorderWidth, Color BorderColor)
@@ -208,7 +227,7 @@ namespace Nox.Win32
             return (count % 2 == 1); // Same as (count%2 == 1)
         }
 
-        public void DrawArea(Point[] Points, int BorderWidth, Color FillColor, Color BoundaryColor, Color Hatching)
+        public void DrawArea(Point[] Points, int BorderWidth, Color FillColor, Color BoundaryColor)
         {
             //Point Left, Top, Right, Bottom;
 
@@ -241,6 +260,36 @@ namespace Nox.Win32
             var B = new Pen(BoundaryColor, BorderWidth);
             _graphics.DrawPolygon(B, Points);
         }
+
+        private Rectangle BoundaryFromPoints(Point[] P)
+        {
+            int x1 = int.MaxValue, y1 = int.MaxValue, x2 = int.MinValue, y2 = int.MinValue;
+            foreach (var item in P)
+            {
+                if (item.X < x1) x1 = item.X;
+                if (item.Y < y1) y1 = item.Y;
+
+                if (item.X > x1) x2 = item.X;
+                if (item.Y > y1) y2 = item.Y;
+            }
+
+            return new Rectangle(x1, y1, x2, y2);
+        }
+
+        //public void DrawArea(Point[] Points, int BorderWidth, Color FillColor1, Color FillColor2, Color BoundaryColor)
+        //{
+        //    // fill 
+        //    var r = BoundaryFromPoints(Points);
+
+        //    LinearGradientBrush lgb =
+        //       new LinearGradientBrush(r, FillColor1, FillColor2, (float)Math.PI / 4, true);
+
+        //    _graphics.FillPolygon(lgb, Points);
+
+        //    // border
+        //    var B = new Pen(BoundaryColor, BorderWidth);
+        //    _graphics.DrawPolygon(B, Points);
+        //}
 
         public void DrawGrid(Point Origin, Size RectSize, int BorderWidth, int Space, Color GridColor)
         {

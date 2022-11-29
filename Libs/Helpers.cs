@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Serialization;
 
@@ -283,6 +284,52 @@ namespace Nox
             Array.Copy(data, Offset, buffer1, 0, 16);
 
             return new Guid(buffer1);
+        }
+
+        public static byte[] ExtractArrayWithLength(byte[] data, int Offset, int length, out int read)
+        {
+            var l = length;
+
+            //TODO:Verify
+            if (Offset + l > length)
+                l -= (Offset + l) - l + 1;
+
+            byte[] buffer1 = new byte[l];
+            Array.Copy(data, Offset, buffer1, 0, l);
+
+            read = l;
+            return buffer1;
+        }
+
+        public static byte[] ExtractArray(byte[] data, int Offset, out int read) =>
+            ExtractArray(data, Offset, data.Length, out read);
+
+        public static byte[] ExtractArray(byte[] data, int Offset, int length, out int read)
+        {
+            var l = length;
+
+            //TODO:Verify
+            if (Offset + l > length)
+                l -= length - (Offset + l);
+
+            byte[] buffer1 = new byte[l];
+            Array.Copy(data, Offset, buffer1, 0, l);
+
+            read = l;
+            return buffer1;
+        }
+
+        public static byte[] ExtractArrayWithLength(byte[] data, int Offset, out int read)
+        {
+            int l = 0, i = Offset;
+            l = BitConverter.ToInt32(data, i); i += sizeof(int);
+
+            byte[] k = new byte[l];
+            Array.Copy(data, i, k, 0, l);
+            i += l;
+
+            read = l + sizeof(int);
+            return k;
         }
 
         public static string SerializeToXml<T>(T obj)
