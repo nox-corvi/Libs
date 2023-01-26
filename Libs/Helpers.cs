@@ -78,6 +78,17 @@ namespace Nox
             Success?.Invoke(Result);
         }
 
+        public static T OnXTry<T>(Func<T> exec, Func<Exception, T> exception) where T : struct
+        {
+            try
+            {
+                return exec.Invoke();
+            }
+            catch (Exception e)
+            {
+                return exception?.Invoke(e) ?? default(T);
+            }
+        }
 
         public static T OnXCond<T>(Func<bool> Condition, Func<T> True, Func<T> False)
         {

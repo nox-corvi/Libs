@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using System.Threading;
-
+using System.Windows.Forms;
 
 namespace Nox.Win32
 {
@@ -63,16 +63,16 @@ namespace Nox.Win32
         //public Color Grid = Color.White;
         //public Color Box = Color.Black;
 
-        private Color Back1 = Color.FromArgb(int.Parse("ff0b597d", System.Globalization.NumberStyles.HexNumber));
-        private Color Back2 = Color.FromArgb(int.Parse("ff10151b", System.Globalization.NumberStyles.HexNumber));
+        public Color Back1 = Color.FromArgb(int.Parse("ff0b597d", System.Globalization.NumberStyles.HexNumber));
+        public Color Back2 = Color.FromArgb(int.Parse("ff10151b", System.Globalization.NumberStyles.HexNumber));
 
-        private Color FrameLight = Color.FromArgb(int.Parse("ff1880b7", System.Globalization.NumberStyles.HexNumber));
-        private Color FrameDark = Color.FromArgb(int.Parse("ff242b33", System.Globalization.NumberStyles.HexNumber));
+        public Color FrameLight = Color.FromArgb(int.Parse("ff1880b7", System.Globalization.NumberStyles.HexNumber));
+        public Color FrameDark = Color.FromArgb(int.Parse("ff242b33", System.Globalization.NumberStyles.HexNumber));
 
-        private Color FixedBorder = Color.FromArgb(int.Parse("ff0899b4", System.Globalization.NumberStyles.HexNumber));
+        public Color FixedBorder = Color.FromArgb(int.Parse("ff0899b4", System.Globalization.NumberStyles.HexNumber));
 
-        private Color Grid = Color.FromArgb(int.Parse("ffd7edf8", System.Globalization.NumberStyles.HexNumber));
-        private Color Box = Color.Black;
+        public Color Grid = Color.FromArgb(int.Parse("ffd7edf8", System.Globalization.NumberStyles.HexNumber));
+        public Color Box = Color.Black;
     }
 
     public class LeyoutWinFormExtender
@@ -89,7 +89,7 @@ namespace Nox.Win32
 
 
         #region Properties
-        public Leyout Leyout { get => Leyout; set => _Leyout = value; }
+        public Leyout Leyout { get => _Leyout; set => _Leyout = value; }
 
         public Graphics Graphics { get => _graphics; }
         #endregion
@@ -123,6 +123,8 @@ namespace Nox.Win32
                 _graphics.DrawLine(D, f.Right - BW - i - 1, f.Top + BW2, f.Right - BW - i - 1, f.Bottom - BW - i - 1);
             }
         }
+        public void DrawFrame(Rectangle f, int BorderWidth) =>
+            DrawFrame(f, BorderWidth, Leyout.FrameLight, Leyout.FrameDark);
 
         public void DrawFilledBorderBox(Rectangle f, int BorderWidth, Color FillColor, Color BorderColor)
         {
@@ -261,6 +263,9 @@ namespace Nox.Win32
             _graphics.DrawPolygon(B, Points);
         }
 
+        public void DrawArea(Point[] Points, int BorderWidth) =>
+            DrawArea(Points, BorderWidth, Leyout.Back2, Leyout.FixedBorder);
+
         private Rectangle BoundaryFromPoints(Point[] P)
         {
             int x1 = int.MaxValue, y1 = int.MaxValue, x2 = int.MinValue, y2 = int.MinValue;
@@ -316,12 +321,14 @@ namespace Nox.Win32
                 g += Space;
             }
         }
+        
+        public void DrawGrid(Point Origin, Size RectSize, int BorderWidth, int Space) =>
+            DrawGrid(Origin, RectSize, BorderWidth, Space, _Leyout.Grid);
 
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
             
-
         }
 
         public XGraphics(Graphics graphics)

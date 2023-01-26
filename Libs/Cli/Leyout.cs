@@ -12,7 +12,8 @@ namespace Nox.Cli
 
         #region Properties
         public ConsoleColor Text;
-        public ConsoleColor HighLight;
+        public ConsoleColor HighLight1;
+        public ConsoleColor HighLight2;
 
         public ConsoleColor Prompt;
         public ConsoleColor Layer;
@@ -28,7 +29,9 @@ namespace Nox.Cli
             Default = new Layout()
             {
                 Text = ConsoleColor.Gray,
-                HighLight = ConsoleColor.White,
+                HighLight1 = ConsoleColor.White,
+                HighLight2 = ConsoleColor.White,
+
 
                 Prompt = ConsoleColor.Cyan,
                 Layer = ConsoleColor.Green,

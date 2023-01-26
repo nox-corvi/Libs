@@ -12,7 +12,7 @@ namespace Nox.Win32.CI
         : Nox.CI.CI
     {
         protected RegistryHandler _Registry1 = null!;
-
+        protected WinUpdateControl _WinUpdateControl = null!;
 
 
         #region Properties
@@ -64,6 +64,20 @@ namespace Nox.Win32.CI
                     _Registry1 = new RegistryHandler(this, _logger);
                 }
                 return _Registry1;
+            }
+        }
+
+        public virtual WinUpdateControl GetWinUpdateControl
+        {
+            get
+            {
+                if (_WinUpdateControl == null)
+                {
+                    _logger?.LogMessage("create winupdatecontrol handler", Log4.Log4LevelEnum.Info);
+                    _WinUpdateControl = new WinUpdateControl(this, _logger);
+                }
+
+                return _WinUpdateControl;
             }
         }
 

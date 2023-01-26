@@ -25,6 +25,15 @@ namespace Nox
                 return string.Empty;
         }
 
+        public static string CenterText(this string source, int Length)
+        {
+            int l_ges = source.Length;
+            int l1 = (Length - source.Length) / 2;
+            int l2 = (8 - Length - l1);
+
+            return new string(' ', l1) + source + new string(' ', l2);
+        }
+
         public static string RemoveQMarks(this string source)
         {
             var Result = source;

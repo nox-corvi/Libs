@@ -39,7 +39,7 @@ namespace Nox.Cli
             Prompt();
 
             if (HighLight)
-                Console.ForegroundColor = __layout.HighLight;
+                Console.ForegroundColor = __layout.HighLight1;
             else
                 Console.ForegroundColor = __layout.Text;
 
@@ -58,7 +58,7 @@ namespace Nox.Cli
         public void PrintText(string Text, bool HighLight = false)
         {
             if (HighLight)
-                Console.ForegroundColor = __layout.HighLight;
+                Console.ForegroundColor = __layout.HighLight1;
             else
                 Console.ForegroundColor = __layout.Text;
 
@@ -125,18 +125,98 @@ namespace Nox.Cli
             Console.CursorLeft = Console.WindowWidth - StateText.Length - 1;
 
             Console.ForegroundColor = __layout.Text;
-            Console.Write("[");
+            Console.Write("[ ");
 
             SetStateColor(StateValue);
             Console.Write(GetStateText(StateValue));
 
             Console.ForegroundColor = __layout.Text;
-            Console.Write("]");
+            Console.Write("] ");
 
             Console.ResetColor();
 
             if (LineFeed)
-                Console.WriteLine();
+                LF();
         }
+
+        public void AddMessage(string Group, string Message) =>
+            AddMessage(Group, -1, Message, null, null);
+
+        public void AddMessage(string Group, int ProcessId, string Message) =>
+            AddMessage(Group, ProcessId, Message, null, null);
+
+        public void AddMessage(string Group,int ProcessId, string Message, StateEnum State) =>
+            AddMessage(Group, ProcessId, Message, null, (State) => GetStateText(State));
+
+        public void AddMessage(string Group, string Message, Func<ConPrint.StateEnum> Callback) =>
+            AddMessage(Group, -1, Message, Callback);
+
+        public void AddMessage(string Group, int ProcessId, string Message, Func<ConPrint.StateEnum> Callback) =>
+            AddMessage(Group, ProcessId, Message, Callback);
+
+        public void AddMessage(string Group, int ProcessId, string Message, Func<ConPrint.StateEnum> Callback, Func<ConPrint.StateEnum, string> MessageResult)
+        {
+            BeginMessage(Group, ProcessId, Message);
+
+            if (Callback != null)
+            {
+                var Result = Helpers.OnXTry<ConPrint.StateEnum>(Callback, (Exception e) => StateEnum.fail);
+                
+                AppendMessage(MessageResult?.Invoke(Result) ?? "");
+                EndMessage(Result);
+            }
+            else
+                LF();
+        }
+
+        public void BeginMessage(string Group, int ProcessId, string Message)
+        {
+            Console.ForegroundColor = __layout.Text;
+
+            if (Group != "")
+            {
+                Console.Write("[ ");
+
+                string Group2 = Group.TrimEnd().CenterText(8);
+                Console.ForegroundColor = __layout.Layer;
+                Console.Write(Group2);
+
+                Console.ForegroundColor = __layout.Text;
+                Console.Write("] ");
+            }
+
+            if (ProcessId != -1)
+            {
+                Console.Write("[ ");
+
+                string ProcessId2 = ProcessId.ToString().CenterText(4);
+                Console.ForegroundColor = __layout.HighLight1;
+                Console.Write(ProcessId2);
+
+                Console.ForegroundColor = __layout.Text;
+                Console.Write("] ");
+            }
+
+            int MaxLength = Console.BufferWidth - Console.CursorLeft - 8 - 1;
+            string Message2 = Message.LimitLength(MaxLength);
+
+            Console.Write(Message);
+
+            Console.ResetColor();
+        }
+
+        public void UpdateState(ConPrint.StateEnum Result) =>
+            PrintState(Result, false);
+
+        public void AppendMessage(string Message)
+        {
+            int MaxLength = Console.BufferWidth - Console.CursorLeft - 8 - 1;
+            string Message2 = Message.LimitLength(MaxLength);
+
+            Console.Write(Message);
+        }
+
+        public void EndMessage(ConPrint.StateEnum Result) =>
+            PrintState(Result, true);
     }
 }
