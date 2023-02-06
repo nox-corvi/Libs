@@ -66,7 +66,7 @@ namespace Nox.Net.Com
         }
         #endregion
 
-        public void Bind(string IP, int Port)
+        public virtual void Bind(string IP, int Port)
         {
             Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
 
@@ -127,7 +127,7 @@ namespace Nox.Net.Com
                         SocketListener.CloseSocket += (object sender, CloseSocketEventArgs e) =>
                             OnCloseSocket(sender, e);
                         SocketListener.Message += (object sender, MessageEventArgs e) =>
-                            OnMessage(sender, e);
+                            OnMessage(sender, e);                        
 
                         lock (_ListOfListener)
                         {

@@ -31,7 +31,7 @@ namespace Nox
             int l1 = (Length - source.Length) / 2;
             int l2 = (8 - Length - l1);
 
-            return new string(' ', l1) + source + new string(' ', l2);
+            return (new string(' ', l1) + source + new string(' ', Length)).Substring(0, Length);
         }
 
         public static string RemoveQMarks(this string source)

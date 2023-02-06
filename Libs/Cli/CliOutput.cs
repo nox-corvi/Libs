@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -152,7 +153,7 @@ namespace Nox.Cli
             AddMessage(Group, -1, Message, Callback);
 
         public void AddMessage(string Group, int ProcessId, string Message, Func<ConPrint.StateEnum> Callback) =>
-            AddMessage(Group, ProcessId, Message, Callback);
+            AddMessage(Group, ProcessId, Message, Callback, null);
 
         public void AddMessage(string Group, int ProcessId, string Message, Func<ConPrint.StateEnum> Callback, Func<ConPrint.StateEnum, string> MessageResult)
         {
@@ -161,16 +162,19 @@ namespace Nox.Cli
             if (Callback != null)
             {
                 var Result = Helpers.OnXTry<ConPrint.StateEnum>(Callback, (Exception e) => StateEnum.fail);
-                
+
                 AppendMessage(MessageResult?.Invoke(Result) ?? "");
                 EndMessage(Result);
             }
             else
                 LF();
+
+            Prompt();
         }
 
         public void BeginMessage(string Group, int ProcessId, string Message)
         {
+            Console.Write("\r");
             Console.ForegroundColor = __layout.Text;
 
             if (Group != "")

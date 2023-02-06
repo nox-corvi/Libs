@@ -23,7 +23,7 @@ namespace Nox.Net.Com
 
     public class ObtainPublicKeyEventArgs : CancelEventArgs
     {
-        public byte[] PublicKey { get; set; }
+        public byte[] publicKey { get; set; }
 
         public ObtainPublicKeyEventArgs()
             : base() { }

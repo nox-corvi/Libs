@@ -303,7 +303,7 @@ namespace Nox.Net.Com
                 var p = new ObtainPublicKeyEventArgs();
                 OnObtainPublicKey(this, p);
 
-                if (!p.Cancel && p.PublicKey != null)
+                if (!p.Cancel && p.publicKey != null)
                 {
                     var m = new ObtainMessageEventArgs();
                     OnObtainMessage(this, m);
@@ -315,14 +315,15 @@ namespace Nox.Net.Com
                         OnEhloMessage(this, new MessageEhloEventArgs(ehlo.DataBlock.SequenceId, ehlo.DataBlock.Timestamp, ehlo.DataBlock.PublicKey, ehlo.DataBlock.Message));
 
                         // send response back 
-                        SendRplyMessage(ehlo.DataBlock.SequenceId, p.PublicKey, m.Message);
+                        SendRplyMessage(ehlo.DataBlock.SequenceId, p.publicKey, m.Message);
                     }
                     else
                         // error obtain public key
-                        OnMessage(this, new MessageEventArgs("cancel obtain public key or public key is empty"));
+                        OnMessage(this, new MessageEventArgs("cancel obtain random message or message is empty"));
                 }
                 else
-                    OnMessage(this, new MessageEventArgs("cancel obtain random message or message is empty"));
+                    OnMessage(this, new MessageEventArgs("cancel obtain public key or public key is empty"));
+                
             }
             else
             {

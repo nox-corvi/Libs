@@ -123,6 +123,7 @@ namespace Nox.Win32
                 _graphics.DrawLine(D, f.Right - BW - i - 1, f.Top + BW2, f.Right - BW - i - 1, f.Bottom - BW - i - 1);
             }
         }
+
         public void DrawFrame(Rectangle f, int BorderWidth) =>
             DrawFrame(f, BorderWidth, Leyout.FrameLight, Leyout.FrameDark);
 
