@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessageEhloEventArgs : EventArgs
+    public class EhloEventArgs : EventArgs
     {
         /// <summary>
         /// Random Guid to identify the sequence
@@ -16,7 +16,7 @@ namespace Nox.Net.Com.Message
         public byte[] publicKey { get; }
         public string Message { get; }
 
-        public MessageEhloEventArgs(Guid SequenceId, DateTime Timestamp, byte[] publicKey, string Message)
+        public EhloEventArgs(Guid SequenceId, DateTime Timestamp, byte[] publicKey, string Message)
             : base()
         {
             this.SequenceId = SequenceId;

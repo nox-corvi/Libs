@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessageSigvEventArgs : EventArgs
+    public class SigvEventArgs : EventArgs
     {
         public Guid SequenceId { get; }
         public byte[] EncryptedHash { get; }
 
         public bool Valid { get; set; } = false;
 
-        public MessageSigvEventArgs(Guid _SequenceId, byte[] EncryptedHash)
+        public SigvEventArgs(Guid _SequenceId, byte[] EncryptedHash)
             : base()
         {
             SequenceId = SequenceId;

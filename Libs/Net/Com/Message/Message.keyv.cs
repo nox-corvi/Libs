@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessageKeyvEventArgs : EventArgs
+    public class KeyvEventArgs : EventArgs
     {
         /// <summary>
         /// Random Guid to identify the sequence
         /// </summary>
         public Guid SequenceId { get; }
-        public MessageKeyvEventArgs()
+        public KeyvEventArgs()
             : base()
         {
             //this.SequenceId = SequenceId;

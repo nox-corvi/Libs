@@ -15,6 +15,20 @@ namespace Nox.Net.Com
             this.Message = Message;
     }
 
+    public class BindEventArgs : EventArgs
+    {
+        public Guid Id { get; set; }
+        public BindEventArgs(Guid Id)
+            : base() => this.Id = Id;
+    }
+
+    public class ConnectEventArgs : EventArgs
+    {
+        public Guid Id { get; set; }
+        public ConnectEventArgs(Guid Id)
+            : base() => this.Id = Id;
+    }
+
     public class CloseSocketEventArgs : MessageEventArgs
     {
         public CloseSocketEventArgs(string Message)

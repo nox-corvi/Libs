@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessagePingEventArgs: EventArgs
+    public class PingEventArgs: EventArgs
     {
         public Guid Id { get; }
         public DateTime Timestamp { get; }
 
-        public MessagePingEventArgs(Guid Id, DateTime Timestamp)
+        public PingEventArgs(Guid Id, DateTime Timestamp)
         {
             this.Id = Id;
             this.Timestamp = Timestamp;

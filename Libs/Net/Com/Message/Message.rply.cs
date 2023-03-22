@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessageRplyEventArgs : EventArgs
+    public class RplyEventArgs : EventArgs
     {
         public Guid SequenceId { get; }
         public DateTime Timestamp { get; }
         public byte[] PublicKey { get; }
         public string Message { get; set; }
 
-        public MessageRplyEventArgs(Guid SequenceId, DateTime Timestamp, byte[] PublicKey, string Message)
+        public RplyEventArgs(Guid SequenceId, DateTime Timestamp, byte[] PublicKey, string Message)
             : base()
         {
             this.SequenceId = SequenceId;

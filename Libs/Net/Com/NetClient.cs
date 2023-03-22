@@ -9,7 +9,7 @@ using System.Runtime.Intrinsics.X86;
 namespace Nox.Net.Com
 {
     public class NetClient<T>
-        : NetBase where T : SocketListener
+        : NetClientBase where T : NetClientSocketListener
     {
         private Log4 Log = Log4.Create();
 
@@ -40,24 +40,24 @@ namespace Nox.Net.Com
             _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client);
 
             // pass through
-            _Listener.PingMessage += (object sender, MessagePingEventArgs e) =>
+            _Listener.PingMessage += (object sender, PingEventArgs e) =>
                 OnPingMessage(sender, e);
-            _Listener.EchoMessage += (object sender, MessageEchoEventArgs e) =>
+            _Listener.EchoMessage += (object sender, EchoEventArgs e) =>
                 OnEchoMessage(sender, e);
 
-            _Listener.EhloMessage += (object sender, MessageEhloEventArgs e) =>
+            _Listener.EhloMessage += (object sender, EhloEventArgs e) =>
                 OnEhloMessage(sender, e);
-            _Listener.RplyMessage += (object sender, MessageRplyEventArgs e) =>
+            _Listener.RplyMessage += (object sender, RplyEventArgs e) =>
                 OnRplyMessage(sender, e);
-            _Listener.SigxMessage += (object sender, MessageSigxEventArgs e) =>
+            _Listener.SigxMessage += (object sender, SigxEventArgs e) =>
                 OnSigxMessage(sender, e);
-            _Listener.SigvMessage += (object sender, MessageSigvEventArgs e) =>
+            _Listener.SigvMessage += (object sender, SigvEventArgs e) =>
                 OnSigvMessage(sender, e);
-            _Listener.KeyxMessage += (object sender, MessageKeyxEventArgs e) =>
+            _Listener.KeyxMessage += (object sender, KeyxEventArgs e) =>
                 OnKeyxMessage(sender, e);
-            _Listener.KeyvMessage += (object sender, MessageKeyvEventArgs e) =>
+            _Listener.KeyvMessage += (object sender, KeyvEventArgs e) =>
                 OnKeyvMessage(sender, e);
-            _Listener.RespMessage += (object sender, MessageRespEventArgs e) =>
+            _Listener.RespMessage += (object sender, RespEventArgs e) =>
                 OnRespMessage(sender, e);
 
             _Listener.CloseSocket += (object sender, CloseSocketEventArgs e) =>

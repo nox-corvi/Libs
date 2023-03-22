@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessageDoneEventArgs : EventArgs
+    public class DoneEventArgs : EventArgs
     {
-        public MessageDoneEventArgs() { }
+        public DoneEventArgs() { }
     }
 
     public class MessageDone

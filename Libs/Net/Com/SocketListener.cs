@@ -32,7 +32,7 @@ namespace Nox.Net.Com
 
         private Guid _SequenceId = Guid.Empty;
 
-        #region Properties
+        #region Properties 
         public Guid Id { get; } = Guid.NewGuid();
 
         public bool IsConnected { get => _Socket?.Connected ?? false; }
@@ -254,7 +254,7 @@ namespace Nox.Net.Com
             var ping = new MessagePing(Signature1);
             ping.Read(Message);
 
-            OnPingMessage(this, new MessagePingEventArgs(ping.DataBlock.Id, ping.DataBlock.Timestamp));
+            OnPingMessage(this, new PingEventArgs(ping.DataBlock.Id, ping.DataBlock.Timestamp));
 
             // make a ping response
             var PingResponse = new MessageEcho(Signature1);
@@ -273,7 +273,7 @@ namespace Nox.Net.Com
             echo.Read(Message);
 
             // nothing more to do
-            OnEchoMessage(this, new MessageEchoEventArgs(echo.DataBlock.PingId, echo.DataBlock.PingTime, echo.DataBlock.Timestamp));
+            OnEchoMessage(this, new EchoEventArgs(echo.DataBlock.PingId, echo.DataBlock.PingTime, echo.DataBlock.Timestamp));
 
             return true;
         }
@@ -312,7 +312,7 @@ namespace Nox.Net.Com
                     {
                         // ehlo done, fix sequenceid, notify 
                         _SequenceId = ehlo.DataBlock.SequenceId;
-                        OnEhloMessage(this, new MessageEhloEventArgs(ehlo.DataBlock.SequenceId, ehlo.DataBlock.Timestamp, ehlo.DataBlock.PublicKey, ehlo.DataBlock.Message));
+                        OnEhloMessage(this, new EhloEventArgs(ehlo.DataBlock.SequenceId, ehlo.DataBlock.Timestamp, ehlo.DataBlock.PublicKey, ehlo.DataBlock.Message));
 
                         // send response back 
                         SendRplyMessage(ehlo.DataBlock.SequenceId, p.publicKey, m.Message);
@@ -349,7 +349,7 @@ namespace Nox.Net.Com
             var rply = new MessageRply(Signature1);
             rply.Read(Message);
 
-            OnRplyMessage(this, new MessageRplyEventArgs(rply.DataBlock.SequenceId, rply.DataBlock.Timestamp, rply.DataBlock.PublicKey, rply.DataBlock.Message));
+            OnRplyMessage(this, new RplyEventArgs(rply.DataBlock.SequenceId, rply.DataBlock.Timestamp, rply.DataBlock.PublicKey, rply.DataBlock.Message));
            
             return true;
         }
@@ -362,7 +362,7 @@ namespace Nox.Net.Com
             if (sigx.DataBlock.SequenceId == _SequenceId)
             {
                 // sign exchange event
-                var x = new MessageSigxEventArgs(sigx.DataBlock.SequenceId, sigx.DataBlock.EncryptedHash);
+                var x = new SigxEventArgs(sigx.DataBlock.SequenceId, sigx.DataBlock.EncryptedHash);
                 OnSigxMessage(this, x);
 
                 if (x.Valid)
@@ -387,7 +387,7 @@ namespace Nox.Net.Com
             if (sigv.DataBlock.SequenceId == _SequenceId)
             {
                 // sign exchange event
-                var v = new MessageSigvEventArgs(sigv.DataBlock.SequenceId, sigv.DataBlock.EncryptedHash);
+                var v = new SigvEventArgs(sigv.DataBlock.SequenceId, sigv.DataBlock.EncryptedHash);
                 OnSigvMessage(this, v);
 
                 if (v.Valid)
@@ -409,7 +409,7 @@ namespace Nox.Net.Com
             var keyx = new MessageKeyx(Signature1);
             keyx.Read(Message);
 
-            OnKeyxMessage(this, new MessageKeyxEventArgs());
+            OnKeyxMessage(this, new KeyxEventArgs());
 
             return true;
         }
@@ -419,7 +419,7 @@ namespace Nox.Net.Com
             var keyv = new MessageKeyv(Signature1);
             keyv.Read(Message);
 
-            OnKeyvMessage(this, new MessageKeyvEventArgs());
+            OnKeyvMessage(this, new KeyvEventArgs());
 
             return true;
         }
@@ -429,7 +429,7 @@ namespace Nox.Net.Com
             var RESP = new MessageResp(Signature1);
             RESP.Read(Message);
 
-            OnRespMessage(this, new MessageRespEventArgs(_SequenceId, RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
+            OnRespMessage(this, new RespEventArgs(_SequenceId, RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
 
             return true;
         }

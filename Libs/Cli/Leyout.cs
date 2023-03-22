@@ -18,6 +18,11 @@ namespace Nox.Cli
         public ConsoleColor Prompt;
         public ConsoleColor Layer;
 
+        public ConsoleColor WindowTitleText;
+        public ConsoleColor WindowTitleBack;
+        public ConsoleColor WindowBack1;
+        public ConsoleColor WindowBack2;
+
         public ConsoleColor StateInfo;
         public ConsoleColor StateWarn;
         public ConsoleColor StateFail;
@@ -35,6 +40,11 @@ namespace Nox.Cli
 
                 Prompt = ConsoleColor.Cyan,
                 Layer = ConsoleColor.Green,
+
+                WindowTitleText = ConsoleColor.Yellow,
+                WindowTitleBack = ConsoleColor.Blue,
+                WindowBack1 = ConsoleColor.Blue,
+                WindowBack2 = ConsoleColor.DarkCyan,
 
                 StateInfo = ConsoleColor.DarkMagenta,
                 StateWarn = ConsoleColor.DarkYellow,

@@ -11,9 +11,7 @@ using System.Threading;
 namespace Nox.Net.Com
 {
     public class NetServer<T>
-        : NetBase
-        where T : SocketListener
-
+        : NetServerBase where T : NetServerSocketListener
     {
         private Log4 Log = Log4.Create();
 
@@ -104,19 +102,19 @@ namespace Nox.Net.Com
                         // create using abstract method
                         var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket);
 
-                        SocketListener.PingMessage += (object sender, MessagePingEventArgs e) =>
+                        SocketListener.PingMessage += (object sender, PingEventArgs e) =>
                             OnPingMessage(sender, e);
-                        SocketListener.EchoMessage += (object sender, MessageEchoEventArgs e) =>
+                        SocketListener.EchoMessage += (object sender, EchoEventArgs e) =>
                             OnEchoMessage(sender, e);
-                        SocketListener.EhloMessage += (object sender, MessageEhloEventArgs e) =>
+                        SocketListener.EhloMessage += (object sender, EhloEventArgs e) =>
                             OnEhloMessage(sender, e);
-                        SocketListener.RplyMessage += (object sender, MessageRplyEventArgs e) =>
+                        SocketListener.RplyMessage += (object sender, RplyEventArgs e) =>
                             OnRplyMessage(sender, e);
-                        SocketListener.SigxMessage += (object sender, MessageSigxEventArgs e) =>
+                        SocketListener.SigxMessage += (object sender, SigxEventArgs e) =>
                             OnSigxMessage(sender, e);
-                        SocketListener.SigvMessage += (object sender, MessageSigvEventArgs e) =>
+                        SocketListener.SigvMessage += (object sender, SigvEventArgs e) =>
                             OnSigvMessage(sender, e);
-                        SocketListener.RespMessage += (object sender, MessageRespEventArgs e) =>
+                        SocketListener.RespMessage += (object sender, RespEventArgs e) =>
                             OnRespMessage(sender, e);
 
                         SocketListener.ObtainMessage += (object sender, ObtainMessageEventArgs e) =>
@@ -127,7 +125,9 @@ namespace Nox.Net.Com
                         SocketListener.CloseSocket += (object sender, CloseSocketEventArgs e) =>
                             OnCloseSocket(sender, e);
                         SocketListener.Message += (object sender, MessageEventArgs e) =>
-                            OnMessage(sender, e);                        
+                            OnMessage(sender, e);
+
+                        OnConnect(this, new ConnectEventArgs(SocketListener.Id));
 
                         lock (_ListOfListener)
                         {

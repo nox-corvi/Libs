@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class MessageSigxEventArgs : EventArgs
+    public class SigxEventArgs : EventArgs
     {
         public Guid SequenceId { get; }
 
@@ -14,7 +14,7 @@ namespace Nox.Net.Com.Message
 
         public bool Valid { get; set; } = false;
 
-        public MessageSigxEventArgs(Guid SequenceId, byte[] EncryptedHash)
+        public SigxEventArgs(Guid SequenceId, byte[] EncryptedHash)
             : base()
         {
             this.SequenceId = SequenceId;
