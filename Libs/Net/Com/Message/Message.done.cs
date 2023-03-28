@@ -6,15 +6,10 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class DoneEventArgs : EventArgs
-    {
-        public DoneEventArgs() { }
-    }
-
-    public class MessageDone
+    public class MessageTerminate
        : RawMessage<MessagePlainData>
     {
-        public MessageDone(uint Signature1)
+        public MessageTerminate(uint Signature1)
             : base(Signature1, (uint)MessageTypeEnum.DONE) { }
     }
 }

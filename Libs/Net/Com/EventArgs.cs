@@ -14,40 +14,38 @@ namespace Nox.Net.Com
             : base() =>
             this.Message = Message;
     }
-
-    public class BindEventArgs : EventArgs
-    {
-        public Guid Id { get; set; }
-        public BindEventArgs(Guid Id)
-            : base() => this.Id = Id;
-    }
-
-    public class ConnectEventArgs : EventArgs
-    {
-        public Guid Id { get; set; }
-        public ConnectEventArgs(Guid Id)
-            : base() => this.Id = Id;
-    }
-
-    public class CloseSocketEventArgs : MessageEventArgs
-    {
-        public CloseSocketEventArgs(string Message)
-            : base(Message) { }
-    }
-
-    public class ObtainPublicKeyEventArgs : CancelEventArgs
-    {
-        public byte[] publicKey { get; set; }
-
-        public ObtainPublicKeyEventArgs()
-            : base() { }
-    }
-
-    public class ObtainMessageEventArgs : CancelEventArgs
+    public class ObtainMessageEventArgs : EventArgs
     {
         public string Message { get; set; }
 
         public ObtainMessageEventArgs()
+            : base() =>
+            this.Message = Message;
+    }
+
+    public class ObtainCancelMessageEventArgs : CancelEventArgs
+    {
+        public string Message { get; set; }
+
+        public ObtainCancelMessageEventArgs()
+            : base() =>
+            this.Message = Message;
+    }
+
+    public class MessageCancelEventArgs : CancelEventArgs
+    {
+        public string Message { get; set; }
+
+        public MessageCancelEventArgs(string Message)
+            : base()
+            => this.Message = Message;
+    }
+
+    public class PublicKeyEventArgs : CancelEventArgs
+    {
+        public byte[] publicKey { get; set; }
+
+        public PublicKeyEventArgs()
             : base() { }
     }
 }

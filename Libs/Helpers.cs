@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Serialization;
@@ -106,8 +107,30 @@ namespace Nox
                 False?.Invoke();
         }
 
+        public static bool OnX(Action f)
+        {
+            try
+            {
+                f.Invoke();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public static bool[] OnX(params Action[] fs)
+        {
+            var Result = new bool[f.Length];
+            for (int i = 0; i < f.Length; i++)
+                Result[i] = OnX(f: f[i]);
+
+            return Result;
+        }
+
         public static T OnXFunc<T>(Func<T> f) => f.Invoke();
-        
 
 
         public static int OnXExec(params Action[] Methods)

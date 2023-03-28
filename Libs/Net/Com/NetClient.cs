@@ -67,7 +67,7 @@ namespace Nox.Net.Com
 
             _Listener.ObtainMessage += (object sender, ObtainMessageEventArgs e) =>
                 OnObtainMessage(sender, e);
-            _Listener.ObtainPublicKey += (object sender, ObtainPublicKeyEventArgs e) =>
+            _Listener.ObtainPublicKey += (object sender, PublicKeyEventArgs e) =>
                 OnObtainPublicKey(sender, e);
 
             _Listener.StartListener();

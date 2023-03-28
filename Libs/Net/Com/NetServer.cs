@@ -11,7 +11,7 @@ using System.Threading;
 namespace Nox.Net.Com
 {
     public class NetServer<T>
-        : NetServerBase where T : NetServerSocketListener
+        : NetBase where T : NetServerSocketListener
     {
         private Log4 Log = Log4.Create();
 
@@ -46,7 +46,7 @@ namespace Nox.Net.Com
             {
                 int r = 0;
                 for (int i = 0; i < _ListOfListener.Count; i++)
-                    r += _ListOfListener[i]?.ReceiveBufferLength ?? 0;
+                    r += _ListOfListener[i]?.SocketBufferLength ?? 0;
 
                 return r;
             }
@@ -57,7 +57,7 @@ namespace Nox.Net.Com
             {
                 int r = 0;
                 for (int i = 0; i < _ListOfListener.Count; i++)
-                    r += _ListOfListener[i]?.MessageCount ?? 0;
+                    r += _ListOfListener[i]?.MessageBufferLength ?? 0;
 
                 return r;
             }
@@ -119,7 +119,7 @@ namespace Nox.Net.Com
 
                         SocketListener.ObtainMessage += (object sender, ObtainMessageEventArgs e) =>
                             OnObtainMessage(sender, e);
-                        SocketListener.ObtainPublicKey += (object sender, ObtainPublicKeyEventArgs e) =>
+                        SocketListener.ObtainPublicKey += (object sender, PublicKeyEventArgs e) =>
                             OnObtainPublicKey(sender, e);
 
                         SocketListener.CloseSocket += (object sender, CloseSocketEventArgs e) =>
