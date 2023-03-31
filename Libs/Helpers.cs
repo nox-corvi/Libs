@@ -123,9 +123,9 @@ namespace Nox
 
         public static bool[] OnX(params Action[] fs)
         {
-            var Result = new bool[f.Length];
-            for (int i = 0; i < f.Length; i++)
-                Result[i] = OnX(f: f[i]);
+            var Result = new bool[fs.Length];
+            for (int i = 0; i < fs.Length; i++)
+                Result[i] = OnX(f: fs[i]);
 
             return Result;
         }

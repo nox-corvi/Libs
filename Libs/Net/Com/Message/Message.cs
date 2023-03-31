@@ -8,7 +8,7 @@ namespace Nox.Net.Com.Message
 {
     public enum MessageTypeEnum
     {
-        DONE = 0xFCA0,  // Done
+        TERM = 0xFCA0,  // Done
         PING = 0xFCA1,  // Ping
         ECHO = 0xFCA2,  // Reply to Ping
         FEAT = 0xFCA3
@@ -35,3 +35,4 @@ namespace Nox.Net.Com.Message
             : base(Signature2) { }
     }
 }
+ 

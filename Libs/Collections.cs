@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Nox
@@ -329,5 +331,206 @@ namespace Nox
             _last = -1;
             _index = 0;
         }
+    }
+
+    public class ThreadSafeDataList<T>
+        : ICloneable, IList<T>
+
+    {
+        private List<T> _List = new();
+        private Log4 _Log = null!;
+
+        #region IList
+        public T this[int index]
+        {
+            get
+            {
+                _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
+
+                lock (_List)
+                {
+                    return _List[index];
+                }
+            }
+            set
+            {
+                _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
+
+                lock (_List)
+                {
+                    _List[index] = value;
+                }
+
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+                lock (_List)
+                {
+                    return _List.Count;
+                }
+            }
+        }
+
+        public bool IsReadOnly
+        {
+            get
+            {
+                _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+                return false;
+            }
+        }
+
+        public void Add(T value)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
+
+            lock (_List)
+            {
+                _List.Add(value);
+            }
+        }
+
+        public void AddRange(IEnumerable<T> collection)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, collection);
+
+            lock (_List)
+            {
+                _List.AddRange(_List);
+            }
+        }
+
+        public void Insert(int index, T value)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index, value);
+
+            lock (_List)
+            {
+                _List.Insert(index, value);
+            }
+        }
+        public bool Remove(T item)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, item);
+
+            lock (_List)
+            {
+                return _List.Remove(item);
+            }
+        }
+
+        public void RemoveAt(int index)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
+
+            lock (_List)
+            {
+                _List.RemoveAt(index);
+            }
+        }
+
+        public void RemoveRange(int index, int count)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index, count);
+
+            lock (_List)
+            {
+                _List.RemoveRange(index, count);
+            }
+        }
+
+        public void Clear()
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+            lock (_List)
+            {
+                _List.Clear();
+            }
+        }
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, array, arrayIndex);
+
+            lock (_List)
+            {
+                _List.CopyTo(array, arrayIndex);
+            }
+        }
+
+        public void CopyTo(int index, T[] array, int arrayIndex, int count)
+        {
+            // Delegate rest of error checking to Array.Copy.
+            for (int i = 0; i < count; i++)
+                array[arrayIndex + i] = _List[index + i];
+        }
+
+        public bool Contains(T value)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
+
+            lock (_List)
+            {
+                return _List.Contains(value);
+            }
+        }
+        public IEnumerator GetEnumerator()
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+            lock (_List)
+            {
+                return _List.GetEnumerator();
+            }
+        }
+        public int IndexOf(T value)
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
+
+            lock (_List)
+            {
+                return _List.IndexOf(value);
+            }
+        }
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+            lock (_List)
+            {
+                return _List.GetEnumerator();
+            }
+        }
+        #endregion
+
+        #region ICloneable
+        public object Clone()
+        {
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+            var Result = new ThreadSafeDataList<T>();
+            lock (_List)
+            {
+                for (int i = 0; i < _List.Count(); i++)
+                    Result.Add(_List[i]);
+            }
+
+            return Result;
+        }
+        #endregion
+
+        public ThreadSafeDataList(Log4 Log)
+            : base()
+            => (_Log = Log)?.LogMethod(Log4.Log4LevelEnum.Trace);
+
+        public ThreadSafeDataList()
+            : base() { }
     }
 }

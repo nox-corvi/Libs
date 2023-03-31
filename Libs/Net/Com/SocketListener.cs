@@ -17,233 +17,24 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com
 {
-    public interface IRunner
-    {
-        void Initialize();
-        void Run();
-
-        void Done();
-    }
-
-    public class DataListLoopEventArgs<T>
+    public class LoopEventArgs<T>
         : CancelEventArgs
     {
-        public DataList<T> DataList { get; set; }
+        public ThreadSafeDataList<T> DataList { get; set; }
 
-        public DataListLoopEventArgs(DataList<T> dataList)
+        public LoopEventArgs(ThreadSafeDataList<T> dataList)
         {
             DataList = dataList;
         }
     }
 
-    public class DataList<T>
-        : ICloneable, IList<T>
-    //where T : struct
-    {
-        private System.Collections.Generic.List<T> _List = new();
-        private Log4 _Log = null!;
-
-        #region IList
-        public T this[int index]
-        {
-            get
-            {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
-
-                lock (_List)
-                {
-                    return _List[index];
-                }
-            }
-            set
-            {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
-
-                lock (_List)
-                {
-                    _List[index] = value;
-                }
-
-            }
-        }
-
-        public int Count
-        {
-            get
-            {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-                lock (_List)
-                {
-                    return _List.Count;
-                }
-            }
-        }
-
-        public bool IsReadOnly
-        {
-            get
-            {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-                return false;
-            }
-        }
-
-        public void Add(T value)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
-
-            lock (_List)
-            {
-                _List.Add(value);
-            }
-        }
-
-        public void AddRange(IEnumerable<T> collection)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, collection);
-
-            lock (_List)
-            {
-                _List.AddRange(_List);
-            }
-        }
-
-        public void Insert(int index, T value)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index, value);
-
-            lock (_List)
-            {
-                _List.Insert(index, value);
-            }
-        }
-        public bool Remove(T item)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, item);
-
-            lock (_List)
-            {
-                return _List.Remove(item);
-            }
-        }
-
-        public void RemoveAt(int index)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
-
-            lock (_List)
-            {
-                _List.RemoveAt(index);
-            }
-        }
-
-        public void RemoveRange(int index, int count)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index, count);
-
-            lock (_List)
-            {
-                _List.RemoveRange(index, count);
-            }
-        }
-
-        public void Clear()
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-            lock (_List)
-            {
-                _List.Clear();
-            }
-        }
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, array, arrayIndex);
-
-            lock (_List)
-            {
-                _List.CopyTo(array, arrayIndex);
-            }
-        }
-
-        public void CopyTo(int index, T[] array, int arrayIndex, int count)
-        {
-            // Delegate rest of error checking to Array.Copy.
-            for (int i = 0; i < count; i++)
-                array[arrayIndex + i] = _List[index + i];
-        }
-
-        public bool Contains(T value)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
-
-            lock (_List)
-            {
-                return _List.Contains(value);
-            }
-        }
-        public IEnumerator GetEnumerator()
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-            lock (_List)
-            {
-                return _List.GetEnumerator();
-            }
-        }
-        public int IndexOf(T value)
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
-
-            lock (_List)
-            {
-                return _List.IndexOf(value);
-            }
-        }
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-            lock (_List)
-            {
-                return _List.GetEnumerator();
-            }
-        }
-        #endregion
-
-        #region ICloneable
-        public object Clone()
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-            var Result = new DataList<T>();
-            lock (_List)
-            {
-                for (int i = 0; i < _List.Count(); i++)
-                    Result.Add(_List[i]);
-            }
-
-            return Result;
-        }
-        #endregion
-
-        public DataList(Log4 Log)
-            : base()
-            => (_Log = Log)?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-        public DataList()
-            : base() { }
-    }
-
     public class DataHandler<T>
         : IRunner, IList<T>, IDisposable
     {
-        public event EventHandler<DataListLoopEventArgs<T>> Loop;
+        public event EventHandler<LoopEventArgs<T>> Loop;
 
         private Log4 _Log = null!;
-        private DataList<T> _data = null!;
+        private ThreadSafeDataList<T> _data = null!;
 
         private BetterBackgroundWorker _worker = null;
 
@@ -316,7 +107,7 @@ namespace Nox.Net.Com
                 {
                     _Log?.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
 
-                    var e2 = new DataListLoopEventArgs<T>(_data);
+                    var e2 = new LoopEventArgs<T>(_data);
                     while (!(sender as BetterBackgroundWorker).CancellationPending)
                     {
                         try
@@ -397,7 +188,7 @@ namespace Nox.Net.Com
     }
 
     public abstract class SocketListener
-        : NetSocketBase, IRunner
+        : NetSocket, IRunner
     {
         private const int RECEIVE_BUFFER_SIZE = 32768;
         private const uint EOM = 0xFEFE;
@@ -410,6 +201,10 @@ namespace Nox.Net.Com
         protected DataHandler<byte[]> _MessageHandler;
 
         #region Properties 
+        public bool IsInitialized { get; private set; } = false;
+
+        public bool CanPurge { get; private set; } = false;
+
         public int Timeout { get; } = 0;
 
         public DateTime LastResponse { get; private set; } = DateTime.UtcNow;
@@ -424,21 +219,21 @@ namespace Nox.Net.Com
         #region Send Methods
         public void SendBuffer(byte[] byteBuffer)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
             _Socket.Send(byteBuffer);
         }
 
         public void SendDataBlock(DataBlock data)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, data);
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, data);
 
             SendBuffer(data.Write());
         }
         #endregion
 
-        public void ParseReceiveBuffer(DataList<byte> data)
+        public void ParseReceiveBuffer(ThreadSafeDataList<byte> data)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
 
             int Start = 0, End = -1;
             int Length = data.Count;
@@ -476,7 +271,7 @@ namespace Nox.Net.Com
                     }
                     catch (System.ArgumentException e)
                     {
-                        Log.LogException(e);
+                        _Log?.LogException(e);
 
                         return;
                     }
@@ -489,15 +284,15 @@ namespace Nox.Net.Com
 
         public void Initialize()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
 
             try
             {
                 // check, socket must not be null
-                if (_Socket != null)
+                if (!IsInitialized)
                 {
-                    _SocketHandler = new DataHandler<byte>(Log);
-                    _SocketHandler.Loop += (object sender, DataListLoopEventArgs<byte> e) =>
+                    _SocketHandler = new DataHandler<byte>(_Log);
+                    _SocketHandler.Loop += (object sender, LoopEventArgs<byte> e) =>
                     {
                         try
                         {
@@ -521,13 +316,13 @@ namespace Nox.Net.Com
                         }
                         catch (SocketException ex)
                         {
-                            Log.LogException(ex);
+                            _Log?.LogException(ex);
                             e.Cancel = true;
                         }
                     };
                     _SocketHandler.Run();
 
-                    _MessageHandler.Loop += (object sender, DataListLoopEventArgs<byte[]> e) =>
+                    _MessageHandler.Loop += (object sender, LoopEventArgs<byte[]> e) =>
                     {
                         if (_MessageHandler.Count > 0)
                         {
@@ -539,11 +334,13 @@ namespace Nox.Net.Com
                                 ParseMessage(Message);
                         }
                     };
+
+                    IsInitialized = true;
                 }
             }
             catch (Exception e)
             {
-                Log.LogException(e);
+                _Log?.LogException(e);
                 _Socket = null;
             }
         }
@@ -556,13 +353,22 @@ namespace Nox.Net.Com
 
         public void Done()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
 
-            // stop listener - no more messages
-            _SocketHandler.Done();
-            _Socket?.Close();
+            try
+            {
+                // stop listener - no more messages
+                _SocketHandler.Done();
+                _Socket?.Close();
 
-            _MessageHandler.Done();
+                _MessageHandler.Done();
+
+                CanPurge = true; 
+            }
+            finally
+            {
+                IsInitialized = false;
+            }
         }
 
         public abstract bool ParseMessage(byte[] Message);
@@ -619,7 +425,7 @@ namespace Nox.Net.Com
             return true;
         }
 
-        private bool HandleTerminate(byte[] Message)
+        private bool HandleTerminateMessage(byte[] Message)
         {
             _Log?.LogMethod(Log4.Log4LevelEnum.Trace, Message);
 
@@ -680,26 +486,11 @@ namespace Nox.Net.Com
                     case (uint)MessageTypeEnum.ECHO:
                         return HandleEchoMessage(Message);
 
-                    case (uint)SecureMessageTypeEnum.EHLO:
-                        return HandleEhloMessage(Message);
-                    case (uint)SecureMessageTypeEnum.RPLY:
-                        return HandleRplyMessage(Message);
+                    //case (uint)SecureMessageTypeEnum.RESP:
+                    //    return HandleRespMessage(Message);
 
-                    case (uint)SecureMessageTypeEnum.SIGX:
-                        return HandleSigxMessage(Message);
-                    case (uint)SecureMessageTypeEnum.SIGV:
-                        return HandleSigvMessage(Message);
-
-                    case (uint)SecureMessageTypeEnum.KEYX:
-                        return HandleKeyxMessage(Message);
-                    case (uint)SecureMessageTypeEnum.KEYV:
-                        return HandleKeyvMessage(Message);
-
-                    case (uint)SecureMessageTypeEnum.RESP:
-                        return HandleRespMessage(Message);
-
-                    case (uint)MessageTypeEnum.DONE:
-                        return HandleDoneMessage(Message);
+                    case (uint)MessageTypeEnum.TERM:
+                        return HandleTerminateMessage(Message);
                     default:
                         // unknown message type
                         return false;
@@ -707,7 +498,7 @@ namespace Nox.Net.Com
             }
             catch (Exception e)
             {
-                Log.LogException(e);
+                _Log?.LogException(e);
                 return false;
             }
         }
@@ -721,7 +512,7 @@ namespace Nox.Net.Com
     {
         private Guid _SequenceId = Guid.Empty;
 
-        
+
         #region Handle Secure Message Methods
         private bool HandleEhloMessage(byte[] Message)
         {
@@ -738,10 +529,10 @@ namespace Nox.Net.Com
 
                 if (!p.Cancel && p.publicKey != null)
                 {
-                    var m = new ObtainCancelMessageEventArgs();
+                    var m = new ObtainMessageEventArgs();
                     OnObtainMessage(this, m);
 
-                    if (!m.Cancel && m.Message != null)
+                    if (m.Message != null)
                     {
                         // ehlo done, fix sequenceid, notify 
                         _SequenceId = ehlo.DataBlock.SequenceId;
@@ -805,8 +596,8 @@ namespace Nox.Net.Com
             }
             else
             {
+                SendTerminateMessage();
                 Task.Run(() => Done());
-                SendDoneMessage();
             }
             // if ehlo message proceeded, ignore cancel, send always true
             return true;
@@ -829,9 +620,9 @@ namespace Nox.Net.Com
                 }
             }
             else
-            {
+            {7
+                SendTerminateMessage();
                 Task.Run(() => Done());
-                SendDoneMessage();
             }
             // if ehlo message proceeded, ignore cancel, send always true
             return true;
@@ -862,13 +653,11 @@ namespace Nox.Net.Com
             var RESP = new MessageResp(Signature1);
             RESP.Read(Message);
 
-            OnRespMessage(this, new RespEventArgs(_SequenceId, RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
+            OnRespMessage(this, new RespMessageEventArgs(_SequenceId, RESP.DataBlock.Response1, RESP.DataBlock.Response2, RESP.DataBlock.Response3));
 
             return true;
         }
         #endregion
-
-        
 
         #region Secure Send Methods
         public Guid SendEhloMessage(byte[] PublicKey, string Message)
@@ -961,7 +750,6 @@ namespace Nox.Net.Com
         }
         #endregion
 
-
         public override bool ParseMessage(byte[] Message)
         {
             _Log?.LogMethod(Log4.Log4LevelEnum.Trace, Message);
@@ -982,11 +770,11 @@ namespace Nox.Net.Com
                         case (uint)SecureMessageTypeEnum.KEYV:
                             return HandleKeyvMessage(Message);
 
-                        case (uint)SecureMessageTypeEnum.RESP:
-                            return HandleRespMessage(Message);
+                        //case (uint)SecureMessageTypeEnum.RESP:
+                        //    return HandleRespMessage(Message);
 
-                        case (uint)MessageTypeEnum.DONE:
-                            return HandleTerminateMessage(Message);
+                        //case (uint)MessageTypeEnum.DONE:
+                        //    return HandleTerminateMessage(Message);
                         default:
                             // unknown message type
                             return false;
@@ -1002,8 +790,13 @@ namespace Nox.Net.Com
             return true;
         }
 
-        
-        public GenericSocketListener(uint Signature1, Socket socket, Log4 Log = null!, int Timeout = 0)
+        public SecureSocketListener(uint Signature1, Socket socket, Log4 Log, int Timeout)
             : base(Signature1, socket, Log, Timeout) { }
+
+        public SecureSocketListener(uint Signature1, Socket socket, Log4 Log)
+            : base(Signature1, socket, Log, 30) { }
+
+        public SecureSocketListener(uint Signature1, Socket socket)
+            : base(Signature1, socket, null, 30) { }
     }
 }

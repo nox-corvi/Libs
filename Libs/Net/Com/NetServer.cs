@@ -11,15 +11,12 @@ using System.Threading;
 namespace Nox.Net.Com
 {
     public class NetServer<T>
-        : NetBase where T : NetServerSocketListener
+        : NetBase, INetServer where T : SocketListener
     {
         private Log4 Log = Log4.Create();
 
-        private string _ServerIP = "";
-        private int _ServerPort = -1;
-
         private TcpListener _Listener = null;
-        private List<SocketListener> _ListOfListener;
+        private List<SocketListener> _ListOfListener = new List<SocketListener>();
 
         private BetterBackgroundWorker _Server;
         private int _ServerWaitTime = 10;
@@ -28,10 +25,8 @@ namespace Nox.Net.Com
         private int _PurgeWaitTime = 100;
 
         #region Properties
-        public string ServerIP => _ServerIP;
-        public int ServerPort => _ServerPort;
-
-        public Guid Id { get; } = Guid.NewGuid();
+        public string ServerIP { get; set; } = "";
+        public int ServerPort { get; set; } = -1;
 
         public string SocketMessage { get; set; }
 
@@ -64,16 +59,37 @@ namespace Nox.Net.Com
         }
         #endregion
 
+        #region Events
+        public event EventHandler<MessageEventArgs> BindServer;
+        public event EventHandler<RplyEventArgs> RplyMessage;
+        public event EventHandler<SigvEventArgs> SigvMessage;
+        public event EventHandler<KeyvEventArgs> KeyvMessage;
+        #endregion
+
+        #region OnRaiseEvent Methods
+        public void OnBindServer(object sender, MessageEventArgs e)
+            => BindServer?.Invoke(sender, e);
+
+        public void OnRplyMessage(object sender, RplyEventArgs e)
+            => RplyMessage?.Invoke(sender, e);
+
+        public void OnSigvMessage(object sender, SigvEventArgs e)
+            => SigvMessage?.Invoke(sender, e);
+
+        public void OnKeyvMessage(object sender, KeyvEventArgs e)
+            => KeyvMessage?.Invoke(sender, e);
+        #endregion
+
         public virtual void Bind(string IP, int Port)
         {
             Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
 
             StopServer();
 
-            _ServerIP = IP; _ServerPort = Port;
+            ServerIP = IP; ServerPort = Port;
             _Listener = new TcpListener(new IPEndPoint(IPAddress.Parse(IP), Port));
 
-            _ListOfListener = new List<SocketListener>();
+            //_ListOfListener = new List<SocketListener>();
             _Listener.Start();
 
             _Server = new BetterBackgroundWorker();
@@ -106,35 +122,37 @@ namespace Nox.Net.Com
                             OnPingMessage(sender, e);
                         SocketListener.EchoMessage += (object sender, EchoEventArgs e) =>
                             OnEchoMessage(sender, e);
-                        SocketListener.EhloMessage += (object sender, EhloEventArgs e) =>
-                            OnEhloMessage(sender, e);
+                        //SocketListener.EhloMessage += (object sender, EhloEventArgs e) =>
+                        //    OnEhloMessage(sender, e);
                         SocketListener.RplyMessage += (object sender, RplyEventArgs e) =>
                             OnRplyMessage(sender, e);
-                        SocketListener.SigxMessage += (object sender, SigxEventArgs e) =>
-                            OnSigxMessage(sender, e);
+                        //SocketListener.SigxMessage += (object sender, SigxEventArgs e) =>
+                        //    OnSigxMessage(sender, e);
                         SocketListener.SigvMessage += (object sender, SigvEventArgs e) =>
                             OnSigvMessage(sender, e);
-                        SocketListener.RespMessage += (object sender, RespEventArgs e) =>
-                            OnRespMessage(sender, e);
+                        //SocketListener.RespMessage += (object sender, RespEventArgs e) =>
+                        //    OnRespMessage(sender, e);
 
                         SocketListener.ObtainMessage += (object sender, ObtainMessageEventArgs e) =>
                             OnObtainMessage(sender, e);
-                        SocketListener.ObtainPublicKey += (object sender, PublicKeyEventArgs e) =>
-                            OnObtainPublicKey(sender, e);
 
-                        SocketListener.CloseSocket += (object sender, CloseSocketEventArgs e) =>
+                        SocketListener.ObtainPublicKey += (object sender, PublicKeyEventArgs e) =>
+                        {
+                        };
+
+                        SocketListener.CloseSocket += (object sender, MessageEventArgs e) =>
                             OnCloseSocket(sender, e);
                         SocketListener.Message += (object sender, MessageEventArgs e) =>
                             OnMessage(sender, e);
 
-                        OnConnect(this, new ConnectEventArgs(SocketListener.Id));
+                        //OnConnectClient(this, new ConnectEventArgs(SocketListener.Id));
 
                         lock (_ListOfListener)
                         {
                             _ListOfListener.Add(SocketListener);
                         }
 
-                        SocketListener.StartListener();
+                        SocketListener.Run();
                     }
                     else
                         Thread.Sleep(_ServerWaitTime);
@@ -158,9 +176,9 @@ namespace Nox.Net.Com
                 lock (_ListOfListener)
                 {
                     for (int i = _ListOfListener.Count - 1; i >= 0; i--)
-                        if (_ListOfListener[i]?.Remove ?? false)
+                        if (_ListOfListener[i]?.CanPurge ?? false)
                         {
-                            _ListOfListener[i].StopListener();
+                            _ListOfListener[i].Done();
                             _ListOfListener.RemoveAt(i);
                         }
                 }
@@ -200,11 +218,11 @@ namespace Nox.Net.Com
             if (_ListOfListener != null)
             {
                 for (int i = 0; i < _ListOfListener.Count; i++)
-                    _ListOfListener[i].StopListener();
+                    _ListOfListener[i].Done();
 
                 while (_ListOfListener.Count > 0)
                     _ListOfListener.RemoveAt(0);
-                _ListOfListener = null;
+                //_ListOfListener = null;
             }
         }
 
@@ -214,7 +232,7 @@ namespace Nox.Net.Com
 
             try
             {
-                if (_ListOfListener[Index].IsConnected)
+                if (_ListOfListener[Index].IsInitialized)
                 {
                     _ListOfListener[Index].SendBuffer(byteBuffer);
                     return true;
@@ -235,7 +253,7 @@ namespace Nox.Net.Com
             int Result = 0;
 
             for (int i = 0; i < _ListOfListener.Count; i++)
-                if (_ListOfListener[i].IsConnected)
+                if (_ListOfListener[i].IsInitialized)
                     if (SendBufferTo(i, byteBuffer))
                         Result++;
 
@@ -261,12 +279,12 @@ namespace Nox.Net.Com
             StopServer();
         }
 
-            public NetServer(uint Signature1)
-            : base(Signature1) { }
+        public NetServer(uint Signature1)
+        : base(Signature1) { }
 
         ~NetServer()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace); 
+            Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopServer();
         }
     }

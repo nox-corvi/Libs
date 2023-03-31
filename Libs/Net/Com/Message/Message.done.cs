@@ -10,6 +10,6 @@ namespace Nox.Net.Com.Message
        : RawMessage<MessagePlainData>
     {
         public MessageTerminate(uint Signature1)
-            : base(Signature1, (uint)MessageTypeEnum.DONE) { }
+            : base(Signature1, (uint)MessageTypeEnum.TERM) { }
     }
 }
