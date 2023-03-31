@@ -391,8 +391,33 @@ namespace Nox.Net.Com
     }
 
     public class GenericSocketListener
-        : SocketListener
+        : SocketListener, INetGenericSocket
     {
+        #region Events
+        public event EventHandler<PingMessageEventArgs> PingMessage;
+        public event EventHandler<EchoMessageEventArgs> EchoMessage;
+        public event EventHandler<RespMessageEventArgs> RespMessage;
+        public event EventHandler<ObtainMessageEventArgs> ObtainMessage;
+        public event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
+        #endregion
+
+        #region OnRaiseEvent Methods
+        public void OnPingMessage(object sender, PingMessageEventArgs e)
+           => PingMessage?.Invoke(sender, e);
+
+        public void OnEchoMessage(object sender, EchoMessageEventArgs e)
+            => EchoMessage?.Invoke(sender, e);
+
+        public void OnRespMessage(object sender, RespMessageEventArgs e)
+            => RespMessage?.Invoke(sender, e);
+
+        public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)
+            => ObtainCancelMessage?.Invoke(sender, e);
+
+        public void OnObtainMessage(object sender, ObtainMessageEventArgs e)
+            => ObtainMessage?.Invoke(sender, e);
+        #endregion
+
         #region Handle Message Methods
         private bool HandlePingMessage(byte[] Message)
         {
@@ -401,7 +426,7 @@ namespace Nox.Net.Com
             var ping = new MessagePing(Signature1);
             ping.Read(Message);
 
-            OnPingMessage(this, new PingEventArgs(ping.DataBlock.Id, ping.DataBlock.Timestamp));
+            OnPingMessage(this, new PingMessageEventArgs(ping.DataBlock.Id, ping.DataBlock.Timestamp));
 
             // make a ping response
             var PingResponse = new MessageEcho(Signature1);
@@ -420,7 +445,7 @@ namespace Nox.Net.Com
             echo.Read(Message);
 
             // nothing more to do
-            OnEchoMessage(this, new EchoEventArgs(echo.DataBlock.PingId, echo.DataBlock.PingTime, echo.DataBlock.Timestamp));
+            OnEchoMessage(this, new EchoMessageEventArgs(echo.DataBlock.PingId, echo.DataBlock.PingTime, echo.DataBlock.Timestamp));
 
             return true;
         }
@@ -508,10 +533,45 @@ namespace Nox.Net.Com
     }
 
     public abstract class SecureSocketListener
-        : GenericSocketListener
+        : GenericSocketListener, INetSecureSocket
     {
         private Guid _SequenceId = Guid.Empty;
 
+        #region Events
+        public event EventHandler<EhloEventArgs> EhloMessage;
+        public event EventHandler<RplyEventArgs> RplyMessage;
+
+        public event EventHandler<SigxEventArgs> SigxMessage;
+        public event EventHandler<SigvEventArgs> SigvMessage;
+
+        public event EventHandler<KeyxEventArgs> KeyxMessage;
+        public event EventHandler<KeyvEventArgs> KeyvMessage;
+
+        public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
+        #endregion
+
+        #region OnRaiseEvent Methods
+        public void OnEhloMessage(object sender, EhloEventArgs e)
+            => EhloMessage?.Invoke(sender, e);
+
+        public void OnRplyMessage(object sender, RplyEventArgs e)
+            => RplyMessage?.Invoke(sender, e);
+
+        public void OnSigvMessage(object sender, SigvEventArgs e)
+            => SigvMessage?.Invoke(sender, e);
+
+        public void OnSigxMessage(object sender, SigxEventArgs e)
+            => SigxMessage?.Invoke(sender, e);
+
+        public void OnKeyvMessage(object sender, KeyvEventArgs e)
+            => KeyvMessage?.Invoke(sender, e);
+
+        public void OnKeyxMessage(object sender, KeyxEventArgs e)
+            => KeyxMessage?.Invoke(sender, e);
+
+        public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
+            => ObtainPublicKey?.Invoke(sender, e);
+        #endregion
 
         #region Handle Secure Message Methods
         private bool HandleEhloMessage(byte[] Message)
@@ -620,7 +680,7 @@ namespace Nox.Net.Com
                 }
             }
             else
-            {7
+            {
                 SendTerminateMessage();
                 Task.Run(() => Done());
             }

@@ -7,19 +7,19 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class PingEventArgs: EventArgs
+    public class PingMessageEventArgs: EventArgs
     {
         public Guid Id { get; }
         public DateTime Timestamp { get; }
 
-        public PingEventArgs(Guid Id, DateTime Timestamp)
+        public PingMessageEventArgs(Guid Id, DateTime Timestamp)
         {
             this.Id = Id;
             this.Timestamp = Timestamp;
         }
     }
 
-    public class MessagePingData
+    public class PingMessageData
         : DataBlock
     {
         private Guid _Id = Guid.NewGuid();
@@ -47,12 +47,12 @@ namespace Nox.Net.Com.Message
             return Result.ToArray();
         }
 
-        public MessagePingData(uint Signature2)
+        public PingMessageData(uint Signature2)
             : base(Signature2) { }
     }
 
     public class MessagePing
-       : RawMessage<MessagePingData>
+       : RawMessage<PingMessageData>
     {
         public MessagePing(uint Signature1)
             : base(Signature1, (uint)MessageTypeEnum.PING) { }

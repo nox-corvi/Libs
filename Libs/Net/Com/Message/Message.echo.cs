@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com.Message
 {
-    public class EchoEventArgs : EventArgs
+    public class EchoMessageEventArgs : EventArgs
     {
         public Guid PingId { get; }
         public DateTime PingTime { get; }
         public DateTime Timestamp { get; }
 
-        public EchoEventArgs(Guid PingId, DateTime PingTime, DateTime Timestamp)
+        public EchoMessageEventArgs(Guid PingId, DateTime PingTime, DateTime Timestamp)
         {
             this.PingId = PingId;
             this.PingTime = PingTime;

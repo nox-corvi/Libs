@@ -14,8 +14,19 @@ namespace Nox.Net.Com
             : base() =>
             this.Message = Message;
     }
+    public class MessageCancelEventArgs : CancelEventArgs
+    {
+        public string Message { get; set; }
+
+        public MessageCancelEventArgs(string Message)
+            : base()
+            => this.Message = Message;
+    }
+
     public class ObtainMessageEventArgs : EventArgs
     {
+        public uint Identifier { get; set; }
+
         public string Message { get; set; }
 
         public ObtainMessageEventArgs()
@@ -25,20 +36,12 @@ namespace Nox.Net.Com
 
     public class ObtainCancelMessageEventArgs : CancelEventArgs
     {
+        public uint Identifier { get; set; }
         public string Message { get; set; }
 
         public ObtainCancelMessageEventArgs()
             : base() =>
             this.Message = Message;
-    }
-
-    public class MessageCancelEventArgs : CancelEventArgs
-    {
-        public string Message { get; set; }
-
-        public MessageCancelEventArgs(string Message)
-            : base()
-            => this.Message = Message;
     }
 
     public class PublicKeyEventArgs : CancelEventArgs

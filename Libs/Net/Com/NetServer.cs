@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace Nox.Net.Com
 {
-    public class NetServer<T>
+    public abstract class NetServer<T>
         : NetBase, INetServer where T : SocketListener
     {
         private Log4 Log = Log4.Create();
@@ -60,25 +60,15 @@ namespace Nox.Net.Com
         #endregion
 
         #region Events
-        public event EventHandler<MessageEventArgs> BindServer;
-        public event EventHandler<RplyEventArgs> RplyMessage;
-        public event EventHandler<SigvEventArgs> SigvMessage;
-        public event EventHandler<KeyvEventArgs> KeyvMessage;
+        public event EventHandler<MessageEventArgs> BindSocket;
         #endregion
 
         #region OnRaiseEvent Methods
-        public void OnBindServer(object sender, MessageEventArgs e)
-            => BindServer?.Invoke(sender, e);
-
-        public void OnRplyMessage(object sender, RplyEventArgs e)
-            => RplyMessage?.Invoke(sender, e);
-
-        public void OnSigvMessage(object sender, SigvEventArgs e)
-            => SigvMessage?.Invoke(sender, e);
-
-        public void OnKeyvMessage(object sender, KeyvEventArgs e)
-            => KeyvMessage?.Invoke(sender, e);
+        public void OnBindSocket(object sender, MessageEventArgs e)
+            => BindSocket?.Invoke(sender, e);
         #endregion
+
+        protected abstract void BindEvents(T SocketListener);
 
         public virtual void Bind(string IP, int Port)
         {
@@ -101,6 +91,8 @@ namespace Nox.Net.Com
             _Purge.Run();
         }
 
+
+
         private void Server_DoWork(object sender, DoWorkEventArgs e)
         {
             Log.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
@@ -118,35 +110,7 @@ namespace Nox.Net.Com
                         // create using abstract method
                         var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket);
 
-                        SocketListener.PingMessage += (object sender, PingEventArgs e) =>
-                            OnPingMessage(sender, e);
-                        SocketListener.EchoMessage += (object sender, EchoEventArgs e) =>
-                            OnEchoMessage(sender, e);
-                        //SocketListener.EhloMessage += (object sender, EhloEventArgs e) =>
-                        //    OnEhloMessage(sender, e);
-                        SocketListener.RplyMessage += (object sender, RplyEventArgs e) =>
-                            OnRplyMessage(sender, e);
-                        //SocketListener.SigxMessage += (object sender, SigxEventArgs e) =>
-                        //    OnSigxMessage(sender, e);
-                        SocketListener.SigvMessage += (object sender, SigvEventArgs e) =>
-                            OnSigvMessage(sender, e);
-                        //SocketListener.RespMessage += (object sender, RespEventArgs e) =>
-                        //    OnRespMessage(sender, e);
-
-                        SocketListener.ObtainMessage += (object sender, ObtainMessageEventArgs e) =>
-                            OnObtainMessage(sender, e);
-
-                        SocketListener.ObtainPublicKey += (object sender, PublicKeyEventArgs e) =>
-                        {
-                        };
-
-                        SocketListener.CloseSocket += (object sender, MessageEventArgs e) =>
-                            OnCloseSocket(sender, e);
-                        SocketListener.Message += (object sender, MessageEventArgs e) =>
-                            OnMessage(sender, e);
-
-                        //OnConnectClient(this, new ConnectEventArgs(SocketListener.Id));
-
+                        BindEvents(SocketListener);
                         lock (_ListOfListener)
                         {
                             _ListOfListener.Add(SocketListener);
@@ -287,5 +251,86 @@ namespace Nox.Net.Com
             Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopServer();
         }
+    }
+
+    public class NetGenericServer<T>
+         : NetServer<T>, INetGenericMessages where T : GenericSocketListener
+    {
+        #region Events
+        public event EventHandler<PingMessageEventArgs> PingMessage;
+        public event EventHandler<EchoMessageEventArgs> EchoMessage;
+        public event EventHandler<RespMessageEventArgs> RespMessage;
+        public event EventHandler<ObtainMessageEventArgs> ObtainMessage;
+        public event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
+        #endregion
+
+        #region OnRaiseEvent Methods
+        public void OnPingMessage(object sender, PingMessageEventArgs e)
+            => PingMessage?.Invoke(sender, e);
+
+        public void OnEchoMessage(object sender, EchoMessageEventArgs e)
+            => EchoMessage?.Invoke(sender, e);  
+
+        public void OnRespMessage(object sender, RespMessageEventArgs e)
+            => RespMessage?.Invoke(sender, e);
+
+        public void OnObtainMessage(object sender, ObtainMessageEventArgs e)
+            => ObtainMessage?.Invoke(sender, e);    
+
+        public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)
+            => ObtainCancelMessage?.Invoke(sender, e);  
+        #endregion
+
+        protected override void BindEvents(T SocketListener)
+        {
+            SocketListener.PingMessage += OnPingMessage;
+            SocketListener.EchoMessage += OnEchoMessage;
+            SocketListener.RespMessage += OnRespMessage;
+            SocketListener.ObtainMessage += OnObtainMessage;
+            SocketListener.ObtainCancelMessage += OnObtainCancelMessage;
+        }
+
+        public NetGenericServer(uint Signature1)
+            : base(Signature1) { }
+    }
+
+
+    public class NetSecureServer<T>
+        : NetGenericServer<T>, INetSecureServerMessages where T : SecureSocketListener    
+    {
+
+
+        #region Events
+        public event EventHandler<RplyEventArgs> RplyMessage;
+        public event EventHandler<SigvEventArgs> SigvMessage;
+        public event EventHandler<KeyvEventArgs> KeyvMessage;
+        public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
+        #endregion
+
+        #region OnRaiseEvent Methods
+        public void OnRplyMessage(object sender, RplyEventArgs e)
+            => RplyMessage?.Invoke(sender, e);
+
+        public void OnSigvMessage(object sender, SigvEventArgs e)
+            => SigvMessage?.Invoke(sender, e);
+        public void OnKeyvMessage(object sender, KeyvEventArgs e)
+            => KeyvMessage?.Invoke(sender, e);
+
+        public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
+            =>ObtainPublicKey?.Invoke(sender, e);
+        #endregion
+
+        protected override void BindEvents(T SocketListener)
+        {
+            base.BindEvents(SocketListener);
+
+            SocketListener.RplyMessage += OnRplyMessage;
+            SocketListener.SigvMessage += OnSigvMessage;
+            SocketListener.KeyvMessage += OnKeyvMessage;
+            SocketListener.ObtainPublicKey += OnObtainPublicKey;
+        }
+
+        public NetSecureServer(uint Signature1)
+           : base(Signature1) { }
     }
 }
