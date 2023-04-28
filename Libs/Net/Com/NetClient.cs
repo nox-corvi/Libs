@@ -13,7 +13,7 @@ namespace Nox.Net.Com
     {
         private Log4 Log = Log4.Create();
 
-        private INetSocket _Listener;
+        private T _Listener;
         private TcpClient _Client;
 
         private string _ServerIP = "";
@@ -50,22 +50,27 @@ namespace Nox.Net.Com
             _Client.Connect(new IPEndPoint(IPAddress.Parse(IP), Port));
 
             // create instance
-            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client);
-            (_Listener as T)?.Initialize();
+            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client, Log, 0);
 
+            _Listener.Terminate += OnTerminate;
+            _Listener.CloseSocket += OnCloseSocket;
+            _Listener.Message += OnMessage;
+            _Listener.Initialize();
+         
             BindEvents(_Listener as T);
-            
+         
+            _Listener.Run();
+
             _ServerIP = IP;
         }
 
         public void StopClient()
         {
             Log.LogMethod(Log4.Log4LevelEnum.Trace);
-            if (_Listener != null)
-            {
-                (_Listener as T).Done(); ;
-                _Listener = null;
-            }
+            
+            (_Listener as T)?.Done(); ;
+            _Listener = null;
+            
             _Client?.Dispose();
 
             _ServerIP = "";
@@ -104,6 +109,10 @@ namespace Nox.Net.Com
             StopClient();
         }
 
+        public NetClient(uint Signature1, Log4 Log)
+            : this(Signature1)
+            => this.Log = Log;
+
         public NetClient(uint Signature1)
             : base(Signature1) { }
 
@@ -120,29 +129,15 @@ namespace Nox.Net.Com
     {
         #region Events
         public event EventHandler<PingMessageEventArgs> PingMessage;
-        
         public event EventHandler<EchoMessageEventArgs> EchoMessage;
-
-        /// <summary>
-        /// raised if a message respone occurs
-        /// </summary>
         public event EventHandler<RespMessageEventArgs> RespMessage;
-
-        /// <summary>
-        /// raised if a message will obtained
-        /// </summary>
         public event EventHandler<ObtainMessageEventArgs> ObtainMessage;
-
-        /// <summary>
-        /// raised if a message will obtained. event can be canceled
-        /// </summary>
         public event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
         #endregion
 
         #region OnRaiseEvent Methods
-        public void OnPingMessage(object sender, PingMessageEventArgs e) 
+        public void OnPingMessage(object sender, PingMessageEventArgs e)
             => PingMessage?.Invoke(sender, e);
-
 
         public void OnEchoMessage(object sender, EchoMessageEventArgs e)
             => EchoMessage?.Invoke(sender, e);
@@ -150,10 +145,10 @@ namespace Nox.Net.Com
         public void OnRespMessage(object sender, RespMessageEventArgs e)
             => RespMessage?.Invoke(sender, e);
 
-        public void OnObtainMessage(object sender, ObtainMessageEventArgs e) 
+        public void OnObtainMessage(object sender, ObtainMessageEventArgs e)
             => ObtainMessage?.Invoke(sender, e);
 
-        public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)   
+        public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)
             => ObtainCancelMessage?.Invoke(sender, e);
         #endregion
 
@@ -166,6 +161,8 @@ namespace Nox.Net.Com
             SocketListener.ObtainCancelMessage += OnObtainCancelMessage;
         }
 
+        public NetGenericClient(uint Signature1, Log4 Log)
+            : base(Signature1, Log) { }
         public NetGenericClient(uint Signature1)
             : base(Signature1) { }
 
@@ -175,22 +172,20 @@ namespace Nox.Net.Com
         : NetGenericClient<T>, INetClient, INetSecureClientMessages where T : SecureSocketListener, IRunner
     {
         #region Events
-        public event EventHandler<EhloEventArgs> EhloMessage;
-        public event EventHandler<KeyxEventArgs> KeyxMessage;
-        public event EventHandler<SigxEventArgs> SigxMessage;
-
+        public event EventHandler<RplyEventArgs> RplyMessage;
+        public event EventHandler<SigvEventArgs> SigvMessage;
+        public event EventHandler<KeyvEventArgs> KeyvMessage;
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
 
         #region OnRaiseEvent Methods
-        public void OnEhloMessage(object sender, EhloEventArgs e)
-            => EhloMessage?.Invoke(sender, e);
+        public void OnRplyMessage(object sender, RplyEventArgs e)
+            => RplyMessage?.Invoke(sender, e);
 
-        public void OnSigxMessage(object sender, SigxEventArgs e)
-            => SigxMessage?.Invoke(sender, e);
-
-        public void OnKeyxMessage(object sender, KeyxEventArgs e)
-            => KeyxMessage?.Invoke(sender, e);
+        public void OnSigvMessage(object sender, SigvEventArgs e)
+            => SigvMessage?.Invoke(sender, e);
+        public void OnKeyvMessage(object sender, KeyvEventArgs e)
+            => KeyvMessage?.Invoke(sender, e);
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
@@ -200,11 +195,15 @@ namespace Nox.Net.Com
         {
             base.BindEvents(SocketListener);
 
-            SocketListener.EhloMessage += OnEhloMessage;
-            SocketListener.SigxMessage += OnSigxMessage;
-            SocketListener.KeyxMessage += OnKeyxMessage;
+            SocketListener.RplyMessage += OnRplyMessage;
+            SocketListener.SigvMessage += OnSigvMessage;
+            SocketListener.KeyvMessage += OnKeyvMessage;
+
             SocketListener.ObtainPublicKey  += OnObtainPublicKey;
         }
+
+        public NetSecureClient(uint Signature1, Log4 Log)
+            : base(Signature1, Log) { }
 
         public NetSecureClient(uint Signature1)
             : base(Signature1) { }

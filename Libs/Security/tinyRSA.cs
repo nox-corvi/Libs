@@ -14,20 +14,20 @@ namespace Nox.Security
     {
         private const int KEY_SIZE = 4096;
 
-        private RSA _rsa;
         private RSAParameters _parameters = new RSAParameters();
 
+        protected RSA _rsa;
+
         #region Properties
+
         public RSASignaturePadding SigningPadding { get; set; } = RSASignaturePadding.Pkcs1;
-        public RSAEncryptionPadding EncryptionPadding { get; set; } = RSAEncryptionPadding.OaepSHA512;
+        public RSAEncryptionPadding EncryptionPadding { get; set; } = RSAEncryptionPadding.Pkcs1;
 
         public HashAlgorithmName UsedHashAlgorithm { get; set; } = HashAlgorithmName.SHA384;
-
-        
         #endregion
 
         //TODO:Optimize
-        private int FindBestMatchKeySize(int KeySize)
+        protected int FindBestMatchKeySize(int KeySize)
         {
             var keySizes = _rsa.LegalKeySizes;
             int bestMatch = int.MinValue;
@@ -107,7 +107,13 @@ namespace Nox.Security
             return readBytes;
         }
 
+        public int ImportPrivateKey(byte[] bytes)
+        {
+            _rsa.ImportRSAPrivateKey(bytes, out int readBytes);
+            return readBytes;
+        }
+
         public void Dispose() =>
-            _rsa.Clear();
+           _rsa.Clear();
     }
 }

@@ -7,8 +7,13 @@ using System.Threading.Tasks;
 
 namespace Nox.Hosting
 {
-    public interface IReader
+    public interface IAsyncReader
     {
         Task Read(CancellationToken stoppingToken);
+    }
+
+    public interface IReader
+    {
+        void Read();
     }
 }

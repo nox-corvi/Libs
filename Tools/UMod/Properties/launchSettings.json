@@ -2,7 +2,7 @@
   "profiles": {
     "UMod": {
       "commandName": "Project",
-      "commandLineArgs": "create user blub Blub --setpass:Boie1234"
+      "commandLineArgs": "--help"
     }
   }
 }

@@ -78,8 +78,6 @@ namespace Nox.Net.Com
 
             ServerIP = IP; ServerPort = Port;
             _Listener = new TcpListener(new IPEndPoint(IPAddress.Parse(IP), Port));
-
-            //_ListOfListener = new List<SocketListener>();
             _Listener.Start();
 
             _Server = new BetterBackgroundWorker();
@@ -90,8 +88,6 @@ namespace Nox.Net.Com
             _Purge.DoWork += new DoWorkEventHandler(Purge_DoWork);
             _Purge.Run();
         }
-
-
 
         private void Server_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -108,14 +104,18 @@ namespace Nox.Net.Com
                         var ClientSocket = _Listener.AcceptSocket();
 
                         // create using abstract method
-                        var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket);
+                        var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket, Log, 0);
+
+                        SocketListener.Terminate += OnTerminate;
+                        SocketListener.CloseSocket += OnCloseSocket;
+                        SocketListener.Message += OnMessage;
 
                         BindEvents(SocketListener);
                         lock (_ListOfListener)
                         {
                             _ListOfListener.Add(SocketListener);
                         }
-
+                        SocketListener.Initialize();
                         SocketListener.Run();
                     }
                     else
@@ -243,6 +243,10 @@ namespace Nox.Net.Com
             StopServer();
         }
 
+        public NetServer(uint Signature1, Log4 Log)
+            : this(Signature1)
+            => this.Log = Log;
+
         public NetServer(uint Signature1)
         : base(Signature1) { }
 
@@ -256,11 +260,25 @@ namespace Nox.Net.Com
     public class NetGenericServer<T>
          : NetServer<T>, INetGenericMessages where T : GenericSocketListener
     {
+
         #region Events
         public event EventHandler<PingMessageEventArgs> PingMessage;
+
         public event EventHandler<EchoMessageEventArgs> EchoMessage;
+
+        /// <summary>
+        /// raised if a message respone occurs
+        /// </summary>
         public event EventHandler<RespMessageEventArgs> RespMessage;
+
+        /// <summary>
+        /// raised if a message will obtained
+        /// </summary>
         public event EventHandler<ObtainMessageEventArgs> ObtainMessage;
+
+        /// <summary>
+        /// raised if a message will obtained. event can be canceled
+        /// </summary>
         public event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
         #endregion
 
@@ -268,18 +286,20 @@ namespace Nox.Net.Com
         public void OnPingMessage(object sender, PingMessageEventArgs e)
             => PingMessage?.Invoke(sender, e);
 
+
         public void OnEchoMessage(object sender, EchoMessageEventArgs e)
-            => EchoMessage?.Invoke(sender, e);  
+            => EchoMessage?.Invoke(sender, e);
 
         public void OnRespMessage(object sender, RespMessageEventArgs e)
             => RespMessage?.Invoke(sender, e);
 
         public void OnObtainMessage(object sender, ObtainMessageEventArgs e)
-            => ObtainMessage?.Invoke(sender, e);    
+            => ObtainMessage?.Invoke(sender, e);
 
         public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)
-            => ObtainCancelMessage?.Invoke(sender, e);  
+            => ObtainCancelMessage?.Invoke(sender, e);
         #endregion
+
 
         protected override void BindEvents(T SocketListener)
         {
@@ -290,46 +310,54 @@ namespace Nox.Net.Com
             SocketListener.ObtainCancelMessage += OnObtainCancelMessage;
         }
 
+
+        public NetGenericServer(uint Signature1, Log4 Log)
+            : base(Signature1, Log) { }
+
         public NetGenericServer(uint Signature1)
             : base(Signature1) { }
     }
 
-
     public class NetSecureServer<T>
         : NetGenericServer<T>, INetSecureServerMessages where T : SecureSocketListener    
     {
-
-
         #region Events
-        public event EventHandler<RplyEventArgs> RplyMessage;
-        public event EventHandler<SigvEventArgs> SigvMessage;
-        public event EventHandler<KeyvEventArgs> KeyvMessage;
+        public event EventHandler<EhloEventArgs> EhloMessage;
+        public event EventHandler<KeyxEventArgs> KeyxMessage;
+        public event EventHandler<SigxEventArgs> SigxMessage;
+
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
 
         #region OnRaiseEvent Methods
-        public void OnRplyMessage(object sender, RplyEventArgs e)
-            => RplyMessage?.Invoke(sender, e);
+        public void OnEhloMessage(object sender, EhloEventArgs e)
+            => EhloMessage?.Invoke(sender, e);
 
-        public void OnSigvMessage(object sender, SigvEventArgs e)
-            => SigvMessage?.Invoke(sender, e);
-        public void OnKeyvMessage(object sender, KeyvEventArgs e)
-            => KeyvMessage?.Invoke(sender, e);
+        public void OnSigxMessage(object sender, SigxEventArgs e)
+            => SigxMessage?.Invoke(sender, e);
+
+        public void OnKeyxMessage(object sender, KeyxEventArgs e)
+            => KeyxMessage?.Invoke(sender, e);
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
-            =>ObtainPublicKey?.Invoke(sender, e);
+            => ObtainPublicKey?.Invoke(sender, e);
         #endregion
+
+
 
         protected override void BindEvents(T SocketListener)
         {
             base.BindEvents(SocketListener);
 
-            SocketListener.RplyMessage += OnRplyMessage;
-            SocketListener.SigvMessage += OnSigvMessage;
-            SocketListener.KeyvMessage += OnKeyvMessage;
+            SocketListener.EhloMessage += OnEhloMessage;
+            SocketListener.SigxMessage += OnSigxMessage;
+            SocketListener.KeyxMessage += OnKeyxMessage;
+
             SocketListener.ObtainPublicKey += OnObtainPublicKey;
         }
 
+        public NetSecureServer(uint Signature1, Log4 Log)
+            : base(Signature1, Log) { }
         public NetSecureServer(uint Signature1)
            : base(Signature1) { }
     }

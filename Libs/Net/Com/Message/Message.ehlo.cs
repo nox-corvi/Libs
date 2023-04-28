@@ -13,7 +13,7 @@ namespace Nox.Net.Com.Message
         /// </summary>
         public Guid SequenceId { get; }
         public DateTime Timestamp { get; }
-        public byte[] publicKey { get; }
+        public byte[] PublicKey { get; }
         public string Message { get; }
 
         public EhloEventArgs(Guid SequenceId, DateTime Timestamp, byte[] publicKey, string Message)
@@ -21,7 +21,7 @@ namespace Nox.Net.Com.Message
         {
             this.SequenceId = SequenceId;
             this.Timestamp = Timestamp;
-            this.publicKey = publicKey;
+            this.PublicKey = publicKey;
             this.Message = Message;
         }
     }

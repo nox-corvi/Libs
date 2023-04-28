@@ -403,7 +403,7 @@ namespace Nox
 
             lock (_List)
             {
-                _List.AddRange(_List);
+                _List.AddRange(collection);
             }
         }
 

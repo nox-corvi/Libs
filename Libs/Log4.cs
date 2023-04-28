@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nox.Cli;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -41,8 +42,28 @@ namespace Nox
         #region Helpers
         public static string LogClassName(Type type) =>
             $"{type.Assembly.GetName().Name}->{type.Name}";
-        #endregion
 
+        public string GetLogLevelText(Log4LevelEnum LogLevel)
+        {
+            switch (LogLevel)
+            {
+                case Log4LevelEnum.Fatal:
+                    return "FATAL";
+                case Log4LevelEnum.Error:
+                    return "ERROR";
+                case Log4LevelEnum.Warning:
+                    return "WARN";
+                case Log4LevelEnum.Info:
+                    return "INFO";
+                case Log4LevelEnum.Debug:
+                    return "DEBUG";
+                case Log4LevelEnum.Trace:
+                    return "TRACE";
+                default:
+                    return "UNKNWN";
+            }
+        }
+        #endregion
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Objekte nicht mehrmals verwerfen")]
         public static bool CompressLogFile(string Filename, bool DeleteAfter = false)
@@ -118,7 +139,6 @@ namespace Nox
         public bool WriteLog(string Message, string Filename) =>
             AppendLogFile($"{System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n", Filename);
 
-
         public string BuildLogFile()
         {
             string wcLogPath = Environment.CurrentDirectory;
@@ -152,8 +172,7 @@ namespace Nox
             var method = frame.GetMethod();
             string OriginInfo = $"{frame.GetFileName()}({frame.GetFileLineNumber()}):{method.Name}";
 
-            string Message = $"{ex.GetType().Name}\t{OriginInfo}: {ex.ToString()}";
-            return WriteLog(Message, LogFile);
+            return WriteLog($"{ex.GetType().Name}\t{OriginInfo}: {ex.ToString()}", LogFile);
         }
 
         /// <summary>
@@ -230,7 +249,7 @@ namespace Nox
                     LogMessage.Append($"{Enum.GetName(typeof(Log4LevelEnum), LogLevel)}\t");
 
                     // Origin
-                    LogMessage.Append($"{frame.GetFileName()}({frame.GetFileLineNumber()}\t");
+                    LogMessage.Append($"{frame.GetFileName()}({frame.GetFileLineNumber()})\t");
 
                     // Methode
                     LogMessage.Append($"{method.Name}(");
@@ -328,6 +347,7 @@ namespace Nox
             if (LogLevel <= _LogLevel)
             {
                 string Message = action?.Invoke();
+
                 return LogMessageNative(2, Message, LogLevel);
             }
             else
@@ -338,15 +358,12 @@ namespace Nox
 
         public bool TestLogWriteable(string Filename) => AppendLogFile("", Filename);
 
-
         public static Log4 Create(Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
             new Log4($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
 
         public Log4(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
             : this(LogFile, LogLevel)
-        {
-            this._Echo = Echo;
-        }
+            => this._Echo = Echo;
 
         public Log4(string LogFile, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
         {

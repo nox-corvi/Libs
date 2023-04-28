@@ -14,11 +14,11 @@ using System.Threading.Tasks;
 namespace Nox.Hosting
 {
     public class HostedConsole<T> : IHostedService
-        where T : class, IReader
+        where T : class, IAsyncReader
     {
         public EventHandler<HostedEventArgs> Initialize;
         
-        private readonly IReader _reader;
+        private readonly IAsyncReader _reader;
         private readonly ILogger<T> _logger;
         private readonly IConfiguration _configuration;
 
@@ -61,7 +61,7 @@ namespace Nox.Hosting
             return Task.CompletedTask;
         }
 
-        public HostedConsole(HostedConfiguration hostedConfig, IReader reader, IConfiguration configuration, IHostApplicationLifetime hostLifetime, ILogger<T> logger)
+        public HostedConsole(HostedConfiguration hostedConfig, IAsyncReader reader, IConfiguration configuration, IHostApplicationLifetime hostLifetime, ILogger<T> logger)
         {
             Initialize += (sender, args) => 
                 hostedConfig?.Initialize?.Invoke(sender, args);
@@ -116,7 +116,7 @@ namespace Nox.Hosting
                 services.AddScoped<HostedConfiguration>(c => hostedConfig);
 
                 services.AddHostedService<HostedConsole<T>>();
-                services.AddSingleton<IReader, T>(implementationFactory);
+                services.AddSingleton<IAsyncReader, T>(implementationFactory);
             })
             .ConfigureLogging((hostingContext, logging) =>
             {
@@ -137,7 +137,7 @@ namespace Nox.Hosting
                 services.AddScoped<HostedConfiguration>(c => hostedConfig);
 
                 services.AddHostedService<HostedConsole<T>>();
-                services.AddSingleton<IReader, T>(implementationFactory);
+                services.AddSingleton<IAsyncReader, T>(implementationFactory);
             })
             .ConfigureLogging((hostingContext, logging) =>
             {

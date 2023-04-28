@@ -13,6 +13,8 @@ namespace Nox.Net.Com
     /// </summary>
     public interface INetBase
     {
+        Guid Id { get; }
+
         /// <summary>
         /// raised if a message received
         /// </summary>
@@ -181,36 +183,6 @@ namespace Nox.Net.Com
     public interface INetSecureClientMessages
         : INetSecureMessages
     {
-        public event EventHandler<EhloEventArgs> EhloMessage;
-        public event EventHandler<SigxEventArgs> SigxMessage;
-        public event EventHandler<KeyxEventArgs> KeyxMessage;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender">sender object, usually the current object</param>
-        /// <param name="e"></param>
-        void OnEhloMessage(object sender, EhloEventArgs e);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender">sender object, usually the current object</param>
-        /// <param name="e"></param>
-        void OnSigxMessage(object sender, SigxEventArgs e);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender">sender object, usually the current object</param>
-        /// <param name="e"></param>
-        void OnKeyxMessage(object sender, KeyxEventArgs e);
-
-    }
-
-    public interface INetSecureServerMessages
-        : INetSecureMessages
-    {
         public event EventHandler<RplyEventArgs> RplyMessage;
         public event EventHandler<SigvEventArgs> SigvMessage;
         public event EventHandler<KeyvEventArgs> KeyvMessage;
@@ -235,6 +207,35 @@ namespace Nox.Net.Com
         /// <param name="sender">sender object, usually the current object</param>
         /// <param name="e"></param>
         void OnKeyvMessage(object sender, KeyvEventArgs e);
+    }
+
+    public interface INetSecureServerMessages
+        : INetSecureMessages
+    {
+        public event EventHandler<EhloEventArgs> EhloMessage;
+        public event EventHandler<SigxEventArgs> SigxMessage;
+        public event EventHandler<KeyxEventArgs> KeyxMessage;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender">sender object, usually the current object</param>
+        /// <param name="e"></param>
+        void OnEhloMessage(object sender, EhloEventArgs e);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender">sender object, usually the current object</param>
+        /// <param name="e"></param>
+        void OnSigxMessage(object sender, SigxEventArgs e);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender">sender object, usually the current object</param>
+        /// <param name="e"></param>
+        void OnKeyxMessage(object sender, KeyxEventArgs e);
     }
 
     public interface INetSocket

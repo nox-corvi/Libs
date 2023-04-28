@@ -11,7 +11,10 @@ namespace Nox.Security
     /// </summary>
     public class Laverna : IDisposable
     {
-        public const int MAX_BLOCK_SIZE = 1024;
+        private const int KEY_SIZE = 256;
+        private const int BLOCK_SIZE = 256;
+
+        public const int BUFFER_SIZE = 1024;
         public const string SIGNATURE = "LE";
 
         private byte[] _key;
@@ -21,11 +24,11 @@ namespace Nox.Security
         {
             using (var myAes = Aes.Create())
             {
-                myAes.BlockSize = 128;
-                myAes.KeySize = 128;
+                myAes.BlockSize = BLOCK_SIZE;
+                myAes.KeySize = KEY_SIZE;
                 myAes.Padding = PaddingMode.Zeros;
                 myAes.Mode = CipherMode.CBC;
-                myAes.FeedbackSize = 128;
+                myAes.FeedbackSize = KEY_SIZE;
 
                 return myAes.CreateEncryptor(_key, _IV);
             }
@@ -35,11 +38,11 @@ namespace Nox.Security
         {
             using (var myAes = Aes.Create())
             {
-                myAes.BlockSize = 128;
-                myAes.KeySize = 128;
+                myAes.BlockSize = BLOCK_SIZE;
+                myAes.KeySize = KEY_SIZE;
                 myAes.Padding = PaddingMode.Zeros;
                 myAes.Mode = CipherMode.CBC;
-                myAes.FeedbackSize = 128;
+                myAes.FeedbackSize = KEY_SIZE;
 
                 return myAes.CreateEncryptor(_key, _IV);
             }
@@ -60,7 +63,7 @@ namespace Nox.Security
             {
                 BinaryWriter Writer = new BinaryWriter(CryptoStream);
 
-                byte[] data = new byte[MAX_BLOCK_SIZE]; int read = 0;
+                byte[] data = new byte[BUFFER_SIZE]; int read = 0;
                 while ((read = Source.Read(data, 0, data.Length)) > 0)
                 {
                     Writer.Write(data, 0, read);
@@ -94,7 +97,7 @@ namespace Nox.Security
             {
                 BinaryReader Reader = new BinaryReader(CryptoStream);
 
-                byte[] data = new byte[MAX_BLOCK_SIZE]; int read = 0;
+                byte[] data = new byte[BUFFER_SIZE]; int read = 0;
                 while ((read = Reader.Read(data, 0, data.Length)) > 0)
                 {
                     Destination.Write(data, 0, read);
@@ -216,21 +219,17 @@ namespace Nox.Security
 
             var _salt = new byte[Salt.Length]; byte pred = 0;
             for (int i = 0; i < Salt.Length;)
-                unchecked
-                {
-                    pred = _salt[i] = (byte)((byte)Salt[i] + pred);
-                    i++;
-                }
+                unchecked { pred = _salt[i++] = (byte)((byte)Salt[i] + pred); }
 
             using (var _2898 = new Rfc2898DeriveBytes(Key, _salt, Iterations))
             {
-                _key = _2898.GetBytes(32);
-                _IV = _2898.GetBytes(16);
+                _key = _2898.GetBytes(KEY_SIZE << 3);
+                _IV = _2898.GetBytes(KEY_SIZE << 4);
             }
         }
+
         public Laverna(string Key, string Salt, int Iterations = 16) =>
             Prepare(Key, Salt, Iterations);
-
 
         public void Dispose()
         {
