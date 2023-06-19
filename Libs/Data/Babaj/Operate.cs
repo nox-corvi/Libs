@@ -34,9 +34,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection.Emit;
-using Nox.Libs;
-using Nox.Libs.Data;
-using Nox.Libs.Data.SqlServer;
+using Nox;
+using Nox.Data;
+using Nox.Data.SqlServer;
 using System.Reflection;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -46,7 +46,7 @@ namespace Nox.Libs.Data.Babaj
     /// <summary>
     /// Stellt Werkzeuge zur Datenmanipulation zur Verfügung
     /// </summary>
-    public class Operate<T> : SqlServer.SqlDbAccess where T : DataRow
+    public class Operate<T> : SqlDbAccess where T : DataRow
     {
         private DataTable _dataTable;
         private DataColMapDescriptor[] _Attributes;

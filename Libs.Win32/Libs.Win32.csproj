@@ -27,11 +27,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Libs\Libs.csproj" />
+    <Compile Include="Libs.Win32\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Security\" />
+    <Compile Remove="Libs.Win32\obj\Debug\net6.0-windows\**" />
+    <Compile Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Libs\Libs.csproj" />
   </ItemGroup>
 
 </Project>

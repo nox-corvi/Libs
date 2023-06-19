@@ -106,7 +106,18 @@ namespace Nox.Net.Com
                         // create using abstract method
                         var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket, Log, 0);
 
-                        SocketListener.Terminate += OnTerminate;
+                        SocketListener.Terminate += (object sender, EventArgs e) =>
+                        {
+                            // notify
+                            OnTerminate(sender, e);
+
+                            
+                            var sl = (sender as Com.SocketListener);
+
+                            // and remove
+                            sl.Done();
+                            _ListOfListener.Remove(sl);
+                        };
                         SocketListener.CloseSocket += OnCloseSocket;
                         SocketListener.Message += OnMessage;
 

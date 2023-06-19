@@ -296,11 +296,8 @@ namespace Nox.Cli
             Console.ResetColor();
         }
 
-        public void LF()
-        {
-            Console.CursorLeft = 0;
-            Console.CursorTop += 1;
-        }
+        public void LF() 
+            => Console.WriteLine();
 
         public void PrintWithState(string Message, StateEnum StateValue)
         {

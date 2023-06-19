@@ -389,5 +389,17 @@ namespace Nox
             }
             return result;
         }
+
+        public static string RandomString(int length)
+        {
+            var sb = new StringBuilder();
+            var rnd = new Random((int)(DateTime.Now.Ticks & 0xFFFF));
+
+            while (sb.Length < length)
+                sb.Append(Helpers.EnHEX(new byte[] { (byte)rnd.Next(0xFF) }));
+
+            return sb.ToString(0, length);
+        }
+
     }
 }

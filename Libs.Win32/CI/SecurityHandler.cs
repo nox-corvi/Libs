@@ -577,7 +577,6 @@ namespace Nox.Win32.CI
             }
         }
 
-
         public bool ShareExists(string Share, ProcessCredential Credential)
         {
             // Log

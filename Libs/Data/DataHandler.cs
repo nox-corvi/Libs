@@ -14,6 +14,9 @@ namespace Nox.Data
     public class DataHandler<T>
         : IRunner, IList<T>, IDisposable
     {
+        private const int TIMEOUT = 15;
+
+
         public event EventHandler<LoopEventArgs<T>> Loop;
 
         private Log4 _Log = null!;
@@ -31,6 +34,8 @@ namespace Nox.Data
             get => _data[index];
             set => _data[index] = value;
         }
+
+        public int Timeout { get; set; } = TIMEOUT;
 
         public int Count
             => _data.Count;
@@ -140,10 +145,10 @@ namespace Nox.Data
                     _Log?.LogMessage("cancel worker", Log4.Log4LevelEnum.Trace);
                     _worker.Cancel();
 
-                    // wait for termination ...
+                    _worker = null;
                     _Log?.LogMessage("await worker is done", Log4.Log4LevelEnum.Trace);
-                    while (_worker.IsBusy)
-                        Thread.Sleep(100);
+
+                    
                 }
 
                 IsInitialized = false;

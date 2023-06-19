@@ -18,16 +18,16 @@ namespace Nox.Net.Com
         #endregion
 
         #region Events
-        public event EventHandler<MessageCancelEventArgs> Terminate;
-        public event EventHandler<MessageEventArgs> CloseSocket;
+        public event EventHandler<EventArgs> Terminate;
+        public event EventHandler<EventArgs> CloseSocket;
         public event EventHandler<MessageEventArgs> Message;
         #endregion
 
         #region OnRaiseEvent Methods
-        public void OnTerminate(object sender, MessageCancelEventArgs e)
+        public void OnTerminate(object sender, EventArgs e)
             => Terminate?.Invoke(sender, e);
 
-        public void OnCloseSocket(object sender, MessageEventArgs e)
+        public void OnCloseSocket(object sender, EventArgs e)
             => CloseSocket?.Invoke(sender, e);
 
         public void OnMessage(object sender, MessageEventArgs e)

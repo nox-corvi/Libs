@@ -8,6 +8,8 @@ namespace Nox.Threading
     public class BetterBackgroundWorker 
         : IBetterBackgroundWorker
     {
+        private const int CANCELATION_TIMEOUT = 15;
+
         public event DoWorkEventHandler DoWork;
         //public delegate void RunWorkerCompletedEventHandler(object sender, RunWorkerCompletedEventArgs e);
 
@@ -16,11 +18,11 @@ namespace Nox.Threading
 
         #region Properties
         public int CancelationThreadWait { get; set; } = 100;
+        public int CancelationThreadTimeout { get; set; } = CANCELATION_TIMEOUT;
         public bool CancellationPending { get; private set; }
 
         public int AutoLoopWaitTime { get; set; } = 0;
         public bool AutoLoopWorker { get; set; } = false;
-
 
         public bool IsBusy
             => _IsBusy;
@@ -63,9 +65,15 @@ namespace Nox.Threading
         public void Cancel()
         {
             CancellationPending = true;
+            
+            var ExitTime = DateTime.Now.AddSeconds(CancelationThreadTimeout);
             while (_IsBusy)
-                Thread.Sleep(CancelationThreadWait);
+            {
+                if (DateTime.Now > ExitTime)
+                    return;
 
+                Thread.Sleep(CancelationThreadWait);
+            }
         }
 
         public BetterBackgroundWorker() { }

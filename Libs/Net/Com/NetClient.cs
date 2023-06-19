@@ -51,8 +51,14 @@ namespace Nox.Net.Com
 
             // create instance
             _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client, Log, 0);
+            _Listener.Terminate += (object sender, EventArgs e) =>
+            {
+                // notify
+                OnTerminate(sender, e);
 
-            _Listener.Terminate += OnTerminate;
+                // and close
+                StopClient();
+            };
             _Listener.CloseSocket += OnCloseSocket;
             _Listener.Message += OnMessage;
             _Listener.Initialize();

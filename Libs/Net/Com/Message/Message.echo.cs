@@ -8,15 +8,19 @@ namespace Nox.Net.Com.Message
 {
     public class EchoMessageEventArgs : EventArgs
     {
+        /// <summary>
+        /// unique guid for ping message
+        /// </summary>
         public Guid PingId { get; }
-        public DateTime PingTime { get; }
-        public DateTime Timestamp { get; }
 
-        public EchoMessageEventArgs(Guid PingId, DateTime PingTime, DateTime Timestamp)
+        public DateTime PingTimestamp { get; }
+        public DateTime EchoTimestamp { get; }
+
+        public EchoMessageEventArgs(Guid PingId, DateTime PingTimestamp, DateTime EchoTimestamp)
         {
             this.PingId = PingId;
-            this.PingTime = PingTime;
-            this.Timestamp = Timestamp;
+            this.PingTimestamp = PingTimestamp;
+            this.EchoTimestamp = EchoTimestamp;
         }
     }
 
@@ -24,13 +28,13 @@ namespace Nox.Net.Com.Message
         : DataBlock
     {
         private Guid _PingId;
-        private DateTime _PingTime;
-        private DateTime _Timestamp = DateTime.UtcNow;
+        private DateTime _PingTimestamp;
+        private DateTime _EchoTimestamp = DateTime.UtcNow;
 
         #region Properties
         public Guid PingId { get => _PingId; set => SetProperty(ref _PingId, value); }
-        public DateTime PingTime { get => _PingTime; set => SetProperty(ref _PingTime, value); }
-        public DateTime Timestamp { get => _Timestamp; set => SetProperty(ref _Timestamp, value); }
+        public DateTime PingTimestamp { get => _PingTimestamp; set => SetProperty(ref _PingTimestamp, value); }
+        public DateTime EchoTimestamp { get => _EchoTimestamp; set => SetProperty(ref _EchoTimestamp, value); }
         #endregion
 
         public override void Read(byte[] data)
@@ -38,18 +42,18 @@ namespace Nox.Net.Com.Message
             _PingId = Helpers.ExtractGuid(data, 0);
 
             int i = 16;
-            _PingTime = DateTime.FromBinary(BitConverter.ToInt64(data, i));
+            _PingTimestamp = DateTime.FromBinary(BitConverter.ToInt64(data, i));
 
             i += sizeof(long);
-            _Timestamp = DateTime.FromBinary(BitConverter.ToInt64(data, i));
+            _EchoTimestamp = DateTime.FromBinary(BitConverter.ToInt64(data, i));
         }
 
         public override byte[] Write()
         {
             var Result = new List<byte>();
             Result.AddRange(_PingId.ToByteArray());
-            Result.AddRange(BitConverter.GetBytes(_PingTime.ToBinary()));
-            Result.AddRange(BitConverter.GetBytes(_Timestamp.ToBinary()));
+            Result.AddRange(BitConverter.GetBytes(_PingTimestamp.ToBinary()));
+            Result.AddRange(BitConverter.GetBytes(_EchoTimestamp.ToBinary()));
 
             return Result.ToArray();
         }

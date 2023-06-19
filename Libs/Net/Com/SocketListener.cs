@@ -25,18 +25,40 @@ namespace Nox.Net.Com
         private const int RECEIVE_BUFFER_SIZE = 32768;
         private const uint EOM = 0xFEFE;
 
-        //protected Log4 _Log = null!;
-
         protected Socket _Socket = null;
+
+        private int _Timeout = 0;
 
         protected DataHandler<byte> _SocketHandler;
         protected DataHandler<byte[]> _MessageHandler;
 
         #region Properties 
+        /// <summary>
+        /// True if the Object is Disposed ans is ready to remove
+        /// </summary>
         public bool CanPurge { get; private set; } = false;
 
-        public int Timeout { get; } = 0;
+        /// <summary>
+        /// Timeout 
+        /// </summary>
+        public int Timeout
+        {
+            get => _Timeout;
+            set
+            {
+                // pass through
+                _Timeout = value;
+                if (_SocketHandler != null)
+                    _SocketHandler.Timeout = value;
 
+                if (_MessageHandler != null) 
+                    _MessageHandler.Timeout = value;
+            }
+        }
+
+        /// <summary>
+        /// Timestamp of last 
+        /// </summary>
         public DateTime LastResponse { get; private set; } = DateTime.UtcNow;
 
         public int SocketBufferLength
@@ -53,7 +75,7 @@ namespace Nox.Net.Com
             _Socket.Send(byteBuffer);
         }
 
-        public void SendDataBlock(DataBlock data)
+        public void SendDataBlock (DataBlock data)
         {
             _Log?.LogMethod(Log4.Log4LevelEnum.Trace, data);
 
@@ -114,7 +136,6 @@ namespace Nox.Net.Com
 
         public override void Initialize()
         {
-           
             _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
 
             base.Initialize();
@@ -123,7 +144,7 @@ namespace Nox.Net.Com
                 // check, socket must not be null
                 if (!IsInitialized)
                 {
-                    _SocketHandler = new(_Log);
+                    _SocketHandler = new(_Log) { Timeout = Timeout };
                     _SocketHandler.Loop += (object sender, LoopEventArgs<byte> e) =>
                     {
                         try
@@ -154,7 +175,7 @@ namespace Nox.Net.Com
                     };
                     _SocketHandler.Initialize();
 
-                    _MessageHandler = new(_Log);
+                    _MessageHandler = new(_Log) { Timeout = Timeout };
                     _MessageHandler.Loop += (object sender, LoopEventArgs<byte[]> e) =>
                     {
                         if (_MessageHandler.Count > 0)
@@ -265,13 +286,20 @@ namespace Nox.Net.Com
             var ping = new MessagePing(Signature1);
             ping.Read(Message);
 
+            // raise ping event 
             OnPingMessage(this, new PingMessageEventArgs(ping.DataBlock.Id, ping.DataBlock.Timestamp));
 
             // make a ping response
-            var PingResponse = new MessageEcho(Signature1);
-            PingResponse.DataBlock.PingId = ping.DataBlock.Id;
-            PingResponse.DataBlock.PingTime = ping.DataBlock.Timestamp;
-            SendBuffer(PingResponse.Write());
+            var Echo = new MessageEcho(Signature1);
+
+            // reply ping id
+            Echo.DataBlock.PingId = ping.DataBlock.Id;
+
+            // rply origin timestamp
+            Echo.DataBlock.PingTimestamp = ping.DataBlock.Timestamp;
+
+            //TODO: Time Difference of Client and Server!
+            SendBuffer(Echo.Write());
 
             return true;
         }
@@ -283,8 +311,8 @@ namespace Nox.Net.Com
             var echo = new MessageEcho(Signature1);
             echo.Read(Message);
 
-            // nothing more to do
-            OnEchoMessage(this, new EchoMessageEventArgs(echo.DataBlock.PingId, echo.DataBlock.PingTime, echo.DataBlock.Timestamp));
+            // raise event, nothing more to do
+            OnEchoMessage(this, new EchoMessageEventArgs(echo.DataBlock.PingId, echo.DataBlock.PingTimestamp, echo.DataBlock.EchoTimestamp));
 
             return true;
         }
@@ -296,13 +324,8 @@ namespace Nox.Net.Com
             var terminate = new MessageTerminate(Signature1);
             terminate.Read(Message);
 
-            var e = new MessageCancelEventArgs("terminate message received, close socket?");
-            OnTerminate(this, e);
+            OnTerminate(this, new MessageEventArgs("terminate confirmed, close socket!"));
 
-            if (!e.Cancel)
-            {
-                OnCloseSocket(this, new MessageEventArgs("terminate confirmed, close socket!"));
-            }
             return true;
         }
         #endregion
@@ -322,7 +345,7 @@ namespace Nox.Net.Com
             var echo = new MessageEcho(Signature1);
 
             echo.DataBlock.PingId = Id;
-            echo.DataBlock.PingTime = Timestamp;
+            echo.DataBlock.PingTimestamp = Timestamp;
 
             SendBuffer(echo.Write());
         }

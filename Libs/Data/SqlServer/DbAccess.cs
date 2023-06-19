@@ -125,28 +125,27 @@ namespace Nox.Data.SqlServer
                 _DatabaseConnection.Open();
         }
 
-
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:SQL-Abfragen auf Sicherheitsrisiken überprüfen")]
         public SqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
 		{
             EnsureConnectionEstablished();
 
-            SqlCommand CMD = new SqlCommand(SQL, _DatabaseConnection)
+            SqlCommand c = new SqlCommand(SQL, _DatabaseConnection)
 			{
 				CommandTimeout = SqlCommandTimeout,
 				Transaction = _Transaction,
 				CommandType = commandType
-			};
+			}; 
 
             OpenDatabaseConnection();
 
 			if (Parameters != null)
 				foreach (SqlParameter Param in Parameters)
-					CMD.Parameters.AddWithValue(Param.ParameterName, Param.Value);
+					c.Parameters.AddWithValue(Param.ParameterName, Param.Value);
 
-			return CMD.ExecuteReader(CommandBehavior.CloseConnection);
+			return c.ExecuteReader(CommandBehavior.CloseConnection);
 		}
-
+		
         public SqlDataReader GetReader(string SQL, params SqlParameter[] Parameters) =>
             GetReader(SQL, CommandType.Text, Parameters);
 

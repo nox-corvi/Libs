@@ -9,6 +9,9 @@ namespace Nox.Net.Com.Message
 {
     public class PingMessageEventArgs: EventArgs
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public Guid Id { get; }
         public DateTime Timestamp { get; }
 

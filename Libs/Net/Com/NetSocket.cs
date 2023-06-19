@@ -23,7 +23,6 @@ namespace Nox.Net.Com
         #endregion
 
         #region OnRaiseEvent Methods
-
         public void OnBindSocket(object sender, MessageEventArgs e)
             => BindSocket?.Invoke(sender, e);
 

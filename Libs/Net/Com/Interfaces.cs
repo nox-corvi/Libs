@@ -23,26 +23,26 @@ namespace Nox.Net.Com
         /// <summary>
         /// raised if communication should be terminated
         /// </summary>
-        event EventHandler<MessageCancelEventArgs> Terminate;
+        event EventHandler<EventArgs> Terminate;
 
         /// <summary>
         /// raised if socket will close
         /// </summary>
-        event EventHandler<MessageEventArgs> CloseSocket;
+        event EventHandler<EventArgs> CloseSocket;
 
         /// <summary>
         /// will raise the Terminate event
         /// </summary>
         /// <param name="sender">sender object, usually the current object</param>
         /// <param name="e">MessageCancelEventArgs</param>
-        void OnTerminate(object sender, MessageCancelEventArgs e);
+        void OnTerminate(object sender, EventArgs e);
 
         /// <summary>
         /// will raise the CloseSocket event
         /// </summary>
         /// <param name="sender">sender object, usually the current object</param>
         /// <param name="e">MessageEventArgs</param>
-        void OnCloseSocket(object sender, MessageEventArgs e);
+        void OnCloseSocket(object sender, EventArgs e);
 
         /// <summary>
         /// will raise the message event
@@ -108,7 +108,6 @@ namespace Nox.Net.Com
         /// raised if a ping echo occurs
         /// </summary>
         event EventHandler<EchoMessageEventArgs> EchoMessage;
-
 
         /// <summary>
         /// raised if a message respone occurs

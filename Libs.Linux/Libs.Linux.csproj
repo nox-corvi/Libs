@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net6.0-android</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>Nox.Linux</AssemblyName>
@@ -16,11 +16,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Libs\Libs.csproj" />
+    <Compile Include="..\Source\Libs.Linux\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Security\" />
+    <Compile Remove="..\Source\Libs.Linux\obj\Debug\**" />
+    <Compile Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Libs\Libs.csproj" />
   </ItemGroup>
 
 </Project>
