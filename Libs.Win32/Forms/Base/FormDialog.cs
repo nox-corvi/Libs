@@ -1,6 +1,4 @@
-﻿using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -87,14 +85,16 @@ namespace Nox.Win32.Forms.Base
                         AcceptButton = button1;
                         CancelButton = button2;
                         break;
+                    #if NETCOREAPP
                     case MessageBoxButtons.CancelTryContinue:
                         ButtonCount = 3;
                         ButtonText("&Cancel", "Try &again", "&Continue");
-
+                    
                         _defaultButton = MessageBoxDefaultButton.Button2;
                         AcceptButton = button2;
                         CancelButton = button1;
                         break;
+                    #endif
                 }
             }
         }
@@ -115,9 +115,11 @@ namespace Nox.Win32.Forms.Base
                         return button3;
 
                     break;
+                #if NETCOREAPP
                 case MessageBoxDefaultButton.Button4:
                     // ignore 
                     return null;
+                #endif
             }
 
             return null;
@@ -206,9 +208,11 @@ namespace Nox.Win32.Forms.Base
                     case MessageBoxButtons.RetryCancel:
                         ButtonRetry?.Invoke(sender, e);
                         break;
+#if NETCOREAPP
                     case MessageBoxButtons.CancelTryContinue:
                         ButtonCancel?.Invoke(sender, e);
                         break;
+#endif
                 }
             };
             button2.Click += (object sender, EventArgs e) =>
@@ -226,9 +230,11 @@ namespace Nox.Win32.Forms.Base
                     case MessageBoxButtons.YesNoCancel:
                         ButtonNo?.Invoke(sender, e);
                         break;
+#if NETCOREAPP
                     case MessageBoxButtons.CancelTryContinue:
                         ButtonTryAgain?.Invoke(sender, e);
                         break;
+#endif
                 }
             };
             button3.Click += (object sender, EventArgs e) =>
@@ -241,9 +247,11 @@ namespace Nox.Win32.Forms.Base
                     case MessageBoxButtons.YesNoCancel:
                         ButtonCancel?.Invoke(sender, e);
                         break;
+                    #if NETCOREAPP
                     case MessageBoxButtons.CancelTryContinue:
                         ButtonContinue?.Invoke(sender, e);
                         break;
+                    #endif
                 }
             };
 

@@ -16,18 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Source\Libs.Linux\**\*.cs" />
+    <ProjectReference Include="..\Libs\Libs\Libs.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="..\Source\Libs.Linux\obj\Debug\**" />
-    <Compile Remove="obj\**" />
-    <EmbeddedResource Remove="obj\**" />
-    <None Remove="obj\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Libs\Libs.csproj" />
-  </ItemGroup>
-
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);CORE</DefineConstants>
+  </PropertyGroup>
 </Project>

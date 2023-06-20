@@ -15,8 +15,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Miru\Libs\Miru\Miru.csproj" />
-    <ProjectReference Include="..\..\Libs.Win32\Libs.Win32.csproj" />
-    <ProjectReference Include="..\..\Libs\Libs.csproj" />
+    <ProjectReference Include="..\..\Libs.Win32\Libs.Win32\Libs.Win32.csproj" />
+    <ProjectReference Include="..\..\Libs\Libs\Libs.csproj" />
   </ItemGroup>
 
 </Project>

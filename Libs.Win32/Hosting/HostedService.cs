@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿#if NETCOREAPP
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
@@ -46,3 +47,4 @@ namespace Nox.Win32.Hosting
             .RunAsync();
     }
 }
+#endif

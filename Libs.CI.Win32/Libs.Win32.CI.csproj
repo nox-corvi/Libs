@@ -25,19 +25,14 @@
     <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="Libs.Win32\**\*.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <Compile Remove="Libs.Win32\obj\Debug\net6.0-windows\**" />
     <Compile Remove="obj\**" />
     <EmbeddedResource Remove="obj\**" />
     <None Remove="obj\**" />
   </ItemGroup>
-
   <ItemGroup>
+    <ProjectReference Include="..\Libs.CI\Libs.CI.csproj" />
     <ProjectReference Include="..\Libs\Libs\Libs.csproj" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

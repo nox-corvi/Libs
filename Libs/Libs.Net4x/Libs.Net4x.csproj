@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <AssemblyName>Nox</AssemblyName>
+    <RootNamespace>Nox</RootNamespace>
+    <PackageId>Libs</PackageId>
+    <Company>Libs</Company>
+    <Product>Libs</Product>
+    <Authors>Libs</Authors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Src\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="..\Src\CI\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
+</Project>
+
