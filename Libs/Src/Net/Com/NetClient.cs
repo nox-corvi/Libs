@@ -10,7 +10,7 @@ namespace Nox.Net.Com
     public abstract class NetClient<T>
         : NetBase, INetClient where T : SocketListener, IRunner
     {
-        private Log4 Log = Log4.Create();
+        private Log4 _Log = Log4.Create();
 
         private T _Listener;
         private TcpClient _Client;
@@ -41,7 +41,7 @@ namespace Nox.Net.Com
 
         public virtual void Connect(string IP, int Port)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
+            _Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
 
             StopClient();
 
@@ -49,7 +49,7 @@ namespace Nox.Net.Com
             _Client.Connect(new IPEndPoint(IPAddress.Parse(IP), Port));
 
             // create instance
-            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client, Log, 0);
+            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client, _Log, 0);
             _Listener.Terminate += (object sender, EventArgs e) =>
             {
                 // notify
@@ -71,7 +71,7 @@ namespace Nox.Net.Com
 
         public void StopClient()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+            _Log.LogMethod(Log4.Log4LevelEnum.Trace);
             
             (_Listener as T)?.Done(); ;
             _Listener = null;
@@ -83,7 +83,7 @@ namespace Nox.Net.Com
 
         public bool SendBuffer(byte[] byteBuffer)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
+            _Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
             try
             {
                 if ((_Listener as T).IsInitialized)
@@ -102,7 +102,7 @@ namespace Nox.Net.Com
 
         public bool SendDataBlock(DataBlock data)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, data);
+            _Log.LogMethod(Log4.Log4LevelEnum.Trace, data);
 
             return SendBuffer(data.Write());
         }
@@ -110,13 +110,13 @@ namespace Nox.Net.Com
 
         public override void Dispose()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+            _Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopClient();
         }
 
         public NetClient(uint Signature1, Log4 Log)
             : this(Signature1)
-            => this.Log = Log;
+            => this._Log = Log;
 
         public NetClient(uint Signature1)
             : base(Signature1) { }
@@ -124,7 +124,7 @@ namespace Nox.Net.Com
 
         ~NetClient()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
+            _Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopClient();
         }
     }

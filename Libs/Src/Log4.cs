@@ -141,10 +141,13 @@ namespace Nox
 
         public string BuildLogFile()
         {
-            string wcLogPath = Environment.CurrentDirectory;
-
+            string wcLogPath = AppContext.BaseDirectory; //Environment.CurrentDirectory;
             if (!wcLogPath.EndsWith(@"\"))
                 wcLogPath += @"\";
+
+            //if (_LogFile.StartsWith("."))
+            //    // relative path
+            //    wcLogPath = "";
 
             string wcLogFile = _LogFile;
 
