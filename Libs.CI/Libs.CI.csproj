@@ -4,26 +4,14 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>Nox.CI</AssemblyName>
     <RootNamespace>Nox.CI</RootNamespace>
-    <PackageId>Libs</PackageId>
     <Company>Libs</Company>
     <Product>Libs</Product>
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-  </PropertyGroup> 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
-  </ItemGroup> 
+	<RestoreFallbackFolders>clear</RestoreFallbackFolders>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Libs\Libs\Libs.csproj" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);CORE</DefineConstants>
-  </PropertyGroup>
 </Project>

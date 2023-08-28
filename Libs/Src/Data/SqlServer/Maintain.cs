@@ -42,7 +42,7 @@ namespace Nox.Data.SqlServer
         public List<TypeDesc> Types()
         {
             var Result = new List<TypeDesc>();
-            using (var r = _dba.GetReader("select distinct type, type_desc from sys.all_objects order by type"))
+            using (var r = _dba.GetReader("select distinct type, type_desc from sys.all_objects where is_ms_shipped = 0 order by type"))
                 Result.Add(new TypeDesc()
                 {
                     Type = Helpers.NZ(r.GetValue(r.GetOrdinal("type"))),
@@ -55,7 +55,7 @@ namespace Nox.Data.SqlServer
         public List<SqlObject> Objects(string Type)
         {
             var Result = new List<SqlObject>();
-            using (var r = _dba.GetReader("select * from sys.all_objects where type = @type",
+            using (var r = _dba.GetReader("select * from sys.all_objects where type = @type and is_ms_shipped = 0",
                 new SqlParameter("@type", Type)))
                 Result.Add(new SqlObject()
                 {

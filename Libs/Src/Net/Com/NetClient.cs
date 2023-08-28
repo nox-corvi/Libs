@@ -17,6 +17,11 @@ namespace Nox.Net.Com
 
         private string _ServerIP = "";
 
+
+        public string T1 => _Listener?.Id.ToString() ?? "<null>";
+        public string T2 => _Client?.Client?.Handle.ToString() ?? "<null>";
+
+
         #region Properties
         public string ServerIP { get { return _ServerIP; } }
 
@@ -195,6 +200,8 @@ namespace Nox.Net.Com
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
         #endregion
+
+        
 
         protected override void BindEvents(T SocketListener)
         {

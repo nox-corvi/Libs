@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Nox.Net.Com
@@ -72,7 +73,7 @@ namespace Nox.Net.Com
 
         public virtual void Bind(string IP, int Port)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
+            Log?.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
 
             StopServer();
 
@@ -235,6 +236,19 @@ namespace Nox.Net.Com
             return Result;
         }
 
+        public bool SendBufferTo(Guid Id, byte[] byteBuffer)
+        {
+            Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
+
+            for (int i = 0; i < _ListOfListener.Count; i++)
+                if (_ListOfListener[i].Id == Id)
+                    if (_ListOfListener[i].IsInitialized)
+                        if (SendBufferTo(i, byteBuffer))
+                            return true;
+
+            return false;
+        }
+
         public void SendDataBlockTo(int Index, DataBlock data)
         {
             Log.LogMethod(Log4.Log4LevelEnum.Trace, Index, data);
@@ -353,8 +367,6 @@ namespace Nox.Net.Com
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
         #endregion
-
-
 
         protected override void BindEvents(T SocketListener)
         {
