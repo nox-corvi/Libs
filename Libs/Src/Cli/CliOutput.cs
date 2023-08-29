@@ -44,7 +44,7 @@ namespace Nox.Cli
                 {
                     return _Buffer[x, y];
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Helpers.Nope();
                     return null;
@@ -166,7 +166,7 @@ namespace Nox.Cli
     public abstract class ConBase
         : IDisposable
     {
-        public bool SetCursor(int X, int Y)
+        public static bool SetCursor(int X, int Y)
         {
             int fX = Console.CursorLeft, fY = Console.CursorTop;
             try
@@ -185,7 +185,7 @@ namespace Nox.Cli
             }
         }
 
-        public bool SetCursorWrap(int X, int Y)
+        public static bool SetCursorWrap(int X, int Y)
         {
             int fX = X, fY = Y;
             while (fX > (Console.WindowWidth - 1))
@@ -219,10 +219,10 @@ namespace Nox.Cli
         public Layout __layout = Layout.Default;
 
 
-        public void Print(string Message)
+        public static void Print(string Message)
             => Console.Write(Message);
 
-        public void PrintWith(string Message, ConsoleColor ForeColor, ConsoleColor BackColor)
+        public static void PrintWith(string Message, ConsoleColor ForeColor, ConsoleColor BackColor)
         {
             Console.ForegroundColor = ForeColor;
             Console.BackgroundColor = BackColor;
@@ -232,16 +232,16 @@ namespace Nox.Cli
             Console.ResetColor();
         }
 
-        public void PrintWith(string Message, ConsoleColor ForeColor)
+        public static void PrintWith(string Message, ConsoleColor ForeColor)
             => PrintWith(Message, ForeColor, Console.BackgroundColor);
 
-        public void PrintTo(string Message, int X, int Y)
+        public static void PrintTo(string Message, int X, int Y)
         {
             SetCursor(X, Y);
             Print(Message);
         }
 
-        public void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor)
+        public static void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor)
         {
             Console.ForegroundColor = ForeColor;
             PrintTo(Message, X, Y);
@@ -249,7 +249,7 @@ namespace Nox.Cli
             Console.ResetColor();
         }
 
-        public void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor, ConsoleColor BackColor)
+        public static void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor, ConsoleColor BackColor)
         {
             Console.BackgroundColor = BackColor;
             PrintToWith(Message, X, Y, ForeColor);
@@ -276,7 +276,7 @@ namespace Nox.Cli
             Console.ResetColor();
         }
 
-        public void PrintLine(string Message) =>
+        public static void PrintLine(string Message) =>
             Print(Message + "\r\n");
 
         public void PrintError(string Message) =>
@@ -294,7 +294,7 @@ namespace Nox.Cli
             Console.ResetColor();
         }
 
-        public void LF() 
+        public static void LF() 
             => Console.WriteLine();
 
         public void PrintWithState(string Message, StateEnum StateValue)

@@ -21,6 +21,7 @@ namespace Nox.Net.Com.Message
         SIGV = 0xFCB3,  // Signature Validate in Reply to SIGX
         KEYX = 0xFCB4,
         KEYV = 0xFCB5,
+        CONS = 0xFCB6,
         RESP = 0xFCBF,  // generic response 
     }
 

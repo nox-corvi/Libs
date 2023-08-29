@@ -406,6 +406,8 @@ namespace Nox.Net.Com
         public event EventHandler<KeyxEventArgs> KeyxMessage;
         public event EventHandler<KeyvEventArgs> KeyvMessage;
 
+        public event EventHandler<ConSEventArgs> ConSMessage;
+
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
 
@@ -427,6 +429,9 @@ namespace Nox.Net.Com
 
         public void OnKeyxMessage(object sender, KeyxEventArgs e)
             => KeyxMessage?.Invoke(sender, e);
+
+        public void OnConSMessage(object sender, ConSEventArgs e)
+            => ConSMessage?.Invoke(sender, e);
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
@@ -584,6 +589,26 @@ namespace Nox.Net.Com
             return true;
         }
 
+        private bool HandleConSMessage(byte[] Message)
+        {
+            var cons = new MessageConS(Signature1);
+            cons.Read(Message);
+
+            if (cons.DataBlock.SequenceId == _SequenceId)
+            {
+                var v = new ConSEventArgs(cons.DataBlock.SequenceId);
+                OnConSMessage(this, v);
+            }
+            else
+            {
+                SendTerminateMessage();
+                Task.Run(() => Done());
+            }
+
+            return true;
+        }
+
+
         private bool HandleRespMessage(byte[] Message)
         {
             var RESP = new MessageResp(Signature1);
@@ -710,6 +735,8 @@ namespace Nox.Net.Com
                         case (uint)SecureMessageTypeEnum.KEYV:
                             return HandleKeyvMessage(Message);
 
+                        case (uint)SecureMessageTypeEnum.CONS:
+                            return HandleConSMessage(Message);
                         //case (uint)SecureMessageTypeEnum.RESP:
                         //    return HandleRespMessage(Message);
 

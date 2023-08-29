@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection.Emit;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -230,6 +231,12 @@ namespace Nox.Security
 
         public Laverna(string Key, string Salt, int Iterations = 16) =>
             Prepare(Key, Salt, Iterations);
+
+        public Laverna(byte[] Key, byte[] IV)
+        {
+            _key = Key;
+            _IV = IV;
+        }
 
         public void Dispose()
         {
