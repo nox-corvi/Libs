@@ -465,7 +465,7 @@ namespace Nox.HMC
                     var Result = new List<DatapointDescriptor>();
                     foreach (var c in f.Root.Elements("device"))
                         foreach (var d in c.Elements("channel"))
-                            if (((string?)d?.Attribute("ise_id") ?? "") == Id.ToString())
+                            if (((string)d?.Attribute("ise_id") ?? "") == Id.ToString())
                                 foreach (var item in d.Elements("datapoint"))
                                 {
                                     Result.Add(new DatapointDescriptor()

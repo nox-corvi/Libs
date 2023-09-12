@@ -14,8 +14,6 @@ namespace Nox.Security
     {
         private const int KEY_SIZE = 4096;
 
-        private RSAParameters _parameters = new RSAParameters();
-
         protected RSA _rsa;
 
         #region Properties

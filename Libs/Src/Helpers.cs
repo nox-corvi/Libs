@@ -15,7 +15,7 @@ namespace Nox
 
         public static void Nope() { return; }
 
-        public static int intParse(string Value, string Fieldname)
+        public static int ParseInt(string Value, string Fieldname)
         {
             try
             {
@@ -27,7 +27,7 @@ namespace Nox
             }
         }
 
-        public static decimal decParse(string Value, string Fieldname)
+        public static decimal ParseDecimal(string Value, string Fieldname)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace Nox
             }
         }
 
-        public static long lngParse(string Value, string Fieldname)
+        public static long ParseLong(string Value, string Fieldname)
         {
             try
             {

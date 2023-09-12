@@ -9,7 +9,7 @@ namespace Nox.CI.CID
 {
     public class List<T> : CIDBase, IList<T>
     {
-        private System.Collections.Generic.List<T> _list;
+        private System.Collections.Generic.List<T> _list = new();
 
         #region IList Implementation
         public T this[int index] { 

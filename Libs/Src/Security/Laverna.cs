@@ -79,7 +79,6 @@ namespace Nox.Security
 
             return total;
         }
-
         public int Encode(Stream Source, Stream Destination) =>
             Encode(Source, Destination, createEncryptorTransformObject());
 
@@ -113,6 +112,28 @@ namespace Nox.Security
 
         public int Decode(Stream Source, Stream Destination) =>
             Decode(Source, Destination, createDecryptorTransformObject());
+
+
+        private static byte[] Encode(byte[] Source, ICryptoTransform transform)
+        {
+            MemoryStream input = new(Source), output = new();
+            int length = Encode(input, output, transform);
+
+            return output.ToArray();
+        }
+        public byte[] Encode(byte[] Source)
+            => Encode(Source, createDecryptorTransformObject());
+
+        private static byte[] Decode(byte[] Source, ICryptoTransform transform)
+        {
+            MemoryStream input = new(Source), output = new();
+            int length = Decode(input, output, transform);
+
+            return output.ToArray();
+        }
+        public byte[] Decode(byte[] Source)
+            => Decode(Source, createDecryptorTransformObject());
+
 
         /// <summary>
         /// encodes a string

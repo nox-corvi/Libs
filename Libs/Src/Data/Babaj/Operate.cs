@@ -217,8 +217,8 @@ namespace Nox.Libs.Data.Babaj
 
             var AttributeList = new List<DataColMapDescriptor>();
 
-            IEnumerable<PropertyInfo> SearchList;
 #if NET35 
+            IEnumerable<PropertyInfo> SearchList;
             SearchList = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.GetCustomAttribute<DatabaseColumnAttribute>() != null))
 #endif

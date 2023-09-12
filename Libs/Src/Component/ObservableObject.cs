@@ -27,7 +27,7 @@ namespace Nox.Component
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
             OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
 
-        protected void OnPropertyChanging([CallerMemberName] string? propertyName = null) =>
+        protected void OnPropertyChanging([CallerMemberName] string propertyName = null) =>
             OnPropertyChanging(new PropertyChangingEventArgs(propertyName));
 
 

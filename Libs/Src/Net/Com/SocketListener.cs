@@ -406,7 +406,7 @@ namespace Nox.Net.Com
         public event EventHandler<KeyxEventArgs> KeyxMessage;
         public event EventHandler<KeyvEventArgs> KeyvMessage;
 
-        public event EventHandler<ConSEventArgs> ConSMessage;
+        public event EventHandler<ConSEventArgs> ConsMessage;
 
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
@@ -430,8 +430,8 @@ namespace Nox.Net.Com
         public void OnKeyxMessage(object sender, KeyxEventArgs e)
             => KeyxMessage?.Invoke(sender, e);
 
-        public void OnConSMessage(object sender, ConSEventArgs e)
-            => ConSMessage?.Invoke(sender, e);
+        public void OnConsMessage(object sender, ConSEventArgs e)
+            => ConsMessage?.Invoke(sender, e);
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
@@ -597,7 +597,7 @@ namespace Nox.Net.Com
             if (cons.DataBlock.SequenceId == _SequenceId)
             {
                 var v = new ConSEventArgs(cons.DataBlock.SequenceId);
-                OnConSMessage(this, v);
+                OnConsMessage(this, v);
             }
             else
             {

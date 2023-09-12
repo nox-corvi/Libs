@@ -218,40 +218,73 @@ namespace Nox.Cli
 
         public Layout __layout = Layout.Default;
 
+        private int _historyBufferSize = -1;
+        public int HistoryBufferSize
+        {
+            get => _historyBufferSize;
+            set
+            {
+                if (_historyBufferSize != value)
+                {
+                    if (value > 0)
+                        _historyBuffer = new RingBuffer<string>(value);
+                    else
+                        _historyBuffer = null;
+                }
 
-        public static void Print(string Message)
-            => Console.Write(Message);
+                _historyBufferSize = value;
+            }
+        }
 
-        public static void PrintWith(string Message, ConsoleColor ForeColor, ConsoleColor BackColor)
+        private RingBuffer<string> _historyBuffer;
+
+        public void Print(string Message)
+        {
+            _historyBuffer?.Append(Message);
+            Console.Write(Message);
+        }
+
+        public void PrintWith(string Message, ConsoleColor ForeColor, ConsoleColor BackColor)
         {
             Console.ForegroundColor = ForeColor;
             Console.BackgroundColor = BackColor;
 
+            _historyBuffer?.Append(Message);
             Print(Message);
 
             Console.ResetColor();
         }
 
-        public static void PrintWith(string Message, ConsoleColor ForeColor)
-            => PrintWith(Message, ForeColor, Console.BackgroundColor);
+        public void PrintWith(string Message, ConsoleColor ForeColor)
+        {
+            _historyBuffer?.Append(Message);
+            PrintWith(Message, ForeColor, Console.BackgroundColor);
+        }
 
-        public static void PrintTo(string Message, int X, int Y)
+
+        public void PrintTo(string Message, int X, int Y)
         {
             SetCursor(X, Y);
+
+            _historyBuffer?.Append(Message);
             Print(Message);
         }
 
-        public static void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor)
+        public void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor)
         {
             Console.ForegroundColor = ForeColor;
+
+            _historyBuffer?.Append(Message);
             PrintTo(Message, X, Y);
 
             Console.ResetColor();
         }
 
-        public static void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor, ConsoleColor BackColor)
+        public void PrintToWith(string Message, int X, int Y, ConsoleColor ForeColor, ConsoleColor BackColor)
         {
             Console.BackgroundColor = BackColor;
+
+            _historyBuffer?.Append(Message);
             PrintToWith(Message, X, Y, ForeColor);
         }
 
@@ -271,16 +304,23 @@ namespace Nox.Cli
             else
                 Console.ForegroundColor = __layout.Text;
 
+            _historyBuffer?.Append(Message);
             Print(Message);
 
             Console.ResetColor();
         }
 
-        public static void PrintLine(string Message) =>
+        public void PrintLine(string Message)
+        {
+            _historyBuffer?.Append(Message);
             Print(Message + "\r\n");
+        }
 
-        public void PrintError(string Message) =>
+        public void PrintError(string Message)
+        {
+            _historyBuffer?.Append(Message);
             Console.Error.WriteLine(Message);
+        }
 
         public void PrintText(string Text, bool HighLight = false)
         {
@@ -289,12 +329,13 @@ namespace Nox.Cli
             else
                 Console.ForegroundColor = __layout.Text;
 
+            _historyBuffer?.Append(Text);
             Print(Text);
 
             Console.ResetColor();
         }
 
-        public static void LF() 
+        public void LF()
             => Console.WriteLine();
 
         public void PrintWithState(string Message, StateEnum StateValue)
@@ -302,6 +343,8 @@ namespace Nox.Cli
             Prompt();
 
             Console.ForegroundColor = __layout.Text;
+
+            _historyBuffer?.Append(Message);
             Print(Message);
 
             this.PrintState(StateValue);
@@ -389,8 +432,8 @@ namespace Nox.Cli
             if (Callback != null)
             {
                 var Result = Helpers.OnXTry<ConPrint.StateEnum>(Callback, (Exception e) => StateEnum.fail);
-
                 AppendMessage(MessageResult?.Invoke(Result) ?? "");
+
                 EndMessage(Result);
             }
             else
@@ -431,6 +474,7 @@ namespace Nox.Cli
             //int MaxLength = Console.WindowWidth - Console.CursorLeft - 12 - (ProcessId != -1 ? 8 : 0) - 1;
             //string Message2 = Message.LimitLength(MaxLength);
 
+            _historyBuffer?.Append(Message);
             Print(Message);
 
             Console.ResetColor();
@@ -444,6 +488,7 @@ namespace Nox.Cli
             //int MaxLength = Console.BufferWidth - Console.CursorLeft - 8 - 1;
             //string Message2 = Message.LimitLength(MaxLength);
 
+            _historyBuffer?.Append(Message);
             Print(Message);
         }
 
@@ -452,7 +497,10 @@ namespace Nox.Cli
 
         //string Chars = " ─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ▀ ▄ █ ▌ ▐ ░ ▒ ▓ ■ □ ▪ ▫ ";
 
-        public ConPrint() { }
+        public ConPrint()
+        {
+            HistoryBufferSize = _historyBufferSize;
+        }
     }
     public class ConWindow
         : ConBase
@@ -471,6 +519,9 @@ namespace Nox.Cli
             // invalidate buffer?
             if ((buffer.Width != Console.WindowWidth) | (_buffer.Height != Console.WindowHeight))
                 Invalidate();
+
+            Console.CursorLeft = X; Console.CursorTop = Y;
+            Console.ForegroundColor = ForeColor; Console.BackgroundColor = BackColor;
 
             for (int i = 0; i < Message.Length; i++)
             {
@@ -498,7 +549,7 @@ namespace Nox.Cli
                         Console.Write(Message[i]);
                     }
             }
-        }      
+        }
 
         public bool Print(string Message)
         {

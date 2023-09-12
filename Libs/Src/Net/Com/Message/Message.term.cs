@@ -18,9 +18,6 @@ namespace Nox.Net.Com.Message
         public override void Read(byte[] data)
         {
             _Id = Helpers.ExtractGuid(data, 0);
-
-            int i = 16;
-            //_Timestamp = DateTime.FromBinary(BitConverter.ToInt64(data, i));
         }
 
         public override byte[] Write()
