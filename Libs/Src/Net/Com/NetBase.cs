@@ -13,7 +13,7 @@ namespace Nox.Net.Com
         #region Properties
         public Guid Id { get; } = Guid.NewGuid();
 
-        private uint _Signature1;
+        private readonly uint _Signature1;
         public uint Signature1 { get => _Signature1; }
         #endregion
 
@@ -37,6 +37,7 @@ namespace Nox.Net.Com
         public NetBase(uint Signature1) =>
            _Signature1 = Signature1;
 
-        public virtual void Dispose() { }
+        public virtual void Dispose() =>
+            GC.SuppressFinalize(this);
     }
 }

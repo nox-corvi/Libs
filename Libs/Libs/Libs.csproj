@@ -12,6 +12,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />
+	<Link Include="..\Scr\**\*.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="README.md" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />

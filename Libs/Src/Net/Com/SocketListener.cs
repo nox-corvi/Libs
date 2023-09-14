@@ -240,10 +240,11 @@ namespace Nox.Net.Com
 
         public override void Dispose()
         {
-            base.Dispose();
-
             _SocketHandler.Dispose();
             _MessageHandler.Dispose();
+
+            base.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 
@@ -363,22 +364,15 @@ namespace Nox.Net.Com
 
             try
             {
-                switch (BitConverter.ToUInt32(Message, sizeof(uint))) // Signature2
+                return BitConverter.ToUInt32(Message, sizeof(uint)) switch // Signature2
                 {
-                    case (uint)MessageTypeEnum.PING:
-                        return HandlePingMessage(Message);
-                    case (uint)MessageTypeEnum.ECHO:
-                        return HandleEchoMessage(Message);
-
+                    (uint)MessageTypeEnum.PING => HandlePingMessage(Message),
+                    (uint)MessageTypeEnum.ECHO => HandleEchoMessage(Message),
                     //case (uint)SecureMessageTypeEnum.RESP:
                     //    return HandleRespMessage(Message);
-
-                    case (uint)MessageTypeEnum.TERM:
-                        return HandleTerminateMessage(Message);
-                    default:
-                        // unknown message type
-                        return false;
-                }
+                    (uint)MessageTypeEnum.TERM => HandleTerminateMessage(Message),
+                    _ => false,// unknown message type
+                };
             }
             catch (Exception e)
             {
@@ -453,8 +447,7 @@ namespace Nox.Net.Com
 
                 if (!p.Cancel && p.publicKey != null)
                 {
-                    var m = new ObtainMessageEventArgs();
-                    m.Identifier = 0xF1; // server rply message part 
+                    var m = new ObtainMessageEventArgs() { Identifier = 0xF1 }; // server rply message part 
                     OnObtainMessage(this, m);
 
                     if (m.Message != null)
@@ -719,33 +712,21 @@ namespace Nox.Net.Com
             {
                 try
                 {
-                    switch (BitConverter.ToUInt32(Message, sizeof(uint))) // Signature2
+                    return BitConverter.ToUInt32(Message, sizeof(uint)) switch // Signature2
                     {
-                        case (uint)SecureMessageTypeEnum.EHLO:
-                            return HandleEhloMessage(Message);
-                        case (uint)SecureMessageTypeEnum.RPLY:
-                            return HandleRplyMessage(Message);
-                        case (uint)SecureMessageTypeEnum.SIGX:
-                            return HandleSigxMessage(Message);
-                        case (uint)SecureMessageTypeEnum.SIGV:
-                            return HandleSigvMessage(Message);
-
-                        case (uint)SecureMessageTypeEnum.KEYX:
-                            return HandleKeyxMessage(Message);
-                        case (uint)SecureMessageTypeEnum.KEYV:
-                            return HandleKeyvMessage(Message);
-
-                        case (uint)SecureMessageTypeEnum.CONS:
-                            return HandleConSMessage(Message);
+                        (uint)SecureMessageTypeEnum.EHLO => HandleEhloMessage(Message),
+                        (uint)SecureMessageTypeEnum.RPLY => HandleRplyMessage(Message),
+                        (uint)SecureMessageTypeEnum.SIGX => HandleSigxMessage(Message),
+                        (uint)SecureMessageTypeEnum.SIGV => HandleSigvMessage(Message),
+                        (uint)SecureMessageTypeEnum.KEYX => HandleKeyxMessage(Message),
+                        (uint)SecureMessageTypeEnum.KEYV => HandleKeyvMessage(Message),
+                        (uint)SecureMessageTypeEnum.CONS => HandleConSMessage(Message),
                         //case (uint)SecureMessageTypeEnum.RESP:
                         //    return HandleRespMessage(Message);
-
                         //case (uint)MessageTypeEnum.DONE:
                         //    return HandleTerminateMessage(Message);
-                        default:
-                            // unknown message type
-                            return false;
-                    }
+                        _ => false,// unknown message type
+                    };
                 }
                 catch (Exception e)
                 {

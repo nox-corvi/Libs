@@ -10,7 +10,7 @@ namespace Nox.Net.Com
     public abstract class NetClient<T>
         : NetBase, INetClient where T : SocketListener, IRunner
     {
-        private Log4 _Log = Log4.Create();
+        private readonly Log4 _Log = Log4.Create();
 
         private T _Listener;
         private TcpClient _Client;

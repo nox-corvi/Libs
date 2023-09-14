@@ -22,6 +22,7 @@ namespace Nox.Net.Com.Message
         KEYX = 0xFCB4,
         KEYV = 0xFCB5,
         CONS = 0xFCB6,
+        CRAW = 0xFCBD,  // Crypted RAW Message
         RESP = 0xFCBF,  // generic response 
     }
 

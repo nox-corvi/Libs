@@ -1,4 +1,5 @@
-﻿using Nox.Cli;
+﻿using Microsoft.Extensions.Logging;
+using Nox.Cli;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -23,12 +24,12 @@ namespace Nox
         private const int GZ_BUFFER_MAX = 2 << 14;
         public const string Extension = ".log";
 
-        private ReaderWriterLock locker = new ReaderWriterLock();
+        private readonly ReaderWriterLock locker = new();
 
         private Log4LevelEnum _LogLevel = Log4LevelEnum.Trace;
-        private string _LogFile = "";
+        private readonly string _LogFile = "";
 
-        private bool _Echo = false;
+        private readonly bool _Echo = false;
 
         #region Properties
         public string LogFile { get => _LogFile; }
@@ -43,29 +44,19 @@ namespace Nox
         public static string LogClassName(Type type) =>
             $"{type.Assembly.GetName().Name}->{type.Name}";
 
-        public string GetLogLevelText(Log4LevelEnum LogLevel)
-        {
-            switch (LogLevel)
+        public static string GetLogLevelText(Log4LevelEnum LogLevel) =>
+            LogLevel switch
             {
-                case Log4LevelEnum.Fatal:
-                    return "FATAL";
-                case Log4LevelEnum.Error:
-                    return "ERROR";
-                case Log4LevelEnum.Warning:
-                    return "WARN";
-                case Log4LevelEnum.Info:
-                    return "INFO";
-                case Log4LevelEnum.Debug:
-                    return "DEBUG";
-                case Log4LevelEnum.Trace:
-                    return "TRACE";
-                default:
-                    return "UNKNWN";
-            }
-        }
+                Log4LevelEnum.Fatal => "FATAL",
+                Log4LevelEnum.Error => "ERROR",
+                Log4LevelEnum.Warning => "WARN",
+                Log4LevelEnum.Info => "INFO",
+                Log4LevelEnum.Debug => "DEBUG",
+                Log4LevelEnum.Trace => "TRACE",
+                _ => "UNKNWN"
+            };
         #endregion
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Objekte nicht mehrmals verwerfen")]
         public static bool CompressLogFile(string Filename, bool DeleteAfter = false)
         {
             var FI = new FileInfo(Filename);
@@ -74,24 +65,20 @@ namespace Nox
                 (FI.Extension != ".gz"))
             {
                 byte[] Buffer = new byte[GZ_BUFFER_MAX];
-                using (FileStream inFileStream = new FileStream(Filename, FileMode.Open))
+                using (FileStream inFileStream = new(Filename, FileMode.Open))
                 {
                     string GZFilename = Path.Combine(FI.DirectoryName,
                         Path.GetFileNameWithoutExtension(Filename) + "_" +
                         DateTime.Now.ToString("yyyymmddHHMMss") + Path.GetExtension(Filename) + ".gz");
 
-                    using (FileStream outFileStream = new FileStream(GZFilename, FileMode.CreateNew))
-                    {
-                        using (GZipStream GZip = new GZipStream(outFileStream, CompressionMode.Compress))
-                        {
-                            int Read = inFileStream.Read(Buffer, 0, Buffer.Length);
+                    using FileStream outFileStream = new(GZFilename, FileMode.CreateNew);
+                    using GZipStream GZip = new(outFileStream, CompressionMode.Compress);
+                    int Read = inFileStream.Read(Buffer, 0, Buffer.Length);
 
-                            while (Read > 0)
-                            {
-                                GZip.Write(Buffer, 0, Read);
-                                Read = inFileStream.Read(Buffer, 0, Buffer.Length);
-                            }
-                        }
+                    while (Read > 0)
+                    {
+                        GZip.Write(Buffer, 0, Read);
+                        Read = inFileStream.Read(Buffer, 0, Buffer.Length);
                     }
                 }
                 if (DeleteAfter) File.Delete(Filename);
@@ -137,17 +124,13 @@ namespace Nox
         }
 
         public bool WriteLog(string Message, string Filename) =>
-            AppendLogFile($"{System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n", Filename);
+            AppendLogFile($"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n", Filename);
 
         public string BuildLogFile()
         {
             string wcLogPath = AppContext.BaseDirectory; //Environment.CurrentDirectory;
             if (!wcLogPath.EndsWith(@"\"))
                 wcLogPath += @"\";
-
-            //if (_LogFile.StartsWith("."))
-            //    // relative path
-            //    wcLogPath = "";
 
             string wcLogFile = _LogFile;
 
@@ -175,7 +158,7 @@ namespace Nox
             var method = frame.GetMethod();
             string OriginInfo = $"{frame.GetFileName()}({frame.GetFileLineNumber()}):{method.Name}";
 
-            return WriteLog($"{ex.GetType().Name}\t{OriginInfo}: {ex.ToString()}", LogFile);
+            return WriteLog($"{ex.GetType().Name}\t{OriginInfo}: {ex}", LogFile);
         }
 
         /// <summary>
@@ -328,7 +311,7 @@ namespace Nox
 
             if (LogLevel <= _LogLevel)
             {
-                var frame = new StackFrame(1, true);
+                var frame = new StackFrame(Frame, true);
                 var method = frame.GetMethod();
                 string OriginInfo = $"{frame.GetFileName()}({frame.GetFileLineNumber()}):{method.Name}";
                 string Message = $"{Enum.GetName(typeof(Log4LevelEnum), LogLevel)}\t{OriginInfo}: {message}";
@@ -362,7 +345,7 @@ namespace Nox
         public bool TestLogWriteable(string Filename) => AppendLogFile("", Filename);
 
         public static Log4 Create(Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
-            new Log4($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
+            new($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
 
         public Log4(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
             : this(LogFile, LogLevel)

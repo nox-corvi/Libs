@@ -14,29 +14,29 @@ namespace Nox.Net.Com
     public abstract class NetServer<T>
         : NetBase, INetServer where T : SocketListener
     {
-        private Log4 Log = Log4.Create();
+        private readonly Log4 Log = Log4.Create();
 
         private TcpListener _Listener = null;
-        private List<SocketListener> _ListOfListener = new List<SocketListener>();
+        private readonly List<SocketListener> _ListOfListener = new();
 
         private BetterBackgroundWorker _Server;
-        private int _ServerWaitTime = 10;
+        private readonly int _ServerWaitTime = 10;
 
         private BetterBackgroundWorker _Purge;
-        private int _PurgeWaitTime = 100;
+        private readonly int _PurgeWaitTime = 100;
 
         #region Properties
-        public string ServerIP { get; set; } = "";
-        public int ServerPort { get; set; } = -1;
+        public string IP { get; set; } = "";
+        public int Port { get; set; } = -1;
 
         public string SocketMessage { get; set; }
 
-        public byte[] publicKey { get; set; } = null!;
+        public byte[] PublicKey { get; set; } = null!;
 
         public int ClientConnectionCount =>
-            _ListOfListener?.Count() ?? 0;
+            _ListOfListener?.Count ?? 0;
 
-        public int ReceiveBufferLength
+        public int AllReceiveBufferLength
         {
             get
             {
@@ -58,6 +58,15 @@ namespace Nox.Net.Com
                 return r;
             }
         }
+
+
+        public bool StillListen
+        {
+            get
+            {
+                return _Listener?.Server?.Connected ?? false;
+            }
+        }
         #endregion
 
         #region Events
@@ -77,7 +86,7 @@ namespace Nox.Net.Com
 
             StopServer();
 
-            ServerIP = IP; ServerPort = Port;
+            this.IP = IP; this.Port = Port;
             _Listener = new TcpListener(new IPEndPoint(IPAddress.Parse(IP), Port));
             _Listener.Start();
 
@@ -266,6 +275,9 @@ namespace Nox.Net.Com
         {
             Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopServer();
+
+            base.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public NetServer(uint Signature1, Log4 Log)
