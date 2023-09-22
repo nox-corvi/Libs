@@ -26,23 +26,11 @@ namespace Nox.Net.Com
         event EventHandler<EventArgs> Terminate;
 
         /// <summary>
-        /// raised if socket will close
-        /// </summary>
-        event EventHandler<EventArgs> CloseSocket;
-
-        /// <summary>
         /// will raise the Terminate event
         /// </summary>
         /// <param name="sender">sender object, usually the current object</param>
         /// <param name="e">MessageCancelEventArgs</param>
         void OnTerminate(object sender, EventArgs e);
-
-        /// <summary>
-        /// will raise the CloseSocket event
-        /// </summary>
-        /// <param name="sender">sender object, usually the current object</param>
-        /// <param name="e">MessageEventArgs</param>
-        void OnCloseSocket(object sender, EventArgs e);
 
         /// <summary>
         /// will raise the message event
@@ -57,21 +45,7 @@ namespace Nox.Net.Com
     /// </summary>
     public interface INetServer
     {
-        #region Events
-        /// <summary>
-        /// raised if the server bind to a socket
-        /// </summary>
-        public event EventHandler<MessageEventArgs> BindSocket;
-        #endregion
 
-        #region OnRaiseEvent Methods
-        /// <summary>
-        /// will raise the bindsocket event
-        /// </summary>
-        /// <param name="sender">sender object, usually the current object</param>
-        /// <param name="e"></param>
-        void OnBindSocket(object sender, MessageEventArgs e);
-        #endregion
     }
 
     /// <summary>
@@ -117,12 +91,7 @@ namespace Nox.Net.Com
         /// <summary>
         /// raised if a message will obtained
         /// </summary>
-        event EventHandler<ObtainMessageEventArgs> ObtainMessage;
-
-        /// <summary>
-        /// raised if a message will obtained. event can be canceled
-        /// </summary>
-        event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
+        event EventHandler<MessageEventArgs> ObtainRplyMessage;
         #endregion
 
         #region OnRaiseEvent Methods
@@ -152,14 +121,7 @@ namespace Nox.Net.Com
         /// </summary>
         /// <param name="sender">sender object, usually the current object</param>
         /// <param name="e"></param>
-        void OnObtainMessage(object sender, ObtainMessageEventArgs e);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender">sender object, usually the current object</param>
-        /// <param name="e"></param>
-        void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e);
+        void OnObtainRplyMessage(object sender, MessageEventArgs e);
         #endregion
     }
 

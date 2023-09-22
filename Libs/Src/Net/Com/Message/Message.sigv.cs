@@ -13,10 +13,10 @@ namespace Nox.Net.Com.Message
 
         public bool Valid { get; set; } = false;
 
-        public SigvEventArgs(Guid _SequenceId, byte[] EncryptedHash)
+        public SigvEventArgs(Guid SequenceId, byte[] EncryptedHash)
             : base()
         {
-            SequenceId = SequenceId;
+            this.SequenceId = SequenceId;
             this.EncryptedHash = EncryptedHash;
         }
     }

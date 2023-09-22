@@ -24,25 +24,23 @@ namespace Nox.Security
         public ICryptoTransform CreateEncryptorTransformObject()
         {
             using var myAes = Aes.Create();
-            myAes.BlockSize = myAes.LegalBlockSizes.Last().MaxSize;
             myAes.KeySize = KEY_SIZE;
-            myAes.Padding = PaddingMode.Zeros;
             myAes.Mode = CipherMode.CBC;
-            myAes.FeedbackSize = myAes.BlockSize;
-
+            myAes.BlockSize = myAes.LegalBlockSizes.Last().MaxSize;
+            myAes.Padding = PaddingMode.ISO10126;
+            
             return myAes.CreateEncryptor(_key, _IV.Take(myAes.BlockSize / 8).ToArray());
         }
 
         public ICryptoTransform CreateDecryptorTransformObject()
         {
             using var myAes = Aes.Create();
-            myAes.BlockSize = myAes.LegalBlockSizes.Last().MaxSize;
             myAes.KeySize = KEY_SIZE;
-            myAes.Padding = PaddingMode.Zeros;
             myAes.Mode = CipherMode.CBC;
-            myAes.FeedbackSize = myAes.BlockSize;
-
-            return myAes.CreateEncryptor(_key, _IV.Take(myAes.BlockSize / 8).ToArray());
+            myAes.BlockSize = myAes.LegalBlockSizes.Last().MaxSize;
+            myAes.Padding = PaddingMode.ISO10126;
+            
+            return myAes.CreateDecryptor(_key, _IV.Take(myAes.BlockSize / 8).ToArray());
         }
 
         /// <summary>
@@ -112,7 +110,7 @@ namespace Nox.Security
 
         private static byte[] Encode(byte[] Source, ICryptoTransform transform)
         {
-            MemoryStream input = new(Source), output = new();
+            MemoryStream input = new(Source, 0, Source.Length), output = new();
             Encode(input, output, transform);
 
             return output.ToArray();
@@ -122,7 +120,7 @@ namespace Nox.Security
 
         private static byte[] Decode(byte[] Source, ICryptoTransform transform)
         {
-            MemoryStream input = new(Source), output = new();
+            MemoryStream input = new(Source, 0, Source.Length), output = new();
             Decode(input, output, transform);
 
             return output.ToArray();

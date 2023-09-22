@@ -6,10 +6,12 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nox
 {
     public class Log4
+       // : ILogger
     {
         public enum Log4LevelEnum
         {
@@ -57,32 +59,40 @@ namespace Nox
             };
         #endregion
 
-        public static bool CompressLogFile(string Filename, bool DeleteAfter = false)
+        public bool CompressLogFile(string Filename, bool DeleteAfter = false)
         {
             var FI = new FileInfo(Filename);
 
             if (((File.GetAttributes(Filename) & FileAttributes.Hidden) != FileAttributes.Hidden) &&
                 (FI.Extension != ".gz"))
             {
-                byte[] Buffer = new byte[GZ_BUFFER_MAX];
-                using (FileStream inFileStream = new(Filename, FileMode.Open))
+                try
                 {
-                    string GZFilename = Path.Combine(FI.DirectoryName,
-                        Path.GetFileNameWithoutExtension(Filename) + "_" +
-                        DateTime.Now.ToString("yyyymmddHHMMss") + Path.GetExtension(Filename) + ".gz");
-
-                    using FileStream outFileStream = new(GZFilename, FileMode.CreateNew);
-                    using GZipStream GZip = new(outFileStream, CompressionMode.Compress);
-                    int Read = inFileStream.Read(Buffer, 0, Buffer.Length);
-
-                    while (Read > 0)
+                    byte[] Buffer = new byte[GZ_BUFFER_MAX];
+                    using (FileStream inFileStream = new(Filename, FileMode.Open))
                     {
-                        GZip.Write(Buffer, 0, Read);
-                        Read = inFileStream.Read(Buffer, 0, Buffer.Length);
+                        string GZFilename = Path.Combine(FI.DirectoryName,
+                            Path.GetFileNameWithoutExtension(Filename) + "_" +
+                            DateTime.Now.ToString("yyyymmddHHMMss") + Path.GetExtension(Filename) + ".gz");
+
+                        using FileStream outFileStream = new(GZFilename, FileMode.CreateNew);
+                        using GZipStream GZip = new(outFileStream, CompressionMode.Compress);
+                        int Read = inFileStream.Read(Buffer, 0, Buffer.Length);
+
+                        while (Read > 0)
+                        {
+                            GZip.Write(Buffer, 0, Read);
+                            Read = inFileStream.Read(Buffer, 0, Buffer.Length);
+                        }
                     }
+                    if (DeleteAfter) File.Delete(Filename);
+
+                    return true;
                 }
-                if (DeleteAfter) File.Delete(Filename);
-                return true;
+                catch (Exception)
+                {
+                    return false;
+                }
             }
             else
                 return false;
@@ -112,7 +122,7 @@ namespace Nox
                     HasError = true;
                     LoopCount += 1;
 
-                    System.Threading.Thread.Sleep((int)(2 * LoopCount));
+                    Thread.Sleep((int)(2 * LoopCount));
                 }
                 finally
                 {
@@ -344,8 +354,23 @@ namespace Nox
 
         public bool TestLogWriteable(string Filename) => AppendLogFile("", Filename);
 
-        public static Log4 Create(Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
+        public static Log4 Create(ILogger logger = null, Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
             new($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+        {
+            throw new NotImplementedException();
+        }
 
         public Log4(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
             : this(LogFile, LogLevel)

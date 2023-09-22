@@ -45,7 +45,7 @@ namespace Nox.Net.Com.Message
 
         public byte[] UserData { get => _user_data; set => _user_data = value; }
 
-        public T DataBlock => (T)_dataBlock;
+        public T dataBlock => (T)_dataBlock;
 
         #endregion
 

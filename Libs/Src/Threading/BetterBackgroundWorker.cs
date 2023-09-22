@@ -51,7 +51,6 @@ namespace Nox.Threading
                         catch (Exception ex)
                         {
                             e.Result = ex;
-                           
                         }
                         finally
                         {

@@ -1,4 +1,5 @@
-﻿using Nox.Net.Com.Message;
+﻿using Microsoft.Extensions.Logging;
+using Nox.Net.Com.Message;
 using Nox.Security;
 using Nox.Threading;
 using System;
@@ -14,7 +15,7 @@ namespace Nox.Net.Com
     public abstract class NetServer<T>
         : NetBase, INetServer where T : SocketListener
     {
-        private readonly Log4 Log = Log4.Create();
+        private readonly ILogger _Logger;
 
         private TcpListener _Listener = null;
         private readonly List<SocketListener> _ListOfListener = new();
@@ -59,31 +60,13 @@ namespace Nox.Net.Com
             }
         }
 
-
-        public bool StillListen
-        {
-            get
-            {
-                return _Listener?.Server?.Connected ?? false;
-            }
-        }
-        #endregion
-
-        #region Events
-        public event EventHandler<MessageEventArgs> BindSocket;
-        #endregion
-
-        #region OnRaiseEvent Methods
-        public void OnBindSocket(object sender, MessageEventArgs e)
-            => BindSocket?.Invoke(sender, e);
+        public bool Bound { get; private set; } = false;
         #endregion
 
         protected abstract void BindEvents(T SocketListener);
 
         public virtual void Bind(string IP, int Port)
         {
-            Log?.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
-
             StopServer();
 
             this.IP = IP; this.Port = Port;
@@ -97,12 +80,12 @@ namespace Nox.Net.Com
             _Purge = new BetterBackgroundWorker();
             _Purge.DoWork += new DoWorkEventHandler(Purge_DoWork);
             _Purge.Run();
+
+            Bound = true;
         }
 
         private void Server_DoWork(object sender, DoWorkEventArgs e)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
-
             var worker = sender as BetterBackgroundWorker;
 
             while (!worker.CancellationPending)
@@ -114,21 +97,19 @@ namespace Nox.Net.Com
                         var ClientSocket = _Listener.AcceptSocket();
 
                         // create using abstract method
-                        var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket, Log, 0);
+                        var SocketListener = (T)Activator.CreateInstance(typeof(T), Signature1, ClientSocket, _Logger, 0);
 
                         SocketListener.Terminate += (object sender, EventArgs e) =>
                         {
                             // notify
                             OnTerminate(sender, e);
 
-                            
                             var sl = (sender as Com.SocketListener);
 
                             // and remove
                             sl.Done();
                             _ListOfListener.Remove(sl);
                         };
-                        SocketListener.CloseSocket += OnCloseSocket;
                         SocketListener.Message += OnMessage;
 
                         BindEvents(SocketListener);
@@ -152,8 +133,6 @@ namespace Nox.Net.Com
 
         private void Purge_DoWork(object sender, DoWorkEventArgs e)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
-
             var worker = sender as BetterBackgroundWorker;
 
             while (!worker.CancellationPending)
@@ -174,11 +153,10 @@ namespace Nox.Net.Com
 
         public void StopServer()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
-
             // no further more connections
             if (_Server?.IsBusy ?? false)
             {
+                Bound = false;
                 _Listener.Stop();
 
                 _Server.Cancel();
@@ -198,8 +176,6 @@ namespace Nox.Net.Com
 
         private void StopAllListers()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
-
             if (_ListOfListener != null)
             {
                 for (int i = 0; i < _ListOfListener.Count; i++)
@@ -213,8 +189,6 @@ namespace Nox.Net.Com
 
         public bool SendBufferTo(int Index, byte[] byteBuffer)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, Index, byteBuffer);
-
             try
             {
                 if (_ListOfListener[Index].IsInitialized)
@@ -233,8 +207,6 @@ namespace Nox.Net.Com
 
         public int SendBuffer(byte[] byteBuffer)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
-
             int Result = 0;
 
             for (int i = 0; i < _ListOfListener.Count; i++)
@@ -247,8 +219,6 @@ namespace Nox.Net.Com
 
         public bool SendBufferTo(Guid Id, byte[] byteBuffer)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
-
             for (int i = 0; i < _ListOfListener.Count; i++)
                 if (_ListOfListener[i].Id == Id)
                     if (_ListOfListener[i].IsInitialized)
@@ -260,44 +230,33 @@ namespace Nox.Net.Com
 
         public void SendDataBlockTo(int Index, DataBlock data)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, Index, data);
-
             SendBufferTo(Index, data.Write());
         }
 
         public int SendDataBlock(DataBlock data)
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace, data);
             return SendBuffer(data.Write());
         }
 
         public override void Dispose()
         {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
             StopServer();
 
             base.Dispose();
             GC.SuppressFinalize(this);
         }
 
-        public NetServer(uint Signature1, Log4 Log)
+        public NetServer(uint Signature1, ILogger logger)
             : this(Signature1)
-            => this.Log = Log;
+            => this._Logger = logger;
 
         public NetServer(uint Signature1)
         : base(Signature1) { }
-
-        ~NetServer()
-        {
-            Log.LogMethod(Log4.Log4LevelEnum.Trace);
-            StopServer();
-        }
     }
 
     public class NetGenericServer<T>
          : NetServer<T>, INetGenericMessages where T : GenericSocketListener
     {
-
         #region Events
         public event EventHandler<PingMessageEventArgs> PingMessage;
 
@@ -311,12 +270,7 @@ namespace Nox.Net.Com
         /// <summary>
         /// raised if a message will obtained
         /// </summary>
-        public event EventHandler<ObtainMessageEventArgs> ObtainMessage;
-
-        /// <summary>
-        /// raised if a message will obtained. event can be canceled
-        /// </summary>
-        public event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
+        public event EventHandler<MessageEventArgs> ObtainRplyMessage;
         #endregion
 
         #region OnRaiseEvent Methods
@@ -330,11 +284,8 @@ namespace Nox.Net.Com
         public void OnRespMessage(object sender, RespMessageEventArgs e)
             => RespMessage?.Invoke(sender, e);
 
-        public void OnObtainMessage(object sender, ObtainMessageEventArgs e)
-            => ObtainMessage?.Invoke(sender, e);
-
-        public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)
-            => ObtainCancelMessage?.Invoke(sender, e);
+        public void OnObtainRplyMessage(object sender, MessageEventArgs e)
+            => ObtainRplyMessage?.Invoke(sender, e);
         #endregion
 
 
@@ -343,13 +294,12 @@ namespace Nox.Net.Com
             SocketListener.PingMessage += OnPingMessage;
             SocketListener.EchoMessage += OnEchoMessage;
             SocketListener.RespMessage += OnRespMessage;
-            SocketListener.ObtainMessage += OnObtainMessage;
-            SocketListener.ObtainCancelMessage += OnObtainCancelMessage;
+            SocketListener.ObtainRplyMessage += OnObtainRplyMessage;
         }
 
 
-        public NetGenericServer(uint Signature1, Log4 Log)
-            : base(Signature1, Log) { }
+        public NetGenericServer(uint Signature1, ILogger logger)
+            : base(Signature1, logger) { }
 
         public NetGenericServer(uint Signature1)
             : base(Signature1) { }
@@ -363,6 +313,7 @@ namespace Nox.Net.Com
         public event EventHandler<KeyxEventArgs> KeyxMessage;
         public event EventHandler<SigxEventArgs> SigxMessage;
         public event EventHandler<ConSEventArgs> ConsMessage;
+        public event EventHandler<CRawEventArgs> CRawMessage;
 
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
@@ -380,6 +331,9 @@ namespace Nox.Net.Com
         public void OnConsMessage(object sender, ConSEventArgs e)
             => ConsMessage?.Invoke(sender, e);
 
+        public void OnCRawMessage(object sender, CRawEventArgs e)
+            => CRawMessage?.Invoke(sender, e);
+
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
         #endregion
@@ -392,12 +346,13 @@ namespace Nox.Net.Com
             SocketListener.SigxMessage += OnSigxMessage;
             SocketListener.KeyxMessage += OnKeyxMessage;
             SocketListener.ConsMessage += OnConsMessage;
+            SocketListener.CRawMessage += OnCRawMessage;
 
             SocketListener.ObtainPublicKey += OnObtainPublicKey;
         }
 
-        public NetSecureServer(uint Signature1, Log4 Log)
-            : base(Signature1, Log) { }
+        public NetSecureServer(uint Signature1, ILogger logger)
+            : base(Signature1, logger) { }
         public NetSecureServer(uint Signature1)
            : base(Signature1) { }
     }

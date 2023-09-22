@@ -30,7 +30,7 @@ namespace Nox.Net.Com.Message
 
         #region Properties
         public Guid SequenceId { get => _SequenceId; set => SetProperty(ref _SequenceId, value); }
-        public byte[] EncryptedHash { get => _EncryptedHash; set => SetProperty(ref _EncryptedHash, value); }
+        public byte[] EncryptedData { get => _EncryptedData; set => SetProperty(ref _EncryptedData, value); }
         #endregion
 
         public override void Read(byte[] data)
@@ -47,7 +47,6 @@ namespace Nox.Net.Com.Message
             Result.AddRange(_SequenceId.ToByteArray());
 
             Result.AddRange(BitConverter.GetBytes(_EncryptedData.Length));
-
             Result.AddRange(_EncryptedData);
 
             return Result.ToArray();

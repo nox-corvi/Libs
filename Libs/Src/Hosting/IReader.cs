@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace Nox.Hosting
 {
+
+
     public interface IAsyncReader
     {
         Task Read(CancellationToken stoppingToken);

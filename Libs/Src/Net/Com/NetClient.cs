@@ -1,4 +1,5 @@
-﻿using Nox.Net.Com.Message;
+﻿using Microsoft.Extensions.Logging;
+using Nox.Net.Com.Message;
 using Nox.Security;
 using System;
 using System.Collections.Generic;
@@ -10,13 +11,12 @@ namespace Nox.Net.Com
     public abstract class NetClient<T>
         : NetBase, INetClient where T : SocketListener, IRunner
     {
-        private readonly Log4 _Log = Log4.Create();
+        private readonly ILogger _Logger;
 
         private T _Listener;
         private TcpClient _Client;
 
         private string _ServerIP = "";
-
 
         public string T1 => _Listener?.Id.ToString() ?? "<null>";
         public string T2 => _Client?.Client?.Handle.ToString() ?? "<null>";
@@ -46,15 +46,13 @@ namespace Nox.Net.Com
 
         public virtual void Connect(string IP, int Port)
         {
-            _Log.LogMethod(Log4.Log4LevelEnum.Trace, IP, Port);
-
             StopClient();
 
             _Client = new TcpClient();
             _Client.Connect(new IPEndPoint(IPAddress.Parse(IP), Port));
 
             // create instance
-            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client, _Log, 0);
+            _Listener = (T)Activator.CreateInstance(typeof(T), Signature1, _Client.Client, _Logger, 0);
             _Listener.Terminate += (object sender, EventArgs e) =>
             {
                 // notify
@@ -63,7 +61,6 @@ namespace Nox.Net.Com
                 // and close
                 StopClient();
             };
-            _Listener.CloseSocket += OnCloseSocket;
             _Listener.Message += OnMessage;
             _Listener.Initialize();
          
@@ -76,8 +73,6 @@ namespace Nox.Net.Com
 
         public void StopClient()
         {
-            _Log.LogMethod(Log4.Log4LevelEnum.Trace);
-            
             (_Listener as T)?.Done(); ;
             _Listener = null;
             
@@ -88,7 +83,6 @@ namespace Nox.Net.Com
 
         public bool SendBuffer(byte[] byteBuffer)
         {
-            _Log.LogMethod(Log4.Log4LevelEnum.Trace, byteBuffer);
             try
             {
                 if ((_Listener as T).IsInitialized)
@@ -106,32 +100,17 @@ namespace Nox.Net.Com
         }
 
         public bool SendDataBlock(DataBlock data)
-        {
-            _Log.LogMethod(Log4.Log4LevelEnum.Trace, data);
-
-            return SendBuffer(data.Write());
-        }
-
+            => SendBuffer(data.Write());
 
         public override void Dispose()
-        {
-            _Log.LogMethod(Log4.Log4LevelEnum.Trace);
-            StopClient();
-        }
+            => StopClient();
 
-        public NetClient(uint Signature1, Log4 Log)
+        public NetClient(uint Signature1, ILogger logger)
             : this(Signature1)
-            => this._Log = Log;
+            => this._Logger = logger;
 
         public NetClient(uint Signature1)
             : base(Signature1) { }
-
-
-        ~NetClient()
-        {
-            _Log.LogMethod(Log4.Log4LevelEnum.Trace);
-            StopClient();
-        }
     }
 
     public class NetGenericClient<T>
@@ -141,8 +120,7 @@ namespace Nox.Net.Com
         public event EventHandler<PingMessageEventArgs> PingMessage;
         public event EventHandler<EchoMessageEventArgs> EchoMessage;
         public event EventHandler<RespMessageEventArgs> RespMessage;
-        public event EventHandler<ObtainMessageEventArgs> ObtainMessage;
-        public event EventHandler<ObtainCancelMessageEventArgs> ObtainCancelMessage;
+        public event EventHandler<MessageEventArgs> ObtainRplyMessage;
         #endregion
 
         #region OnRaiseEvent Methods
@@ -155,11 +133,8 @@ namespace Nox.Net.Com
         public void OnRespMessage(object sender, RespMessageEventArgs e)
             => RespMessage?.Invoke(sender, e);
 
-        public void OnObtainMessage(object sender, ObtainMessageEventArgs e)
-            => ObtainMessage?.Invoke(sender, e);
-
-        public void OnObtainCancelMessage(object sender, ObtainCancelMessageEventArgs e)
-            => ObtainCancelMessage?.Invoke(sender, e);
+        public void OnObtainRplyMessage(object sender, MessageEventArgs e)
+            => ObtainRplyMessage?.Invoke(sender, e);
         #endregion
 
         protected override void BindEvents(T SocketListener)
@@ -167,12 +142,11 @@ namespace Nox.Net.Com
             SocketListener.PingMessage += OnPingMessage;
             SocketListener.EchoMessage += OnEchoMessage;
             SocketListener.RespMessage += OnRespMessage;
-            SocketListener.ObtainMessage += OnObtainMessage;
-            SocketListener.ObtainCancelMessage += OnObtainCancelMessage;
+            SocketListener.ObtainRplyMessage += OnObtainRplyMessage;
         }
 
-        public NetGenericClient(uint Signature1, Log4 Log)
-            : base(Signature1, Log) { }
+        public NetGenericClient(uint Signature1, ILogger logger)
+            : base(Signature1, logger) { }
         public NetGenericClient(uint Signature1)
             : base(Signature1) { }
 
@@ -185,6 +159,7 @@ namespace Nox.Net.Com
         public event EventHandler<RplyEventArgs> RplyMessage;
         public event EventHandler<SigvEventArgs> SigvMessage;
         public event EventHandler<KeyvEventArgs> KeyvMessage;
+        public event EventHandler<CRawEventArgs> CRawMessage;
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
 
@@ -196,6 +171,9 @@ namespace Nox.Net.Com
             => SigvMessage?.Invoke(sender, e);
         public void OnKeyvMessage(object sender, KeyvEventArgs e)
             => KeyvMessage?.Invoke(sender, e);
+
+        public void OnCRawMessage(object sender, CRawEventArgs e)
+            => CRawMessage?.Invoke(sender, e);
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
@@ -210,12 +188,13 @@ namespace Nox.Net.Com
             SocketListener.RplyMessage += OnRplyMessage;
             SocketListener.SigvMessage += OnSigvMessage;
             SocketListener.KeyvMessage += OnKeyvMessage;
+            SocketListener.CRawMessage += OnCRawMessage;
 
             SocketListener.ObtainPublicKey  += OnObtainPublicKey;
         }
 
-        public NetSecureClient(uint Signature1, Log4 Log)
-            : base(Signature1, Log) { }
+        public NetSecureClient(uint Signature1, ILogger logger)
+            : base(Signature1, logger) { }
 
         public NetSecureClient(uint Signature1)
             : base(Signature1) { }

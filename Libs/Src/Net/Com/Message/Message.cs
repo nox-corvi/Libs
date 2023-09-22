@@ -21,7 +21,7 @@ namespace Nox.Net.Com.Message
         SIGV = 0xFCB3,  // Signature Validate in Reply to SIGX
         KEYX = 0xFCB4,
         KEYV = 0xFCB5,
-        CONS = 0xFCB6,
+        CONS = 0xFCB6,  // connection secured 
         CRAW = 0xFCBD,  // Crypted RAW Message
         RESP = 0xFCBF,  // generic response 
     }
@@ -37,4 +37,3 @@ namespace Nox.Net.Com.Message
             : base(Signature2) { }
     }
 }
- 

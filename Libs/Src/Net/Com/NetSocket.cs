@@ -1,4 +1,5 @@
-﻿using Nox.Net.Com.Message;
+﻿using Microsoft.Extensions.Logging;
+using Nox.Net.Com.Message;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Nox.Net.Com
     public class NetSocket
        : NetBase, INetSocket, IRunner
     {
-        public Log4 _Log = null!;
+        public readonly ILogger _Logger;
 
         #region Properties
         public virtual bool IsInitialized { get; protected set; } = false;
@@ -45,9 +46,9 @@ namespace Nox.Net.Com
             //
         }
 
-        public NetSocket(uint Signature1, Log4 Log)
+        public NetSocket(uint Signature1, ILogger logger)
             : base(Signature1)
-            => _Log = Log;
+            => _Logger = logger;
 
         public NetSocket(uint Signature1)
             : this(Signature1, null) { } 

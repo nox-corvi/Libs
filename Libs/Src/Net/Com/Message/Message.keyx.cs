@@ -15,12 +15,14 @@ namespace Nox.Net.Com.Message
         public Guid SequenceId { get; }
 
         public byte[] EncryptedKey { get; }
+        public byte[] KeyHash { get; }
 
-        public KeyxEventArgs(Guid SequenceId, byte[] EncryptedKey)
+        public KeyxEventArgs(Guid SequenceId, byte[] EncryptedKey, byte[] keyHash)
             : base()
         {
             this.SequenceId = SequenceId;
             this.EncryptedKey = EncryptedKey;
+            this.KeyHash = keyHash;
         }
     }
 

@@ -1,4 +1,5 @@
-﻿using Nox.Net.Com;
+﻿using Microsoft.Extensions.Logging;
+using Nox.Net.Com;
 using Nox.Threading;
 using System;
 using System.Collections;
@@ -19,7 +20,7 @@ namespace Nox.Data
 
         public event EventHandler<LoopEventArgs<T>> Loop;
 
-        private Log4 _Log = null!;
+        private ILogger _Logger;
         private ThreadSafeDataList<T> _data = new();
 
         private BetterBackgroundWorker _worker = null;
@@ -85,7 +86,6 @@ namespace Nox.Data
 
         public void Initialize()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
 
             try
             {
@@ -93,8 +93,6 @@ namespace Nox.Data
                 _worker = new BetterBackgroundWorker();
                 _worker.DoWork += (object sender, DoWorkEventArgs e) =>
                 {
-                    _Log?.LogMethod(Log4.Log4LevelEnum.Trace, sender, e);
-
                     var e2 = new LoopEventArgs<T>(_data);
                     while (!(sender as BetterBackgroundWorker).CancellationPending)
                     {
@@ -107,7 +105,7 @@ namespace Nox.Data
                         }
                         catch (SocketException ex)
                         {
-                            _Log?.LogException(ex);
+                            _Logger.LogError(ex.ToString());
 
                             // exit if an error occured
                             break;
@@ -119,56 +117,47 @@ namespace Nox.Data
 
                 IsInitialized = true;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _Log?.LogException(e);
+                _Logger.LogCritical(ex.ToString());
             }
         }
 
         public void Run()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
             if (IsInitialized)
                 _worker.Run();
         }
 
         public void Done()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
             if (IsInitialized)
             {
                 // stop worker 
                 if (_worker.IsBusy)
                 {
-                    _Log?.LogMessage("cancel worker", Log4.Log4LevelEnum.Trace);
+                    _Logger.LogTrace("cancel worker");
                     _worker.Cancel();
 
                     _worker = null;
-                    _Log?.LogMessage("await worker is done", Log4.Log4LevelEnum.Trace);
-
-                    
+                    _Logger.LogTrace("await worker is done");
                 }
 
                 IsInitialized = false;
             }
         }
 
-        public DataHandler(Log4 Log)
-            => this._Log = Log;
+        public DataHandler(ILogger logger)
+            => this._Logger = logger;
 
-        public DataHandler(Log4 Log, bool InitWait = false)
-            : this(Log)
+        public DataHandler(ILogger logger, bool InitWait = false)
+            : this(logger)
         {
             if (!(InitWait | IsInitialized))
                 Initialize();
         }
 
-        public void Dispose()
-        {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-            Done();
-        }
+        public void Dispose() 
+            => Done();
     }
 }
