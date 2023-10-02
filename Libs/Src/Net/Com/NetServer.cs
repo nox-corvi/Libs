@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Threading;
 
 namespace Nox.Net.Com
@@ -314,6 +315,7 @@ namespace Nox.Net.Com
         public event EventHandler<SigxEventArgs> SigxMessage;
         public event EventHandler<ConSEventArgs> ConsMessage;
         public event EventHandler<CRawEventArgs> CRawMessage;
+        public event EventHandler<URawEventArgs> URawMessage;
 
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
@@ -333,6 +335,9 @@ namespace Nox.Net.Com
 
         public void OnCRawMessage(object sender, CRawEventArgs e)
             => CRawMessage?.Invoke(sender, e);
+
+        public void OnURawMessage(object sender, URawEventArgs e)
+            => URawMessage?.Invoke(sender, e);
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);

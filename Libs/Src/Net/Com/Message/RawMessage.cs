@@ -49,8 +49,8 @@ namespace Nox.Net.Com.Message
 
         #endregion
 
-        private IDataBlock CreateDataBlock(uint Signature2) =>
-            (T)Activator.CreateInstance(typeof(T), Signature2);
+        private IDataBlock CreateDataBlock(uint Signature) =>
+            (T)Activator.CreateInstance(typeof(T), Signature);
 
         public virtual void Read(byte[] raw)
         {
@@ -81,7 +81,7 @@ namespace Nox.Net.Com.Message
 
                 var Last = Reader.ReadUInt32();
                 if (Last != EOM)
-                    throw new Exception("0xfefe not found at end of message");
+                    throw new Exception(" not found at end of message");
 
                 _hash = hash;
             }

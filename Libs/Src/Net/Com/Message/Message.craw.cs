@@ -10,15 +10,20 @@ namespace Nox.Net.Com.Message
     {
         public Guid SequenceId { get; }
 
+        public byte[] Hash { get; }
+
         public byte[] EncryptedData { get; }
 
         public bool Valid { get; set; } = false;
 
-        public CRawEventArgs(Guid SequenceId, byte[] EncryptedData)
+        public byte[] UnencryptedData { get; set; }
+
+        public CRawEventArgs(Guid SequenceId, byte[] EncryptedData, byte[] hash)
             : base()
         {
             this.SequenceId = SequenceId;
             this.EncryptedData = EncryptedData;
+            this.Hash = hash;
         }
     }
 
@@ -26,10 +31,12 @@ namespace Nox.Net.Com.Message
         : DataBlock
     {
         private Guid _SequenceId = Guid.NewGuid();
+        private byte[] _Hash;
         private byte[] _EncryptedData;
 
         #region Properties
         public Guid SequenceId { get => _SequenceId; set => SetProperty(ref _SequenceId, value); }
+        public byte[] Hash { get => _Hash; set => SetProperty(ref _Hash, value); }
         public byte[] EncryptedData { get => _EncryptedData; set => SetProperty(ref _EncryptedData, value); }
         #endregion
 
@@ -38,6 +45,9 @@ namespace Nox.Net.Com.Message
             _SequenceId = Helpers.ExtractGuid(data, 0);
 
             int i = 16, read;
+            _Hash = Helpers.ExtractArrayWithLength(data, i, out read);
+
+            i += read;
             _EncryptedData = Helpers.ExtractArrayWithLength(data, i, out read);
         }
 
@@ -45,6 +55,9 @@ namespace Nox.Net.Com.Message
         {
             var Result = new List<byte>();
             Result.AddRange(_SequenceId.ToByteArray());
+
+            Result.AddRange(BitConverter.GetBytes(_Hash.Length));
+            Result.AddRange(_Hash);
 
             Result.AddRange(BitConverter.GetBytes(_EncryptedData.Length));
             Result.AddRange(_EncryptedData);

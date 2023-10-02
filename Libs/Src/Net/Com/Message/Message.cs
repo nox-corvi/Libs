@@ -23,6 +23,7 @@ namespace Nox.Net.Com.Message
         KEYV = 0xFCB5,
         CONS = 0xFCB6,  // connection secured 
         CRAW = 0xFCBD,  // Crypted RAW Message
+        URAW = 0xFCBE,  // Uncrypted RAW Message
         RESP = 0xFCBF,  // generic response 
     }
 

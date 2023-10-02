@@ -15,6 +15,8 @@ namespace Nox.Net.Com.Message
         public uint Response2 { get; }
         public uint Response3 { get; }
 
+        
+
         public RespMessageEventArgs(Guid SequenceId, uint Response1, uint Response2, uint Response3)
             : base()
         {

@@ -1,4 +1,5 @@
 ﻿using Nox.Security;
+using System;
 using System.IO;
 
 namespace Nox.Net.Com.Message

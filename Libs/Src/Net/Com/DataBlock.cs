@@ -11,6 +11,7 @@ namespace Nox.Net.Com
         byte[] Write();
     }
 
+
     public abstract class DataBlock : ObservableObject, IDataBlock
     {
         protected bool _dirty = false;
@@ -26,7 +27,7 @@ namespace Nox.Net.Com
 
         public abstract byte[] Write();
         
-        public DataBlock(uint Signature2)
+        public DataBlock(uint Signature)
             : this() =>
             this.Signature2 = Signature2;
 

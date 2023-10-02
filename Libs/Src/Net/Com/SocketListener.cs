@@ -371,6 +371,7 @@ namespace Nox.Net.Com
         public event EventHandler<ConSEventArgs> ConsMessage;
 
         public event EventHandler<CRawEventArgs> CRawMessage;
+        public event EventHandler<URawEventArgs> URawMessage;
 
         public event EventHandler<PublicKeyEventArgs> ObtainPublicKey;
         #endregion
@@ -399,6 +400,10 @@ namespace Nox.Net.Com
 
         public void OnCRawMessage(object sender, CRawEventArgs e)
             => CRawMessage?.Invoke(sender, e);
+
+        public void OnURawMessage(object sender, URawEventArgs e)
+            => URawMessage?.Invoke(sender, e);
+
 
         public void OnObtainPublicKey(object sender, PublicKeyEventArgs e)
             => ObtainPublicKey?.Invoke(sender, e);
@@ -442,7 +447,6 @@ namespace Nox.Net.Com
                     OnMessage(this, new MessageEventArgs("cancel obtain public key or public key is empty"));
                     Task.Run(() => Done());
                 }
-
 
             }
             else
@@ -588,8 +592,14 @@ namespace Nox.Net.Com
 
             if (craw.dataBlock.SequenceId == _SequenceId)
             {
-                var v = new CRawEventArgs(craw.dataBlock.SequenceId, craw.dataBlock.EncryptedData);
-                OnCRawMessage(this, v);
+                var c = new CRawEventArgs(craw.dataBlock.SequenceId, craw.dataBlock.EncryptedData, craw.dataBlock.Hash);
+                OnCRawMessage(this, c);
+
+                if (c.Valid)
+                {
+                    var u = new URawEventArgs(c.UnencryptedData);
+                    OnURawMessage(this, u);
+                }
             }
             else
             {
@@ -602,10 +612,10 @@ namespace Nox.Net.Com
 
         private bool HandleRespMessage(byte[] Message)
         {
-            var RESP = new MessageResp(Signature1);
-            RESP.Read(Message);
+            var resp = new MessageResp(Signature1);
+            resp.Read(Message);
 
-            OnRespMessage(this, new RespMessageEventArgs(_SequenceId, RESP.dataBlock.Response1, RESP.dataBlock.Response2, RESP.dataBlock.Response3));
+            OnRespMessage(this, new RespMessageEventArgs(_SequenceId, resp.dataBlock.Response1, resp.dataBlock.Response2, resp.dataBlock.Response3));
 
             return true;
         }
@@ -669,23 +679,6 @@ namespace Nox.Net.Com
             resp.dataBlock.Response3 = Response3;
 
             SendBuffer(resp.Write());
-        }
-
-        public void SendKeyxMessage(Guid SequenceId)
-        {
-            var keyx = new MessageKeyx(Signature1);
-
-            keyx.dataBlock.SequenceId = _SequenceId;
-
-            SendBuffer(keyx.Write());
-        }
-        public void SendKeyvMessage(Guid SequenceId)
-        {
-            var keyv = new MessageKeyv(Signature1);
-
-            keyv.dataBlock.SequenceId = _SequenceId;
-
-            SendBuffer(keyv.Write());
         }
 
         public void SendCRawMessage(Guid SequenceId, byte[] EncryptedData)
