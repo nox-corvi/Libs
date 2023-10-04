@@ -49,8 +49,8 @@ namespace Nox.Net.Com.Message
 
         #endregion
 
-        private IDataBlock CreateDataBlock(uint Signature) =>
-            (T)Activator.CreateInstance(typeof(T), Signature);
+        private IDataBlock CreateDataBlock(uint Signature2) =>
+            (T)Activator.CreateInstance(typeof(T), Signature2);
 
         public virtual void Read(byte[] raw)
         {

@@ -352,6 +352,7 @@ namespace Nox.Net.Com
             SocketListener.KeyxMessage += OnKeyxMessage;
             SocketListener.ConsMessage += OnConsMessage;
             SocketListener.CRawMessage += OnCRawMessage;
+            SocketListener.URawMessage += OnURawMessage;
 
             SocketListener.ObtainPublicKey += OnObtainPublicKey;
         }

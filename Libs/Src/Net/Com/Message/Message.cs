@@ -11,7 +11,8 @@ namespace Nox.Net.Com.Message
         TERM = 0xFCA0,  // Done
         PING = 0xFCA1,  // Ping
         ECHO = 0xFCA2,  // Reply to Ping
-        FEAT = 0xFCA3
+        FEAT = 0xFCA3, 
+        DATA = 0xFCA4
     }
     public enum SecureMessageTypeEnum
     {
@@ -22,6 +23,7 @@ namespace Nox.Net.Com.Message
         KEYX = 0xFCB4,
         KEYV = 0xFCB5,
         CONS = 0xFCB6,  // connection secured 
+        
         CRAW = 0xFCBD,  // Crypted RAW Message
         URAW = 0xFCBE,  // Uncrypted RAW Message
         RESP = 0xFCBF,  // generic response 

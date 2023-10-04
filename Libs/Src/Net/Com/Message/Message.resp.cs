@@ -11,11 +11,11 @@ namespace Nox.Net.Com.Message
         : EventArgs
     {
         public Guid SequenceId { get; }
-        public uint Response1 { get; }
+        public uint Response1 { get; }        
         public uint Response2 { get; }
         public uint Response3 { get; }
 
-        
+
 
         public RespMessageEventArgs(Guid SequenceId, uint Response1, uint Response2, uint Response3)
             : base()

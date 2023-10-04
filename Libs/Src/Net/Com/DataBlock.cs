@@ -27,7 +27,7 @@ namespace Nox.Net.Com
 
         public abstract byte[] Write();
         
-        public DataBlock(uint Signature)
+        public DataBlock(uint Signature2)
             : this() =>
             this.Signature2 = Signature2;
 

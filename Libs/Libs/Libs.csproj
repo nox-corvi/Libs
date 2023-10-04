@@ -31,4 +31,3 @@
     <DefineConstants>$(DefineConstants);CORE</DefineConstants>
   </PropertyGroup>
 </Project>
-
