@@ -8,10 +8,10 @@ namespace UserMod
 {
     public class Programm
     {
-        private static SwitchDesc Help = new SwitchDesc("help", "show this help");
+        private static SwitchDesc Help = new("help", "show this help");
 
         //<check type="reg" key="HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall" value="DisplayName" match="*SAP Crystal Reports*" />
-        private static MiruParseDescriptor CliDescription = new MiruParseDescriptor("USERMOD",
+        private static MiruParseDescriptor CliDescription = new("USERMOD",
             @"tiny util to create, change and modify local and ad user, change group memberships and much more",
             CommandDesc.Create(
                 new CommandDesc("query")
@@ -219,7 +219,7 @@ namespace UserMod
                                                         Con1.PrintText($"USER: {user.SamAccountName}, SID: {user.Sid}\r\n");
                                                     }
 
-                                                    using (var f = new PrincipalContext(ContextType.Domain, domainName, userName, passWord)) ;
+                                                    using (var f = new PrincipalContext(ContextType.Domain, domainName, userName, passWord))
 
                                                     Console.WriteLine(domain);
                                                     var members = group.Members;
@@ -287,8 +287,8 @@ namespace UserMod
                                         using (var user = UserPrincipal.FindByIdentity(dom, IdentityType.SamAccountName, u1))
                                             if ((group != null) & (user != null))
                                             {
-                                                group.Members.Add((Principal)user);
-                                                group.Save();
+                                                group?.Members.Add(user as Principal);
+                                                group?.Save();
 
                                                 Con1.PrintText("add-domainuser successfull\r\n");
                                                 Environment.ExitCode = 0;

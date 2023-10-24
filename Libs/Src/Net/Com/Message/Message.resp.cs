@@ -61,7 +61,7 @@ namespace Nox.Net.Com.Message
 
         public override byte[] Write()
         {
-            List<byte> Result = new List<byte>();
+            List<byte> Result = new();
 
             Result.AddRange(BitConverter.GetBytes(_Response1));
             Result.AddRange(BitConverter.GetBytes(_Response2));

@@ -55,7 +55,7 @@ namespace Nox
                 this.Key = Key;
         }
 
-        private Dictionary<string, CacheItem> _Cache = new Dictionary<string, CacheItem>();
+        private Dictionary<string, CacheItem> _Cache = new();
         private bool disposedValue;
 
         #region Properties
@@ -79,13 +79,15 @@ namespace Nox
         {
             try
             {
-                CacheItem Value;
-                if (!_Cache.TryGetValue(Key, out Value))
+                if (!_Cache.TryGetValue(Key, out CacheItem Value))
                 {
                     _Log.LogMessage($"Add to Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
 
-                    var CacheValue = new CacheItem(Key) { Expiration = this.Expiration };
-                    CacheValue.Value = CacheNotHit.Invoke();
+                    var CacheValue = new CacheItem(Key)
+                    {
+                        Expiration = this.Expiration,
+                        Value = CacheNotHit.Invoke()
+                    };
 
                     _Cache.Add(Key, CacheValue);
 
@@ -127,13 +129,15 @@ namespace Nox
         {
             try
             {
-                CacheItem Value;
-                if (!_Cache.TryGetValue(Key, out Value))
+                if (!_Cache.TryGetValue(Key, out CacheItem Value))
                 {
                     _Log.LogMessage($"Add to Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
 
-                    var CacheValue = new CacheItem(Key) { Expiration = this.Expiration };
-                    CacheValue.Value = ValueFunc.Invoke();
+                    var CacheValue = new CacheItem(Key)
+                    {
+                        Expiration = this.Expiration,
+                        Value = ValueFunc.Invoke()
+                    };
 
                     _Cache.Add(Key, CacheValue);
 
@@ -154,8 +158,7 @@ namespace Nox
         {
             try
             {
-                CacheItem Value;
-                return (_Cache.TryGetValue(Key, out Value));
+                return (_Cache.TryGetValue(Key, out CacheItem Value));
             }
             catch (Exception ex)
             {
@@ -165,12 +168,11 @@ namespace Nox
             }
         }
 
-        public T GetCacheValue(string Key, T DefaultValue = default(T))
+        public T GetCacheValue(string Key, T DefaultValue = default)
         {
             try
             {
-                CacheItem Value;
-                if (_Cache.TryGetValue(Key, out Value))
+                if (_Cache.TryGetValue(Key, out CacheItem Value))
                 {
                     _Log.LogMessage($"Get from Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
 
@@ -182,7 +184,7 @@ namespace Nox
             catch (Exception ex)
             {
                 _Log.LogException(ex);
-                return default(T);
+                return default;
             }
         }
         #endregion
@@ -317,7 +319,7 @@ namespace Nox
                 if ((Item != null) && (match.Invoke(Item)))
                     return Item;
 
-            return default(T);
+            return default;
         }
 
         public RingBuffer(int BufferSize)

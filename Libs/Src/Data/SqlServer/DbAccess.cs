@@ -126,7 +126,8 @@ namespace Nox.Data.SqlServer
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:SQL-Abfragen auf Sicherheitsrisiken überprüfen")]
-        public SqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
+        public SqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, 
+			CommandBehavior commandBehavior = CommandBehavior.CloseConnection, params SqlParameter[] Parameters)
 		{
             EnsureConnectionEstablished();
 
@@ -143,30 +144,34 @@ namespace Nox.Data.SqlServer
 				foreach (SqlParameter Param in Parameters)
 					c.Parameters.AddWithValue(Param.ParameterName, Param.Value);
 
-			return c.ExecuteReader(CommandBehavior.CloseConnection);
+			return c.ExecuteReader(commandBehavior);
 		}
 		
         public SqlDataReader GetReader(string SQL, params SqlParameter[] Parameters) =>
-            GetReader(SQL, CommandType.Text, Parameters);
+            GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, Parameters);
 
         public SqlDataReader GetReader(string SQL) =>
-            GetReader(SQL, CommandType.Text, null);
-		
+            GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection);
+
+
+        public SqlDataReader GetSchema(string Table)
+            => GetReader($"SELECT * FROM [{Table}]", CommandType.Text, CommandBehavior.SchemaOnly, null);
+
         public bool Exists(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
         {
-            using (var Reader = GetReader(SQL, commandType, Parameters))
+            using (var Reader = GetReader(SQL, commandType, CommandBehavior.CloseConnection, Parameters))
                 return (Reader.Read());
         }
 
         public bool Exists(string SQL, params SqlParameter[] Parameters)
         {
-            using (var Reader = GetReader(SQL, CommandType.Text, Parameters))
+            using (var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection,Parameters))
                 return (Reader.Read());
         }
 
         public bool Exists(string SQL)
         {
-            using (var Reader = GetReader(SQL, CommandType.Text, null))
+            using (var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, null))
                 return (Reader.Read());
         }
 

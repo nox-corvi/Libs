@@ -88,7 +88,7 @@ namespace Nox
             }
             catch (Exception e)
             {
-                return exception?.Invoke(e) ?? default(T);
+                return exception?.Invoke(e) ?? default;
             }
         }
 
@@ -266,7 +266,7 @@ namespace Nox
 
         public static string EnHEX(byte[] bytes)
         {
-            StringBuilder s = new StringBuilder();
+            StringBuilder s = new();
             foreach (byte b in bytes)
                 s.Append(b.ToString("x2"));
             return s.ToString();

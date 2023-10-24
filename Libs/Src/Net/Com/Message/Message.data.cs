@@ -14,82 +14,82 @@ namespace BitsCommon.Net.Message
 	{
 		public Guid SequenceId { get; }
 
-		public byte[] data0 { get; }
-        public byte[] data1 { get; }
-        public byte[] data2 { get; }
-        public byte[] data3 { get; }
+		public byte[] Data0 { get; }
+        public byte[] Data1 { get; }
+        public byte[] Data2 { get; }
+        public byte[] Data3 { get; }
 
         public DataEventArgs(Guid SequenceId)
 			: base()
 		    => this.SequenceId = SequenceId;
 
-        public DataEventArgs(Guid SequenceId, byte[] data0)
+        public DataEventArgs(Guid SequenceId, byte[] Data0)
             : this(SequenceId)
-            => this.data0 = data0;
+            => this.Data0 = Data0;
 
-        public DataEventArgs(Guid SequenceId, byte[] data0, byte[] data1)
-            : this(SequenceId,  data0)
-            => this.data1 = data1;
+        public DataEventArgs(Guid SequenceId, byte[] Data0, byte[] Data1)
+            : this(SequenceId, Data0)
+            => this.Data1 = Data1;
 
-        public DataEventArgs(Guid SequenceId, byte[] data0, byte[] data1, byte[] data2)
-            : this(SequenceId,  data0, data1)
-            => this.data2 = data2;
+        public DataEventArgs(Guid SequenceId, byte[] Data0, byte[] Data1, byte[] Data2)
+            : this(SequenceId, Data0, Data1)
+            => this.Data2 = Data2;
 
-        public DataEventArgs(Guid SequenceId, byte[] data0, byte[] data1, byte[] data2, byte[] data3)
-            : this(SequenceId,  data0, data1, data3)
-            => this.data3 = data3;
+        public DataEventArgs(Guid SequenceId, byte[] Data0, byte[] Data1, byte[] Data2, byte[] Data3)
+            : this(SequenceId, Data0, Data1, Data2)
+            => this.Data3 = Data3;
     }
 
 	public class MessageDataData
 		: DataBlock
 	{
-        private byte[] _data0;
-        private byte[] _data1;
-        private byte[] _data2;
-        private byte[] _data3;
+        private byte[] _Data0;
+        private byte[] _Data1;
+        private byte[] _Data2;
+        private byte[] _Data3;
 
         #region Properties
-        public byte[] data0 { get => _data0; set => SetProperty(ref _data0, value); }
-        public byte[] data1 { get => _data1; set => SetProperty(ref _data1, value); }
-        public byte[] data2 { get => _data2; set => SetProperty(ref _data2, value); }
-        public byte[] data3 { get => _data3; set => SetProperty(ref _data3, value); }
+        public byte[] Data0 { get => _Data0; set => SetProperty(ref _Data0, value); }
+        public byte[] Data1 { get => _Data1; set => SetProperty(ref _Data1, value); }
+        public byte[] Data2 { get => _Data2; set => SetProperty(ref _Data2, value); }
+        public byte[] Data3 { get => _Data3; set => SetProperty(ref _Data3, value); }
 
         #endregion
 
         public override void Read(byte[] data)
 		{
 			int i = 0, read;
-            _data0 = Helpers.ExtractArrayWithLength(data, i, out read);
+            _Data0 = Helpers.ExtractArrayWithLength(data, i, out read);
 
             i += read;
-            _data1 = Helpers.ExtractArrayWithLength(data, i, out read);
+            _Data1 = Helpers.ExtractArrayWithLength(data, i, out read);
 
             i += read;
-            _data2 = Helpers.ExtractArrayWithLength(data, i, out read);
+            _Data2 = Helpers.ExtractArrayWithLength(data, i, out read);
 
             i += read;
-            _data3 = Helpers.ExtractArrayWithLength(data, i, out read);
+            _Data3 = Helpers.ExtractArrayWithLength(data, i, out read);
         }
 
 		public override byte[] Write()
 		{
 			var Result = new List<byte>();
 
-            Result.AddRange(BitConverter.GetBytes(_data0?.Length ?? 0));
-            if (_data0 != null)
-                Result.AddRange(_data0);
+            Result.AddRange(BitConverter.GetBytes(_Data0?.Length ?? 0));
+            if (_Data0 != null)
+                Result.AddRange(_Data0);
             
-            Result.AddRange(BitConverter.GetBytes(_data1?.Length ?? 0));
-            if (_data1 != null)
-                Result.AddRange(_data1);
+            Result.AddRange(BitConverter.GetBytes(_Data1?.Length ?? 0));
+            if (_Data1 != null)
+                Result.AddRange(_Data1);
             
-            Result.AddRange(BitConverter.GetBytes(_data2?.Length ?? 0));
-            if (_data2 != null)
-                Result.AddRange(_data2);
+            Result.AddRange(BitConverter.GetBytes(_Data2?.Length ?? 0));
+            if (_Data2 != null)
+                Result.AddRange(_Data2);
 
-            Result.AddRange(BitConverter.GetBytes(_data3?.Length ?? 0));
-            if (_data3 != null)
-                Result.AddRange(_data3);
+            Result.AddRange(BitConverter.GetBytes(_Data3?.Length ?? 0));
+            if (_Data3 != null)
+                Result.AddRange(_Data3);
 
             return Result.ToArray();
 		}

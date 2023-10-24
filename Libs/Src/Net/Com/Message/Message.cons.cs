@@ -10,9 +10,9 @@ namespace Nox.Net.Com.Message
     {
         public Guid SequenceId { get; }
         
-        public ConSEventArgs(Guid _SequenceId)
+        public ConSEventArgs(Guid SequenceId)
             : base() =>
-            SequenceId = SequenceId;
+            this.SequenceId = SequenceId;
     }
     public class ConSData
          : DataBlock

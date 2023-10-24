@@ -11,7 +11,7 @@ namespace Nox.CI.CID
     public sealed class CID 
         : CIBase
     {
-        protected const string ERR_UNHANDLED_EXCEPTION = "error: unhandled exception";
+        //protected const string ERR_UNHANDLED_EXCEPTION = "error: unhandled exception";
 
         #region Properties
         public string Version { get; internal set; } = "";

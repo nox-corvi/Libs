@@ -44,7 +44,7 @@ namespace Nox.Net.Com.Message
         {
             _SequenceId = Helpers.ExtractGuid(data, 0);
 
-            int i = 16, read;
+            int i = 16, read = 0;
             _Hash = Helpers.ExtractArrayWithLength(data, i, out read);
 
             i += read;
