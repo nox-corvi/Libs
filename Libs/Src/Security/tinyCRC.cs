@@ -27,7 +27,7 @@ namespace Nox.Security
 
         public void Push(byte Value)
         {
-            var Raw = BitConverter.GetBytes(Value);
+            var Raw = new byte[] { Value };
             Push(Raw, 0, Raw.Length);
         }
 

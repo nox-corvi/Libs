@@ -6,20 +6,25 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace Nox.Data.SqlServer
 {
     public struct SqlColumn
     {
-        public string Name;
-        public int OrdinalNumber;
-        public string TypeName;
-        public int MaxLength;
-        public int Precision;
-        public int Scale;
+        public string TableCatalog;
+        public string TableSchema;
+        public string TableName;
+        public string ColumnName;
+        public int OrdinalPosition;
+        public string ColumnDefault;
         public bool IsNullable;
-        public bool IsIdentity;
-        public int DefaultObjectId;
+        public string DataType;
+        public int MaxLength;
+        public int OctetLength;
+        public int NumericPrecision;
+        public int NumericScale;
+        public int DateTimePrecision;
     }
     public class SqlTable
     {
@@ -84,24 +89,24 @@ namespace Nox.Data.SqlServer
         public SqlColumn[] Columns(string Table)
         {
             var qry =
-            @"select 
-	            c.name as Name,
-	            c.column_id as OrdinalNumber, 
-	            ty.name as TypeName,
-	            c.max_length as MaxLength,
-	            c.precision as Precision, 
-	            c.scale as Scale, 
-	            c.is_nullable as IsNullable, 
-	            c.is_identity as IsIdentity, 
-	            c.default_object_id as DefaultObjectId
+            @"select
+	            table_catalog, 
+	            table_schema, 
+	            table_name, 
+	            column_name, 
+	            ordinal_position,
+	            column_default, 
+	            is_nullable, 
+	            data_type, 
+	            character_maximum_length,
+	            character_octet_length,
+	            numeric_precision, 
+	            numeric_scale, 
+	            datetime_precision
             from 
-	            sys.all_columns c
-	            left join sys.tables ta on c.object_id = ta.object_id
-	            left join sys.types ty on c.system_type_id = ty.system_type_id and c.user_type_id = ty.user_type_id
-
+	            INFORMATION_SCHEMA.COLUMNS
             where
-	            ta.name like @table 
-                and ta.is_ms_shipped = 0";
+	            table_name = @table";
 
             var Result = new List<SqlColumn>();
             using (var r = _dba.GetReader(@qry,
@@ -109,15 +114,19 @@ namespace Nox.Data.SqlServer
                 while (r.Read())
                     Result.Add(new SqlColumn()
                     {
-                        Name = Helpers.NZ(r.GetValue(r.GetOrdinal("name"))),
-                        OrdinalNumber = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("OrdinalNumber")), "0")),
-                        TypeName = Helpers.NZ(r.GetValue(r.GetOrdinal("TypeName"))),
-                        MaxLength = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("MaxLength")), "0")),
-                        Precision = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("Precision")), "0")),
-                        Scale = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("Scale")), "0")),
-                        IsNullable = r.GetBoolean(r.GetOrdinal("IsNullable")),
-                        IsIdentity = r.GetBoolean(r.GetOrdinal("IsIdentity")),
-                        DefaultObjectId = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("DefaultObjectId")), "0")),
+                        TableCatalog = Helpers.NZ(r.GetValue(r.GetOrdinal("table_catalog"))),
+                        TableSchema = Helpers.NZ(r.GetValue(r.GetOrdinal("table_schema"))),
+                        TableName = Helpers.NZ(r.GetValue(r.GetOrdinal("table_name"))),
+                        ColumnName = Helpers.NZ(r.GetValue(r.GetOrdinal("column_name"))),
+                        OrdinalPosition = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("ordinal_position")), "0")),
+                        ColumnDefault = Helpers.NZ(r.GetValue(r.GetOrdinal("column_default"))),
+                        IsNullable = Helpers.NZ(r.GetValue(r.GetOrdinal("is_nullable")),"") == "YES",
+                        DataType = Helpers.NZ(r.GetValue(r.GetOrdinal("data_type"))),
+                        MaxLength = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("character_maximum_length")), "0")),
+                        OctetLength = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("character_octet_length")), "0")),
+                        NumericPrecision = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("numeric_precision")), "0")),
+                        NumericScale = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("numeric_scale")), "0")),
+                        DateTimePrecision = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("datetime_precision")), "0")),
                     });
 
             return Result.ToArray();

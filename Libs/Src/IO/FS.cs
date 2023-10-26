@@ -3679,7 +3679,7 @@ namespace Nox.IO
 
         public void Push(byte Value)
         {
-            var Raw = BitConverter.GetBytes(Value);
+            var Raw = new byte[] { Value };
             Push(Raw, 0, Raw.Length);
         }
         public void Push(int Value)

@@ -98,7 +98,7 @@ namespace Nox.Libs.Data.Babaj
     {
         protected Operate<T> _Operate;
 
-        public DataRowColl<T> Get(string Where, params KeyValuePair[] Parameters)
+        public DataRowColl<T> Get(string Where, params KeyValuePair<string,string>[] Parameters)
         {
             var Result = _Operate.Load(Where, Parameters.Select(f => new SqlParameter(f.Key, f.Value)).ToArray());
 
