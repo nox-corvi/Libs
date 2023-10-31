@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>Nox</AssemblyName>
+    <RootNamespace>Nox</RootNamespace>
+    <PackageId>Libs</PackageId>
+    <Company>Libs</Company>
+    <Product>Libs</Product>
+    <Authors>Libs</Authors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Src\**\*.cs" />
+	<Link Include="..\Scr\**\*.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="..\Src\Data\Babaj\Attributes.cs" />
+    <Compile Remove="..\Src\Data\Babaj\Babaj.cs" />
+    <Compile Remove="..\Src\Data\Babaj\DataColumn.cs" />
+    <Compile Remove="..\Src\Data\Babaj\DataMapping.cs" />
+    <Compile Remove="..\Src\Data\Babaj\DataRelation.cs" />
+    <Compile Remove="..\Src\Data\Babaj\DataRow.cs" />
+    <Compile Remove="..\Src\Data\Babaj\DataRowColl.cs" />
+    <Compile Remove="..\Src\Data\Babaj\DataTable.cs" />
+    <Compile Remove="..\Src\Data\Babaj\Helpers.cs" />
+    <Compile Remove="..\Src\Data\Babaj\Operate.cs" />
+    <Compile Remove="..\Src\Security\ILaverna.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);CORE</DefineConstants>
+  </PropertyGroup>
+</Project>

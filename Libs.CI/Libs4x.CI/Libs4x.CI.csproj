@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <AssemblyName>Nox.CI</AssemblyName>
     <RootNamespace>Nox.CI</RootNamespace>
     <Company>Libs</Company>
@@ -9,9 +8,16 @@
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	<RestoreFallbackFolders>clear</RestoreFallbackFolders>
+	<LangVersion>10.0</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Libs\Libs\Libs.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Src\**\*.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Libs\Libs4x\Libs4x.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Include="System.Net" />
+	  <Reference Include="System.Net.Http" />
+	</ItemGroup>
 </Project>

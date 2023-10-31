@@ -172,7 +172,7 @@ namespace Nox.HMC
         #region Query-Tools 
         private string BaseUri(string Query)
         {
-            ArgumentNullException.ThrowIfNull(Query);
+            if (string.IsNullOrEmpty(Query)) throw new ArgumentNullException(nameof(Query));
             return HMC_BASE_URL.Replace("<IP>", _IP).Replace("*", Query);
         }
 

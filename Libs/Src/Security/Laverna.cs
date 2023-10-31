@@ -231,7 +231,12 @@ namespace Nox.Security
             for (int i = 0; i < Salt.Length;)
                 unchecked { pred = _salt[i++] = (byte)((byte)Salt[i] + pred); }
 
+#if NET40_OR_GREATER
             using var _2898 = new Rfc2898DeriveBytes(Key, _salt, Iterations);
+#elif NET6_0_OR_GREATER
+            using var _2898 = new Rfc2898DeriveBytes(Key, _salt, Iterations, HashAlgorithmName.SHA256);
+#endif
+
             _key = _2898.GetBytes(KEY_SIZE << 3);
             _IV = _2898.GetBytes(KEY_SIZE << 4);
         }

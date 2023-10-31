@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<AssemblyName>Nox.CI</AssemblyName>
+		<RootNamespace>Nox.CI</RootNamespace>
+		<Company>Libs</Company>
+		<Product>Libs</Product>
+		<Authors>Libs</Authors>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<RestoreFallbackFolders>clear</RestoreFallbackFolders>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="..\Src\**\*.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Libs\Libs7x\Libs7x.csproj" />
+	</ItemGroup>
+
+</Project>

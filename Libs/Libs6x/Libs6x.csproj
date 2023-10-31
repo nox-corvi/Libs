@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>Nox</AssemblyName>
     <RootNamespace>Nox</RootNamespace>
     <PackageId>Libs</PackageId>
@@ -9,6 +9,8 @@
     <Product>Libs</Product>
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <RootNamespace>Nox</RootNamespace>
+	  <AssemblyName>Nox</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />
@@ -31,9 +33,6 @@
     <None Remove="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
