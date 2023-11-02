@@ -11,9 +11,8 @@ using System.Threading.Tasks;
 
 namespace Nox.Data
 {
-    public class rddb
+    public class RRDB
     {
 
     }
-
 }

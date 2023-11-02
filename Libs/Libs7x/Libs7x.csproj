@@ -26,6 +26,7 @@
     <Compile Remove="..\Src\Data\Babaj\DataTable.cs" />
     <Compile Remove="..\Src\Data\Babaj\Helpers.cs" />
     <Compile Remove="..\Src\Data\Babaj\Operate.cs" />
+    <Compile Remove="..\Src\IO\rrdb.cs" />
     <Compile Remove="..\Src\Security\ILaverna.cs" />
   </ItemGroup>
   <ItemGroup>
