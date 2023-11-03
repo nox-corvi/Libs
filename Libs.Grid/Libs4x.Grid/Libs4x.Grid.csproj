@@ -5,16 +5,20 @@
 	  <AssemblyName>Nox.Matrix</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RootNamespace>Nox.Matrix</RootNamespace>
-    <AssemblyName>Nox.Matrix</AssemblyName>
+    <RootNamespace>Nox.Grid</RootNamespace>
+    <AssemblyName>Nox.Grid</AssemblyName>
+	  <LangVersion>10</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.1" />
   </ItemGroup>
-	<ItemGroup>
+	<ItemGroup> 
 		<Compile Include="..\Src\**\*.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="..\Src\Net\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Content\Enyo4x.Content\Enyo4x.Content.csproj" />

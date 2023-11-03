@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs4x.CI", "Libs.CI\Libs4x
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs4x", "Libs\Libs4x\Libs4x.csproj", "{4017FCFF-33EC-4A25-BA79-95A0E0D05013}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs4x.Matrix", "Libs.Matrix\Libs4x.Matrix\Libs4x.Matrix.csproj", "{A37C5973-261F-4D4A-BD91-C290DD7A9F53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs4x.Grid", "Libs.Grid\Libs4x.Grid\Libs4x.Grid.csproj", "{A37C5973-261F-4D4A-BD91-C290DD7A9F53}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs4x.Win32", "Libs.Win32\Libs4x.Win32\Libs4x.Win32.csproj", "{B7938CC1-5CE8-402F-944D-B57F5FA2444B}"
 EndProject
@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs6x.CI.Win32", "Libs.CI.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs6x.Linux", "Libs.Linux\Libs6x.Linux\Libs6x.Linux.csproj", "{881628B1-4478-4A93-8662-231C88C0ECA1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs6x.Matrix", "Libs.Matrix\Libs6x.Matrix\Libs6x.Matrix.csproj", "{32D7AD32-92A9-4BE2-AB6C-252418242A3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs6x.Grid", "Libs.Grid\Libs6x.Grid\Libs6x.Grid.csproj", "{32D7AD32-92A9-4BE2-AB6C-252418242A3C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs6x.Win32", "Libs.Win32\Libs6x.Win32\Libs6x.Win32.csproj", "{F737A4A6-2018-4948-915E-51043F99B2D8}"
 EndProject
@@ -47,7 +47,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs7x.CI.Win32", "Libs.CI.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs7x.Linux", "Libs.Linux\Libs7x.Linux\Libs7x.Linux.csproj", "{30BFB92F-5EB3-4359-BE96-355719D2B726}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs7x.Matrix", "Libs.Matrix\Libs7x.Matrix\Libs7x.Matrix.csproj", "{D7E5B530-821D-4349-8049-8193EEEB136B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs7x.Grid", "Libs.Grid\Libs7x.Grid\Libs7x.Grid.csproj", "{D7E5B530-821D-4349-8049-8193EEEB136B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Libs7x.Win32", "Libs.Win32\Libs7x.Win32\Libs7x.Win32.csproj", "{A9456403-C14C-400C-AABD-9B151C4A8B0C}"
 EndProject

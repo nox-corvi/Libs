@@ -6,17 +6,20 @@
     <RootNamespace>Nox</RootNamespace>
     <PackageId>Libs</PackageId>
     <Company>Libs</Company>
-    <Product>Libs</Product>
+    <Product>Libs</Product> 
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>9.0</LangVersion> 
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="..\Src\Data\Babaj\**" />
+    <Compile Remove="..\Src\Hosting\**" />
   </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="..\Src\Net\Com\**" />
+	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />

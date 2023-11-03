@@ -1,5 +1,4 @@
-﻿#if NETCOREAPP
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -59,6 +58,8 @@ namespace Nox.Security
         public tinyRSA()
             : this(KEY_SIZE) { }
 
+
+#if NET6_0_OR_GREATER
         /// <summary>
         /// new instance importing private  / public key bundle
         /// </summary>
@@ -70,6 +71,7 @@ namespace Nox.Security
             _rsa = RSA.Create();
             _rsa.ImportRSAPrivateKey(privateKey, out read);
         }
+#endif
 
         /// <summary>
         /// new instance with best match approximate key length
@@ -82,8 +84,9 @@ namespace Nox.Security
 
             _rsa.KeySize = bestMatchKeySize;
         }
-        #endregion
+#endregion
 
+#if NET6_0_OR_GREATER
         public byte[] Encrypt(byte[] data) =>
             _rsa.Encrypt(data, EncryptionPadding);
 
@@ -110,9 +113,8 @@ namespace Nox.Security
             _rsa.ImportRSAPrivateKey(bytes, out int readBytes);
             return readBytes;
         }
-
+#endif
         public void Dispose() =>
            _rsa.Clear();
     }
 }
-#endif

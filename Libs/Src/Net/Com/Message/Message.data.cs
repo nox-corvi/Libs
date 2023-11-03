@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Nox;
 using System.Security.Cryptography.X509Certificates;
 
-namespace BitsCommon.Net.Message
+namespace Nox.Net.Com.Message
 {
 	public class DataEventArgs : EventArgs
 	{

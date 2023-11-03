@@ -9,7 +9,7 @@
     <Product>Libs</Product>
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	<LangVersion>9.0</LangVersion>
+	<LangVersion>9.0</LangVersion> 
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />

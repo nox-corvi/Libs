@@ -106,7 +106,7 @@ namespace Nox.Libs.Data.Babaj
         }
 
         public T GetWhereId(Guid Id) => Get("id = @id",
-            new KeyValuePair("id", Id.ToString())).FirstOrDefault();
+            new KeyValuePair<string,string>("id", Id.ToString())).FirstOrDefault();
 
         public void Update(T r)
         {

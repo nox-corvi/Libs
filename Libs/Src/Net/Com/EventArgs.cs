@@ -6,17 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nox.Net.Com
 {
-    public class LoopEventArgs<T>
-        : CancelEventArgs
-    {
-        public ThreadSafeDataList<T> DataList { get; set; }
-
-        public LoopEventArgs(ThreadSafeDataList<T> dataList)
-        {
-            DataList = dataList;
-        }
-    }
-
+    
 
     public class MessageEventArgs : EventArgs
     {
