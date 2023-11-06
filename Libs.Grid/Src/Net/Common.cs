@@ -173,8 +173,10 @@ public class Common
             $"OSVersion: {Environment.OSVersion}",
             $"ProcessorCount: {Environment.ProcessorCount}",
             $"Version: {Environment.Version}",
+#if NET6_0_OR_GREATER
             $"ProcessId: {Environment.ProcessId}",
             $"ProcessPath: {Environment.ProcessPath}",
+#endif
         }.ToArray();
 
     public virtual bool ParseMessage(object sender, byte[] Message, Guid SequenceId)

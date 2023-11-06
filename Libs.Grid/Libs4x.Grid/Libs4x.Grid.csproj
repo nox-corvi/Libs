@@ -2,9 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
-	  <AssemblyName>Nox.Matrix</AssemblyName>
-    <UseWindowsForms>true</UseWindowsForms>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>Nox.Grid</RootNamespace>
     <AssemblyName>Nox.Grid</AssemblyName>
 	  <LangVersion>10</LangVersion>
@@ -17,13 +15,8 @@
 	<ItemGroup> 
 		<Compile Include="..\Src\**\*.cs" />
 	</ItemGroup>
+	
 	<ItemGroup>
-		<Compile Remove="..\Src\Net\**\*.cs" />
-	</ItemGroup>
-	<ItemGroup>
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Content\Enyo4x.Content\Enyo4x.Content.csproj" />
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Network\Enyo4x.Network\Enyo4x.Network.csproj" />
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Scripting\Enyo4x.Scripting\Enyo4x.Scripting.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo._Base\Enyo4x\Enyo4x._Base.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo._Framework\Enyo4x._Framework\Enyo4x._Framework.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo\Enyo4x\Enyo4x.csproj" />

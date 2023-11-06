@@ -65,7 +65,8 @@ public class ClientDataKeeper<U>
         }
         set
         {
-            ArgumentNullException.ThrowIfNull(value);
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
 
             _Items[key] = value;
         }
@@ -264,7 +265,7 @@ public abstract class CommonNetSecureServer<T>
         _Server.URawMessage += (sender, e) =>
         {
             _Logger.LogInformation($"unencrypted raw message ...");
-            
+
             ParseMessage(sender, e.Data);
         };
 
@@ -345,7 +346,11 @@ public abstract class CommonNetSecureServer<T>
                 rsa.ImportPublicKey(cd.PublicKey);
 
                 // create new one ...
+#if NETFRAMEWORK
+                using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations))
+#elif NET6_0_OR_GREATER
                 using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations, HashAlgorithmName.SHA256))
+#endif
                     keyv.dataBlock.EncryptedIV = rsa.Encrypt(cd.IV = _2898.GetBytes(16));
 
                 keyv.dataBlock.IVHash = SHA256.Create().ComputeHash(cd.IV);
@@ -366,17 +371,21 @@ public abstract class CommonNetSecureServer<T>
 
         _Logger.LogInformation($"send connection secured {cd.SequenceId}");
 
-        var cons = new MessageKeyv(_Server.Signature1);   
+        var cons = new MessageKeyv(_Server.Signature1);
         cons.dataBlock.SequenceId = cd.SequenceId;
 
-        try 
+        try
         {
             using (var rsa = new tinyRSA())
             {
                 rsa.ImportPublicKey(cd.PublicKey);
 
                 // create new one ...
+#if NETFRAMEWORK
+                using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations))
+#elif NET6_0_OR_GREATER
                 using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations, HashAlgorithmName.SHA256))
+#endif
                     cons.dataBlock.EncryptedIV = rsa.Encrypt(cd.IV = _2898.GetBytes(16));
 
                 cons.dataBlock.IVHash = SHA256.Create().ComputeHash(cd.IV);

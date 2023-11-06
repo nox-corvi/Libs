@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nox.Enyo;
 
-
 public class MManager
     : Nox.Enyo._Framework.EManager
 {

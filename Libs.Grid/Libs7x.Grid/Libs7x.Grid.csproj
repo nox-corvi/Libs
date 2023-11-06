@@ -15,9 +15,6 @@
 		<Compile Include="..\Src\**\*.cs" />
 	</ItemGroup> 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Content\Enyo7x.Content\Enyo7x.Content.csproj" />
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Network\Enyo7x.Network\Enyo7x.Network.csproj" />
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Scripting\Enyo7x.Scripting\Enyo7x.Scripting.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo._Base\Enyo7x\Enyo7x._Base.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo._Framework\Enyo7x._Framework\Enyo7x._Framework.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo\Enyo7x\Enyo7x.csproj" />

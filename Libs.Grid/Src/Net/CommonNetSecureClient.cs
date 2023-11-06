@@ -270,7 +270,11 @@ public abstract class CommonNetSecureClient
                 rsa.ImportPublicKey(_foreignKey);
 
                 // create new one ...
-                using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations, HashAlgorithmName.SHA256))
+#if NETFRAMEWORK
+                using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations))
+#elif NET6_0_OR_GREATER
+using (var _2898 = new Rfc2898DeriveBytes(_Pass, _Salt, Common.Iterations, HashAlgorithmName.SHA256))
+#endif
                     keyx.dataBlock.EncryptedKey = rsa.Encrypt(_Key = _2898.GetBytes(16));
 
                 keyx.dataBlock.KeyHash = SHA256.Create().ComputeHash(_Key);

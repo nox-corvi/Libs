@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	  <AssemblyName>Nox.Matrix</AssemblyName>
     <RootNamespace>Nox.Matrix</RootNamespace>
@@ -16,9 +16,6 @@
 		<Compile Include="..\Src\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Content\Enyo6x.Content\Enyo6x.Content.csproj" />
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Network\Enyo6x.Network\Enyo6x.Network.csproj" />
-	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo.Scripting\Enyo6x.Scripting\Enyo6x.Scripting.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo._Base\Enyo6x\Enyo6x._Base.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo._Framework\Enyo6x._Framework\Enyo6x._Framework.csproj" />
 	  <ProjectReference Include="..\..\..\Enyo\Libs\Enyo\Enyo6x\Enyo6x.csproj" />

@@ -9,7 +9,7 @@
     <Product>Libs</Product> 
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LangVersion>9.0</LangVersion> 
+    <LangVersion>10.0</LangVersion> 
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />
@@ -17,12 +17,11 @@
   <ItemGroup>
     <Compile Remove="..\Src\Hosting\**" />
   </ItemGroup>
-	<ItemGroup>
-		<Compile Remove="..\Src\Net\Com\**" />
-	</ItemGroup>
   <ItemGroup>
+    <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    <PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Configuration">
