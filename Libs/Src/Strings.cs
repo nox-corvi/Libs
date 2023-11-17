@@ -117,8 +117,9 @@ namespace Nox
         /// <returns></returns>
         public static string AddIfMiss(this string source, char add) =>
             source.AddIfMiss(add.ToString());
-        
 
+
+        // http://www.blackbeltcoder.com/Articles/net/implementing-vbs-like-operator-in-c
         public static bool IsLike(this string s, string pattern)
         {
             // Characters matched so far

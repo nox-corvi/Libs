@@ -14,7 +14,7 @@ public class SecureSocketListener
     : Nox.Net.Com.SecureSocketListener
 {
 
-    public SecureSocketListener(uint Signature1, Socket socket, ILogger logger, int Timeout)
+    public SecureSocketListener(uint Signature1, Socket socket, ILogger<SecureSocketListener> logger, int Timeout)
         : base(Signature1, socket, logger, Timeout)
     {
     }
@@ -26,7 +26,7 @@ internal class NetSecureClient
     public NetSecureClient()
         : this(null) { }
 
-    public NetSecureClient(ILogger logger)
+    public NetSecureClient(ILogger<NetSecureClient> logger)
         : base(Common.Signature1, logger)
     { }
 }
@@ -39,7 +39,7 @@ internal class NetSecureServer
     public NetSecureServer()
         : this(null) { }
 
-    public NetSecureServer(ILogger logger)
+    public NetSecureServer(ILogger<NetSecureServer> logger)
         : base(Common.Signature1, logger)
         => _Logger = logger;
 }

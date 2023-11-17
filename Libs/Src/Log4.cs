@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Nox
 {
     public class Log4
-       // : ILogger
+        : ILogger
     {
         public enum Log4LevelEnum
         {

@@ -1,5 +1,4 @@
-﻿#if NETCOREAPP
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,4 +16,3 @@ namespace Nox.Hosting
             : base() => Configuration = configuration;
     }
 }
-#endif

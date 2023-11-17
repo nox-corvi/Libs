@@ -105,7 +105,7 @@ namespace Nox.Net.Com
         public override void Dispose()
             => StopClient();
 
-        public NetClient(uint Signature1, ILogger logger)
+        public NetClient(uint Signature1, ILogger<NetClient<T>> logger)
             : this(Signature1)
             => this._Logger = logger;
 
@@ -145,7 +145,7 @@ namespace Nox.Net.Com
             SocketListener.ObtainRplyMessage += OnObtainRplyMessage;
         }
 
-        public NetGenericClient(uint Signature1, ILogger logger)
+        public NetGenericClient(uint Signature1, ILogger<NetGenericClient<T>> logger)
             : base(Signature1, logger) { }
         public NetGenericClient(uint Signature1)
             : base(Signature1) { }
@@ -198,7 +198,7 @@ namespace Nox.Net.Com
             SocketListener.ObtainPublicKey  += OnObtainPublicKey;
         }
 
-        public NetSecureClient(uint Signature1, ILogger logger)
+        public NetSecureClient(uint Signature1, ILogger<NetSecureClient<T>> logger)
             : base(Signature1, logger) { }
 
         public NetSecureClient(uint Signature1)

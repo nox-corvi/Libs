@@ -183,7 +183,7 @@ public abstract class CommonNetSecureClient
         StopClient();
 
         _C = BindCommon();
-        _Client = new(_Logger);
+        _Client = new(_Logger as ILogger<NetSecureClient>);
 
         DoCreateKeys();
         DoCertificates();

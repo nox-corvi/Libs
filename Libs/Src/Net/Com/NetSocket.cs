@@ -46,7 +46,7 @@ namespace Nox.Net.Com
             //
         }
 
-        public NetSocket(uint Signature1, ILogger logger)
+        public NetSocket(uint Signature1, ILogger<NetSocket> logger)
             : base(Signature1)
             => _Logger = logger;
 

@@ -216,14 +216,14 @@ namespace Nox.Net.Com
 
         public abstract bool ParseMessage(byte[] Message);
 
-        public SocketListener(uint Signature1, Socket Socket, ILogger logger, int Timeout)
+        public SocketListener(uint Signature1, Socket Socket, ILogger<SocketListener> logger, int Timeout)
             : base(Signature1, logger)
         {
             this._Socket = Socket;
             this.Timeout = Timeout;
         }
 
-        public SocketListener(uint Signature1, Socket Socket, ILogger logger)
+        public SocketListener(uint Signature1, Socket Socket, ILogger<SocketListener> logger)
             : this(Signature1, Socket, logger, 0)
         { }
 
@@ -349,7 +349,7 @@ namespace Nox.Net.Com
             }
         }
 
-        public GenericSocketListener(uint Signature1, Socket socket, ILogger logger = null!, int Timeout = 0)
+        public GenericSocketListener(uint Signature1, Socket socket, ILogger<GenericSocketListener> logger = null!, int Timeout = 0)
             : base(Signature1, socket, logger, Timeout) { }
     }
 
@@ -725,10 +725,10 @@ namespace Nox.Net.Com
             return true;
         }
 
-        public SecureSocketListener(uint Signature1, Socket socket, ILogger logger, int Timeout)
+        public SecureSocketListener(uint Signature1, Socket socket, ILogger<SecureSocketListener> logger, int Timeout)
             : base(Signature1, socket, logger, Timeout) { }
 
-        public SecureSocketListener(uint Signature1, Socket socket, ILogger logger)
+        public SecureSocketListener(uint Signature1, Socket socket, ILogger<SecureSocketListener> logger)
             : base(Signature1, socket, logger, 30) { }
 
         public SecureSocketListener(uint Signature1, Socket socket)

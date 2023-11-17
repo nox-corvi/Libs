@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2014-2018 Anrá aka Nox
+ * Copyright (c) 2014-20203 Anrá aka Nox
  * 
  * This code is licensed under the MIT license (MIT) 
  * 
@@ -24,6 +24,7 @@
 */
 
 using Nox.IO.Buffer;
+using Nox.Security;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ using System.Security.Cryptography;
 using System.Text;
 using M = System.Math;
 
-namespace Nox.IO
+namespace Nox.IO.FS
 {
     public enum FSFlags
     {
@@ -62,15 +63,14 @@ namespace Nox.IO
         public virtual FS FSBase { get; protected set; }
 
         public FSObject(FS FS)
-        {
-            this.FSBase = FS;
-        }
+            => FSBase = FS;
     }
 
     /// <summary>
     /// Die Basisklasse für alle FSObjekte, welche innerhalb einen FSClusters verwaltet werden
     /// </summary>
-    public abstract class FSElement : FSObject
+    public abstract class FSElement
+        : FSObject
     {
         /// <summary>
         /// Liefert zurück, ob ein Feld geändert wurde oder legt es fest
@@ -89,7 +89,8 @@ namespace Nox.IO
     /// <summary>
     /// Die Basisklasse für alle FSObjekte welche als Container für mehrere FSClusterObjekte dienen
     /// </summary>
-    public abstract class FSContainer : FSObject
+    public abstract class FSContainer
+        : FSObject
     {
         /// <summary>
         /// Liefert zurück, ob ein Feld geändert wurde oder legt es fest
@@ -108,7 +109,8 @@ namespace Nox.IO
     /// <summary>
     /// Die Basisklasse für alle FSObjekte, welche in einem Cluster gespeichert werden.
     /// </summary>
-    public abstract class FSCluster : FSObject
+    public abstract class FSCluster
+        : FSObject
     {
         // Felder
         private int _Cluster;
@@ -145,11 +147,11 @@ namespace Nox.IO
             }
             catch (IOException IOe)
             {
-                throw new FSException(IOe.Message);
+                throw new FSException($"{nameof(FSCluster)}::Read failed", IOe);
             }
             catch (Exception e)
             {
-                throw new FSException(e.Message);
+                throw new FSException($"{nameof(FSCluster)}::Read failed", e);
             }
         }
 
@@ -193,11 +195,11 @@ namespace Nox.IO
                 }
                 catch (IOException IOe)
                 {
-                    throw new FSException(IOe.Message);
+                    throw new FSException($"{nameof(FSCluster)}::Write failed", IOe);
                 }
                 catch (Exception e)
                 {
-                    throw new FSException(e.Message);
+                    throw new FSException($"{nameof(FSCluster)}::Write failed", e);
                 }
             }
         }
@@ -219,7 +221,8 @@ namespace Nox.IO
     /// <summary>
     /// Behandelt sämtliche FS-Ausnahmen 
     /// </summary>
-    public class FSException : Exception
+    public class FSException
+        : Exception
     {
         #region Konstruktoren
         public FSException(string Message)
@@ -250,7 +253,8 @@ namespace Nox.IO
         }
     }
 
-    public class FSCache<T> : FSObject where T : FSCluster
+    public class FSCache<T>
+        : FSObject where T : FSCluster
     {
         public const int FREE = -1;
 
@@ -375,7 +379,8 @@ namespace Nox.IO
         }
     }
 
-    public class FSClusterMap : FSCluster
+    public class FSClusterMap
+        : FSCluster
     {
         private const int DEFAULT_SIGNATURE = 0x1494BFDA;
 
@@ -434,35 +439,17 @@ namespace Nox.IO
         /// <summary>
         /// Liefert die Anzahl an Slot zurück.
         /// </summary>
-        public int SlotCount
-        {
-            get
-            {
-                return _SlotCount;
-            }
-        }
+        public int SlotCount { get => _SlotCount; }
 
         /// <summary>
         /// Liefert die Anzahl an freien Slots zurück.
         /// </summary>
-        public int SlotsFree
-        {
-            get
-            {
-                return _SlotsFree;
-            }
-        }
+        public int SlotsFree { get => _SlotsFree; }
 
         /// <summary>
         /// Liefert die Anzahl an belegten Slots zurück
         /// </summary>
-        public int SlotsUsed
-        {
-            get
-            {
-                return _SlotCount - _SlotsFree;
-            }
-        }
+        public int SlotsUsed { get => _SlotCount - _SlotsFree; }
         #endregion
 
         #region I/O
@@ -536,7 +523,8 @@ namespace Nox.IO
         }
     }
 
-    public class FSClusterMaps : FSContainer
+    public class FSClusterMaps
+        : FSContainer
     {
         private FSClusterMap[] _Map;
 
@@ -874,7 +862,7 @@ namespace Nox.IO
         /// <returns>der CRC32 des Knoten</returns>
         public uint ReCRC()
         {
-            var CRC = new CRC();
+            var CRC = new tinyCRC();
 
             CRC.Push(_Signature);
             CRC.Push(_Data, 0, _Data.Length);
@@ -1336,7 +1324,7 @@ namespace Nox.IO
         /// <returns>der CRC32 des Kopfsatzes</returns>
         public uint ReCRC()
         {
-            var CRC = new CRC();
+            var CRC = new tinyCRC();
             CRC.Push(_Signature);
 
             CRC.Push(_Version);
@@ -1410,7 +1398,8 @@ namespace Nox.IO
         }
     }
 
-    public class FSMap : FSElement
+    public class FSMap
+        : FSElement
     {
         private byte[] _Map;
 
@@ -1953,7 +1942,7 @@ namespace Nox.IO
         /// <returns>der CRC32 des Knoten</returns>
         public uint ReCRC()
         {
-            var CRC = new CRC();
+            var CRC = new tinyCRC();
             CRC.Push(_Signature);
             CRC.Push(_Id);
             CRC.Push(_Parent);
@@ -2259,7 +2248,8 @@ namespace Nox.IO
         }
     }
 
-    public class FSStream : System.IO.Stream
+    public class FSStream
+        : Stream
     {
         private FS _FSBase;
         private FSNode _Node;
@@ -2717,14 +2707,16 @@ namespace Nox.IO
 
         private FSCache<FSDataCluster> _Cache;
 
-        private byte[] _IDXFS_KEY = {  0x72, 0x7A, 0x62, 0x45, 0x66, 0x5A, 0x55, 0x31,
-                                                    0x59, 0x63, 0x32, 0x37, 0x61, 0x44, 0x73, 0x37,
-                                                    0x51, 0x75, 0x62, 0x4C, 0x64, 0xA7, 0x71, 0x6F,
-                                                    0x67, 0x41, 0x75, 0x43, 0x55, 0x31, 0x75, 0x4B };
-        private byte[] _IDXFS_IV = {   0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8,
-                                                    0xD7, 0xE6, 0xF5, 0x04, 0x5F, 0x6E, 0x7D, 0x8C,
-                                                    0x9B, 0xAA, 0xB9, 0xC8, 0xD7, 0xE6, 0xF5, 0x04,
-                                                    0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8 };
+        private byte[] _FS_KEY = { 
+            0x72, 0x7A, 0x62, 0x45, 0x66, 0x5A, 0x55, 0x31,
+            0x59, 0x63, 0x32, 0x37, 0x61, 0x44, 0x73, 0x37,
+            0x51, 0x75, 0x62, 0x4C, 0x64, 0xA7, 0x71, 0x6F,
+            0x67, 0x41, 0x75, 0x43, 0x55, 0x31, 0x75, 0x4B };
+        private byte[] _FS_IV = {
+            0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8,
+            0xD7, 0xE6, 0xF5, 0x04, 0x5F, 0x6E, 0x7D, 0x8C,
+            0x9B, 0xAA, 0xB9, 0xC8, 0xD7, 0xE6, 0xF5, 0x04,
+            0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8 };
 
         #region Properties
         /// <summary>
@@ -3351,7 +3343,7 @@ namespace Nox.IO
 
             if (Transform == null)
             {
-                var SourceCRC = new CRC();
+                var SourceCRC = new tinyCRC();
                 using (FileStream Source = File.Open(SourceFilePath, FileMode.Open, FileAccess.Read))
                 {
                     while ((Read = Source.Read(Buffer, 0, Buffer.Length)) > 0)
@@ -3628,7 +3620,7 @@ namespace Nox.IO
                 myAes.Mode = CipherMode.CBC;
                 myAes.FeedbackSize = 128;
 
-                return myAes.CreateEncryptor(_IDXFS_KEY, _IDXFS_IV);
+                return myAes.CreateEncryptor(_FS_KEY, _FS_IV);
             }
         }
 
@@ -3642,7 +3634,7 @@ namespace Nox.IO
                 myAes.Mode = CipherMode.CBC;
                 myAes.FeedbackSize = 128;
 
-                return myAes.CreateEncryptor(_IDXFS_KEY, _IDXFS_IV);
+                return myAes.CreateEncryptor(_FS_KEY, _FS_IV);
             }
         }
 
@@ -3652,75 +3644,6 @@ namespace Nox.IO
         {
             _Filename = Filename;
             rootID = HashFilename("ROOT");
-        }
-    }
-
-    public class CRC
-    {
-        private UInt32[] crc32Table;
-        private const int BUFFER_SIZE = 8192;
-
-        private UInt32 Result;
-        private byte[] Buffer;
-
-        public void Push(byte[] Buffer, int Start, int Length)
-        {
-            unchecked
-            {
-                int Index = Start;
-                for (int i = 0; i < Length; i++)
-                    Result = ((Result) >> 8) ^ crc32Table[(Buffer[Index++]) ^ ((Result) & 0x000000FF)];
-            }
-        }
-        public void Push(byte[] Buffer)
-        {
-            Push(Buffer, 0, Buffer.Length);
-        }
-
-        public void Push(byte Value)
-        {
-            var Raw = new byte[] { Value };
-            Push(Raw, 0, Raw.Length);
-        }
-        public void Push(int Value)
-        {
-            var Raw = BitConverter.GetBytes(Value);
-            Push(Raw, 0, Raw.Length);
-        }
-        public void Push(long Value)
-        {
-            var Raw = BitConverter.GetBytes(Value);
-            Push(Raw, 0, Raw.Length);
-        }
-
-        public UInt32 CRC32 { get { return ~Result; } }
-
-        public CRC()
-        {
-            unchecked
-            {
-                // This is the official polynomial used by CRC32 in PKZip.
-                // Often the polynomial is shown reversed as 0x04C11DB7.
-                UInt32 dwPolynomial = 0xEDB88320;
-                UInt32 i, j;
-
-                crc32Table = new UInt32[256];
-
-                UInt32 dwCrc;
-                for (i = 0; i < 256; i++)
-                {
-                    dwCrc = i;
-                    for (j = 8; j > 0; j--)
-                        if ((dwCrc & 1) == 1)
-                            dwCrc = (dwCrc >> 1) ^ dwPolynomial;
-                        else
-                            dwCrc >>= 1;
-                    crc32Table[i] = dwCrc;
-                }
-            }
-
-            Result = 0xFFFFFFFF;
-            Buffer = new byte[BUFFER_SIZE];
         }
     }
 }

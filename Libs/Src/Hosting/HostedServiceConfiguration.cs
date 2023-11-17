@@ -1,5 +1,4 @@
-﻿#if NETCOREAPP
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -43,4 +42,3 @@ namespace Nox.Hosting
             
     }
 }
-#endif

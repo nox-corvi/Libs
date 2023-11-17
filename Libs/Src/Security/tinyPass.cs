@@ -1,5 +1,4 @@
-﻿#if NETCOREAPP
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -27,7 +26,11 @@ namespace Nox.Security
                     pred = _salt[i] = (byte)((byte)Salt[i] + pred);
                     i++;
                 }
+#if NETFRAMEWORK
             _2898 = new Rfc2898DeriveBytes(Key, _salt, Iterations);
+#elif NETCOREAPP
+            _2898 = new Rfc2898DeriveBytes(Key, _salt, Iterations, HashAlgorithmName.SHA256);
+#endif
         }
 
         public ReadOnlySpan<byte> Gen(int Length = 32) =>
@@ -44,4 +47,3 @@ namespace Nox.Security
 
     }
 }
-#endif

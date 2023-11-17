@@ -287,7 +287,7 @@ public abstract class CommonNetSecureServer<T>
         _Logger.LogInformation($"bind {IP}:{Port}");
 
         _C = BindCommon();
-        _Server = new NetSecureServer(_Logger);
+        _Server = new NetSecureServer(_Logger as ILogger<NetSecureServer>);
 
         DoCreateKeys();
         DoCertificates();
