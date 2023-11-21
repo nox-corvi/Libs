@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Anrá aka Nox
+ * Copyright (c) 2014-2023 Anrá aka Nox
  * 
  * This code is licensed under the MIT license (MIT) 
  * 
@@ -23,87 +23,68 @@
  * 
 */
 using Microsoft.Extensions.Logging;
-using Nox.Component;
-using Nox.IO.Buffer;
 using Nox.Security;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using System.Text;
-using M = System.Math;
 
 namespace Nox.IO.DF;
 
-public interface IDFCRCSupport
-{
-    public uint CRC { get; }
+//public interface IDFCRCSupport
+//{
+//    public uint CRC { get; }
 
-    public uint ReCRC();
-}
+//    public uint ReCRC();
+//}
 
-public interface IDFCRCElement
-{
-    public void UserDataCRC(tinyCRC CRC);
-}
+//public interface IDFCRCElement
+//{
+//    public void UserDataCRC(tinyCRC CRC);
+//}
 
-public interface IDFItemBase
-{
-    public IDF DF { get; }
+//public interface IDFContainer
+//    : IDFCRCSupport
+//{
+//    bool Dirty { get; }
 
-    uint DefaultSignature { get; }
-}
+//    int UserDataSize();
+//    int ContainerSize();
 
-public interface IDFContainer
-    : IDFItemBase, IDFCRCSupport
-{
-    bool Dirty { get; }
+//    void Read();
+//    void ReadUserData(BinaryReader Reader);
 
-    int UserDataSize();
-    int ContainerSize();
+//    void Write();
+//    void WriteUserData(BinaryWriter Writer);
+////}
+//public interface IDFHeader
+//    : IDFCRCSupport
+//{
+//    string Name { get; set; }
 
-    void Read();
-    void ReadUserData(BinaryReader Reader);
+//    int ClusterMapCount { get; }
+//    int ClusterSize { get; }
 
-    void Write();
-    void WriteUserData(BinaryWriter Writer);
-}
+//    int ContainerOffset(int Index = 0);
+//    int ClusterMapOffset(int Index = 0);
+//    int FirstClusterOffset();
 
+//    void Read();
 
-public interface IHeader
-    : IDFItemBase, IDFCRCSupport
-{
-    string Name { get; set; }
+//    void Write();
 
-    int ClusterMapCount { get; }
-    int ClusterSize { get; }
+//    //abstract static IHeader Create(int ClusterSize = 8192);
+//}
 
-    int ContainerOffset(int Index = 0);
-    int ClusterMapOffset(int Index = 0);
-    int FirstClusterOffset();
+//public interface IDF
+//{
+//    #region Properties
+//    FileStream FileHandle { get; }
+//    Laverna Laverna { get; }
 
-    void Read();
+//    IDFHeader Header { get; }
 
-    void Write();
+//    ILogger Log { get; }
 
-    //abstract static IHeader Create(int ClusterSize = 8192);
-}
+//    #endregion
 
-public interface IDF
-{
-    #region Properties
-    FileStream FileHandle { get; }
-    Laverna Laverna { get; }
-
-    IHeader Header { get; }
-
-    ILogger Log { get; }
-
-    #endregion
-
-
-    void Flush();
-}
+//    void Flush();
+//}

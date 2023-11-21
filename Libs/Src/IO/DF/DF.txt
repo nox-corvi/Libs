@@ -41,18 +41,18 @@
 
 		DFBase					
 			DFContainer			
-				DFHeader		
-				[..]
-				DFClusterMap
 				DFClusterMaps
 
-			DFCluster				
+				DFCluster				
 
 
 			DFElement
-				DFMap
-				DFMaps
 				DFClusterMap
 
-		2. DFHeader
-			
+
+	file structure
+
+	# DF (:DFContainer)
+
+	0 .. 3	Signature		
+	4 .. 

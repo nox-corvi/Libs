@@ -5,7 +5,7 @@
     <AssemblyName>Nox</AssemblyName>
     <RootNamespace>Nox</RootNamespace>
     <PackageId>Libs</PackageId>
-    <Company>Libs</Company>
+    <Company>Libs</Company> 
     <Product>Libs</Product>
     <Authors>Libs</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -14,21 +14,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />
-	<Link Include="..\Scr\**\*.txt" />
+	<Link Include="..\Src\**\*.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="..\Src\Data\Babaj\Attributes.cs" />
-    <Compile Remove="..\Src\Data\Babaj\Babaj.cs" />
-    <Compile Remove="..\Src\Data\Babaj\DataColumn.cs" />
-    <Compile Remove="..\Src\Data\Babaj\DataMapping.cs" />
-    <Compile Remove="..\Src\Data\Babaj\DataRelation.cs" />
-    <Compile Remove="..\Src\Data\Babaj\DataRow.cs" />
-    <Compile Remove="..\Src\Data\Babaj\DataRowColl.cs" />
-    <Compile Remove="..\Src\Data\Babaj\DataTable.cs" />
-    <Compile Remove="..\Src\Data\Babaj\Helpers.cs" />
-    <Compile Remove="..\Src\Data\Babaj\Operate.cs" />
-    <Compile Remove="..\Src\Security\ILaverna.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\Src\**\*.txt" />
+	</ItemGroup>
   <ItemGroup>
     <None Remove="README.md" />
   </ItemGroup>
