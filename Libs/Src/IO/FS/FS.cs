@@ -23,6 +23,7 @@
  * 
 */
 
+using Microsoft.Extensions.Logging;
 using Nox.IO.Buffer;
 using Nox.IO.DF;
 using Nox.Security;
@@ -30,6 +31,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Nox.IO.FS;
@@ -48,6 +50,14 @@ public enum FSFlags
     SystemUseOnly = 256,
 
     Directory = 8192,
+}
+public interface IFSGuardian
+    : IDFGuardian
+{
+    int NodeSize { get; }
+    int NodesPerBlock { get; }
+
+    int UseableClusterSize { get; }
 }
 public interface IFSPatchTransform : IDisposable
 {
@@ -70,8 +80,9 @@ public class FSException
     }
     #endregion
 }
-public class FSMap
-    : DFElement
+public class FSMap<T>
+    : DFElement<T>
+    where T : class, IFSGuardian
 {
     private int _SlotCount;
     private int _SlotsFree;
@@ -194,15 +205,16 @@ public class FSMap
         CRC.Push(_Map);
     }
 
-    public FSMap(IDFGuardian guardian, int SlotCount)
+    public FSMap(T guardian, int SlotCount)
             : base(guardian)
     {
         _SlotsFree = _SlotCount = SlotCount;
         _Map = new byte[(int)System.Math.Ceiling(SlotCount / (double)8)];
     }
 }
-public class FSNode
-    : DFElement
+public class FSNode<T>
+    : DFElement<T>
+    where T : class, IFSGuardian
 {
     // Vars
     private uint _Id;
@@ -396,7 +408,7 @@ public class FSNode
         CRC.Push(_LastCluster);
     }
 
-    public FSNode(IDFGuardian guardian)
+    public FSNode(T guardian)
         : base(guardian)
     {
         _Name = GetStringBytes("", 32);
@@ -408,14 +420,107 @@ public class FSNode
         _LastCluster = -1;
     }
 }
-public class FSNodeCluster
-    : DFCluster
+public class FSHeader<T>
+    : DFContainerCustom<T>
+    where T : class, IFSGuardian
+{
+    // Konstanten
+    private const uint CURRENT_REVISION = 0x10A0;
+    private const ushort NODE_SIZE = 128;
+
+    // Variablen
+    private uint _Revision = CURRENT_REVISION;
+    private int _NodesPerBlock = -1;
+
+    #region Properties
+    public uint Revision
+    {
+        get => _Revision;
+    }
+
+    /// <summary>
+    /// Liefert die Größe eines Knoten in Bytes zurück.
+    /// </summary>
+    public int NodeSize
+    {
+        get => NODE_SIZE;
+    }
+
+    /// <summary>
+    /// Liefert die maximal für Nutzdaten verwendbare Größe zurück.
+    /// </summary>
+    public int UseableClusterSize
+    {
+        get => GuardianGet.ClusterSize - 16;
+    }
+
+    /// <summary>
+    /// Liefert die maximale Anzahl an Knoten zurück, welche in einem NodeBlock gespeichert werden können.
+    /// </summary>
+    public int NodesPerBlock
+    {
+        get
+        {
+            if (_NodesPerBlock == -1)
+            {
+                _NodesPerBlock = 32;
+                while (_NodesPerBlock * NodeSize < UseableClusterSize)
+                    _NodesPerBlock++;
+
+                while (_NodesPerBlock * NodeSize > UseableClusterSize)
+                    _NodesPerBlock--;
+            }
+
+            return _NodesPerBlock;
+        }
+    }
+
+    /// <summary>
+    /// Liefert die Anzahl an möglichen Positionen pro Cluster zurück.
+    /// </summary>
+    public int PositionsPerCluster
+    {
+        get => GuardianGet.ClusterSize - 12;
+    }
+
+    public override bool Encrypted => false;
+    #endregion
+
+    public override void UserDataCRC(tinyCRC CRC)
+    {
+
+    }
+
+    public override void ReadUserData(BinaryReader Reader)
+    {
+        
+    }
+
+    public override void WriteUserData(BinaryWriter Writer)
+    {
+        
+    }
+
+    public override int UserDataSize()
+    {
+        return 0;
+    }
+
+    public FSHeader(T guardian)
+        : base(guardian, 0)
+    {
+
+    }
+}
+public class FSNodeCluster<T>
+    : DFCluster<T>
+    where T : class, IFSGuardian
 {
     private int _NextBlock;
     private byte[] _Reserved;
 
-    private FSMap _NodeMap; 
-    private FSNode[] _Nodes;
+    private FSMap<T> _NodeMap; 
+    private FSNode<T>[] _Nodes;
 
     public override bool Encrypted { get => true; }
 
@@ -492,13 +597,13 @@ public class FSNodeCluster
         _NodeMap.Read(Reader);
 
         // Nodes einlesen...
-        byte[] Blank = new byte[(DF as FS).Header.NodeSize];
+        byte[] Blank = new byte[GuardianGet.NodeSize];
 
         for (int i = 0; i < _Nodes.Length; i++)
         {
             if (_NodeMap[i])
             {
-                _Nodes[i] = new FSNode((FS)DF);
+                _Nodes[i] = new FSNode<T>(GuardianGet);
                 _Nodes[i].Read(Reader);
             }
             else
@@ -515,7 +620,7 @@ public class FSNodeCluster
         _NodeMap.Write(Writer);
 
 
-        byte[] Blank = new byte[(DF as FS).Header.NodeSize];
+        byte[] Blank = new byte[GuardianGet.NodeSize];
         for (int i = 0; i < _Nodes.Length; i++)
         {
             if (_NodeMap[i])
@@ -540,7 +645,7 @@ public class FSNodeCluster
     /// Erstellt einen neuen Knoten.
     /// </summary>
     /// <returns>ein IDXFSNode wenn erfolgreich, sonst null</returns>
-    public FSNode CreateNode(uint NodeId, uint Parent = 0xFFFFFFFF)
+    public FSNode<T> CreateNode(uint NodeId, uint Parent = 0xFFFFFFFF)
     {
         int Slot;
         if ((Slot = GetFreeSlot()) != -1)
@@ -548,7 +653,7 @@ public class FSNodeCluster
             _NodeMap[Slot] = true;
             Dirty = true;
 
-            return _Nodes[Slot] = new FSNode((FS)DF)
+            return _Nodes[Slot] = new FSNode<T>(GuardianGet)
             {
                 Id = NodeId,
                 Parent = Parent
@@ -584,7 +689,7 @@ public class FSNodeCluster
     /// </summary>
     /// <param name="Index"></param>
     /// <returns>ein IDXFSNode wenn belegt, sonst null</returns>
-    public FSNode GetNodeAt(int Index)
+    public FSNode<T> GetNodeAt(int Index)
     {
         return _NodeMap[Index] ? _Nodes[Index] : null;
     }
@@ -594,7 +699,7 @@ public class FSNodeCluster
     /// </summary>
     /// <param name="Name">Der Name nach dem gesucht werden soll</param>
     /// <returns>ein IDXFSNode wenn belegt, sonst null</returns>
-    public FSNode FindNode(string Name)
+    public FSNode<T> FindNode(string Name)
     {
         for (int i = 0; i < _Nodes.Length; i++)
             if (_NodeMap[i])
@@ -609,7 +714,7 @@ public class FSNodeCluster
     /// </summary>
     /// <param name="NodeId">Die Id nach der gesucht werden soll</param>
     /// <returns>ein IDXFSNode wenn belegt, sonst null</returns>
-    public FSNode FindNode(uint NodeId)
+    public FSNode<T> FindNode(uint NodeId)
     {
         for (int i = 0; i < _Nodes.Length; i++)
             if (_NodeMap[i])
@@ -625,19 +730,20 @@ public class FSNodeCluster
     }
     #endregion
 
-    public FSNodeCluster(IDFGuardian guardian, int ClusterSize, int ClusterId)
+    public FSNodeCluster(T guardian, int ClusterSize, int ClusterId)
         : base(guardian, ClusterSize, ClusterId)
     {
-        _NodeMap = new FSMap(guardian, FS.Header.NodesPerBlock);
+        _NodeMap = new FSMap<T>(guardian, GuardianGet.NodesPerBlock);
         _NextBlock = -1;
 
-        _Nodes = new FSNode[FS.Header.NodesPerBlock];
-        _Reserved = new byte[FS.Header.ClusterSize - (FS.Header.NodesPerBlock *
-            FS.Header.NodeSize + _NodeMap.MapSize + 4)];
+        _Nodes = new FSNode<T>[GuardianGet.NodesPerBlock];
+        _Reserved = new byte[GuardianGet.ClusterSize - (GuardianGet.NodesPerBlock *
+            GuardianGet.NodeSize + _NodeMap.MapSize + 4)];
     }
 }
-public class FSDataCluster
-    : DFCluster
+public class FSDataCluster<T>
+    : DFCluster<T>
+    where T : class, IFSGuardian
 {
     private int _Previous;
     private int _Next;
@@ -739,7 +845,7 @@ public class FSDataCluster
         CRC.Push(_Data);
     }
 
-    public FSDataCluster(IDFGuardian guardian, int ClusterSize, int Cluster)
+    public FSDataCluster(T guardian, int ClusterSize, int Cluster)
         : base(guardian, ClusterSize, Cluster)
     {
         // keep bytes free for prev and next
@@ -761,13 +867,15 @@ public class FSDataCluster
     }
 }
 
-public class FSStream
+public class FSStream<T>
     : Stream
+    where T : class, IFSGuardian
 {
-    private FS _FS;
-    private FSNode _Node;
+    private FS<T> _FS;
+    private T _Guardian;
+    private FSNode<T> _Node;
 
-    private FSDataCluster _CurrentCluster;
+    private FSDataCluster<T> _CurrentCluster;
     private int _CurrentIndex;
 
     private long _ClusterStart;
@@ -951,8 +1059,8 @@ public class FSStream
         {
             _CurrentCluster = _FS.ReadCluster(Cluster);
 
-            _ClusterStart = (FileIndex * _FS.Header.UseableClusterSize);
-            _ClusterEnd = (FileIndex * _FS.Header.UseableClusterSize) + _FS.Header.UseableClusterSize - 1;
+            _ClusterStart = (FileIndex * _Guardian.UseableClusterSize);
+            _ClusterEnd = (FileIndex * _Guardian.UseableClusterSize) + _Guardian.UseableClusterSize - 1;
 
             _CurrentIndex = FileIndex;
         }
@@ -961,8 +1069,8 @@ public class FSStream
             // position points to an unknown cluster.. wait and see
             _CurrentCluster = null;
 
-            _ClusterStart = FileIndex * _FS.Header.UseableClusterSize;
-            _ClusterEnd = (FileIndex * _FS.Header.UseableClusterSize) + _FS.Header.UseableClusterSize - 1;
+            _ClusterStart = FileIndex * _Guardian.UseableClusterSize;
+            _ClusterEnd = (FileIndex * _Guardian.UseableClusterSize) + _Guardian.UseableClusterSize - 1;
             _CurrentIndex = FileIndex;
         }
 
@@ -992,18 +1100,18 @@ public class FSStream
     {
         while (_Node.ClusterCount < ClusterCount)
         {
-            int Slot = _FS.Header.ClusterMaps.GetFreeSlot();
+            int Slot = _Guardian.ClusterMaps.GetFreeSlot();
 
-            FSDataCluster CurrentCluster; int CurrentClusterSlot = -1;
+            FSDataCluster<T> CurrentCluster; int CurrentClusterSlot = -1;
             // Sonderfall, kein Cluster existiert - Setze FirstCluster
             if (_Node.ClusterCount == 0)
-                _FS.Header.ClusterMaps[_Node.FirstCluster = _Node.LastCluster = Slot] = true;
+                _Guardian.ClusterMaps[_Node.FirstCluster = _Node.LastCluster = Slot] = true;
             else
             {
                 CurrentCluster = _FS.ReadCluster(_Node.LastCluster);
                 CurrentClusterSlot = CurrentCluster.ClusterId;
 
-                _FS.Header.ClusterMaps[CurrentCluster.Next = _Node.LastCluster = Slot] = true;
+                _Guardian.ClusterMaps[CurrentCluster.Next = _Node.LastCluster = Slot] = true;
             }
 
             var NewCluster = _FS.CreateDataCluster(Slot);
@@ -1021,7 +1129,7 @@ public class FSStream
     {
         try
         {
-            FSDataCluster CurrentCluster;
+            FSDataCluster<T> CurrentCluster;
             if (_Node.LastCluster == -1)
                 return;
             else
@@ -1033,7 +1141,7 @@ public class FSStream
                     Previous = _Node.LastCluster = CurrentCluster.Previous;
                     _FS.ClearCluster(Cluster);
 
-                    _FS.Header.ClusterMaps[Cluster] = false;
+                    _Guardian.ClusterMaps[Cluster] = false;
                     _Node.ClusterCount--;
 
                     Cluster = Previous;
@@ -1062,13 +1170,14 @@ public class FSStream
 
     private int ClusterCountRequirement(long FileLength)
     {
-        return (int)Math.Ceiling(FileLength / (double)_FS.Header.UseableClusterSize);
+        return (int)Math.Ceiling(FileLength / (double)_Guardian.UseableClusterSize);
     }
 
-    public FSStream(FS FS, FSNode Node)
+    public FSStream(FS<T> FS, T guardian, FSNode<T> Node)
         : base()
     {
         _FS = FS;
+        _Guardian = guardian;
 
         _Node = Node;
         if (_Node.ClusterCount > 0)
@@ -1076,15 +1185,16 @@ public class FSStream
     }
 }
 
-public class FSTree
+public class FSTree<T>
+    where T : class, IFSGuardian
 {
-    private FSDirectory _Root;
+    private FSDirectory<T> _Root;
 
     #region Properties
     /// <summary>
     /// Liefert das Root-Objekt zurück
     /// </summary>
-    public FSDirectory Root
+    public FSDirectory<T> Root
     {
         get => _Root;
     }
@@ -1095,9 +1205,9 @@ public class FSTree
     /// </summary>
     /// <param name="Id">Die Id nach der gesucht werden soll</param>
     /// <returns>Ein IDXFSDirectory-Objekt wenn erfolgreich, sonst null</returns>
-    public FSDirectory FindDirectory(uint Id)
+    public FSDirectory<T> FindDirectory(uint Id)
     {
-        var Stack = new Stack<FSDirectory>(); FSDirectory Next;
+        var Stack = new Stack<FSDirectory<T>>(); FSDirectory<T> Next;
         Stack.Push(_Root);
 
         while (Stack.Count > 0)
@@ -1112,32 +1222,33 @@ public class FSTree
         return null;
     }
 
-    public bool InsertNode(FSNode Node)
+    public bool InsertNode(FSNode<T> Node)
     {
         return true;
     }
 
-    public bool RemoveNode(FSNode Node)
+    public bool RemoveNode(FSNode<T> Node)
     {
         return true;
     }
 
-    public FSTree(FSNode Root)
+    public FSTree(FSNode<T> Root)
     {
-        _Root = new FSDirectory(Root);
+        _Root = new FSDirectory<T>(Root);
     }
 
-    public FSTree(FSDirectory Root)
+    public FSTree(FSDirectory<T> Root)
     {
         _Root = Root;
     }
 }
-public class FSDirectory
+public class FSDirectory<T>
+    where T : class, IFSGuardian
 {
-    private FSNode _Node;
+    private FSNode<T> _Node;
 
-    private EventList<FSDirectory> _Directories;
-    private EventList<FSNode> _Files;
+    private EventList<FSDirectory<T>> _Directories;
+    private EventList<FSNode<T>> _Files;
 
     #region Properties
     /// <summary>
@@ -1197,7 +1308,7 @@ public class FSDirectory
     /// <summary>
     /// Liefert die Unterordner des Verzeichnisses zurück
     /// </summary>
-    public EventList<FSDirectory> Directories
+    public EventList<FSDirectory<T>> Directories
     {
         get
         {
@@ -1208,7 +1319,7 @@ public class FSDirectory
     /// <summary>
     /// Lierfert die Dateien des Verzeichnisses zurück.
     /// </summary>
-    public EventList<FSNode> Files
+    public EventList<FSNode<T>> Files
     {
         get
         {
@@ -1217,7 +1328,7 @@ public class FSDirectory
     }
     #endregion
 
-    public FSDirectory FindDirectory(string Name)
+    public FSDirectory<T> FindDirectory(string Name)
     {
         string FindName = Name.ToLower().Trim();
 
@@ -1228,7 +1339,7 @@ public class FSDirectory
         return null;
     }
 
-    public FSNode FindFile(string Name)
+    public FSNode<T> FindFile(string Name)
     {
         string FindName = Name.ToLower().Trim();
 
@@ -1239,18 +1350,48 @@ public class FSDirectory
         return null;
     }
 
-    public FSDirectory(FSNode Node)
+    public FSDirectory(FSNode<T> Node)
     {
         _Node = Node;
 
-        _Directories = new EventList<FSDirectory>();
-        _Files = new EventList<FSNode>();
+        _Directories = new EventList<FSDirectory<T>>();
+        _Files = new EventList<FSNode<T>>();
     }
 }
-public class FS
-    : DF.DF
+public class FS<T>
+    : DF<IFSGuardian>
+    where T : class, IFSGuardian
 {
-    public const string DEFAULT_EXT = ".vfs";
+    protected class FSGuardian
+        : DFGuardian, IFSGuardian
+    {
+        #region Properties
+
+        #endregion
+
+        #region Helpers
+       
+        #endregion
+
+        public FSGuardian()
+            : base()
+        {
+            
+        }
+
+        public FSGuardian(uint FileSignature)
+            : base(FileSignature) 
+        {
+            // overwrite
+            Log = Hosting.Hosting.CreateDefaultLogger<FS>();
+        }
+
+        public int NodeSize { get; set; }
+
+        public int NodesPerBlock { get; set; }
+
+        public int UseableClusterSize { get; set; }
+    }
 
     public struct DirectoryInfo
     {
@@ -1270,24 +1411,23 @@ public class FS
     }
 
     // Variablen
-    private List<FSNodeCluster> _NodeBlocks;
+    private FSHeader<T> _Header;
 
-    private FSTree _Root;
+    private FSTree<T> _Root;
     private uint rootID;
+    private FSDirectory<T> _CurrentFolder;
+    private List<FSNodeCluster<T>> _NodeBlocks;
 
-    private FSDirectory _CurrentFolder;
+    public override string Extension => ".vfs";
 
     #region Properties       
-    /// <summary>
-    /// Liefert den vollständigen Pfades des aktuellen Verzeichnisses zurück 
-    /// </summary>
     public string FullPath
     {
         get
         {
             var Result = new StringBuilder();
 
-            FSDirectory Current = _CurrentFolder;
+            FSDirectory<T> Current = _CurrentFolder;
 
             if (Current.Parent == 0xFFFFFFFF)
                 return "\\";
@@ -1304,20 +1444,15 @@ public class FS
     #endregion
 
     #region FS-Helpers
-
-    /// <summary>
-    /// Erstellt einen Baum aus den vorhandenen Verzeichnissen und Dateien
-    /// </summary>
-    /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
     private bool BuildTree()
     {
-        List<FSDirectory> FreeDirectories = new();
-        List<FSNode> FreeNodes = new();
+        List<FSDirectory<T>> FreeDirectories = new();
+        List<FSNode<T>> FreeNodes = new();
 
         for (int i = 0; i < _NodeBlocks.Count; i++)
-            for (int j = 0; j < Header.NodesPerBlock; j++)
+            for (int j = 0; j < GuardianGet.NodesPerBlock; j++)
             {
-                FSNode Node = _NodeBlocks[i].GetNodeAt(j);
+                FSNode<T> Node = _NodeBlocks[i].GetNodeAt(j);
                 if (Node != null)
                 {
                     if (Node.IsDirectory)
@@ -1354,25 +1489,21 @@ public class FS
         if (FreeDirectories[0].Id != Hash.HashFNV1a32("ROOT"))
             throw new FSException("ROOT NOT FOUND!");
         else
-            _Root = new FSTree(FreeDirectories[0]);
+            _Root = new FSTree<T>(FreeDirectories[0]);
 
         return true;
     }
 
-    /// <summary>
-    /// Liest die Knotenblöcke aus dem Dateisystem
-    /// </summary>
-    /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
     public void ReadNodeBlocks()
     {
-        _NodeBlocks = new List<FSNodeCluster>();
+        _NodeBlocks = new List<FSNodeCluster<T>>();
 
-        int ClusterIndex = GuardianGet.FirstClusterOffset();
+        int ClusterIndex = GuardianGet.ClusterOffset();
         do
         {
-            long BlockOffset = GuardianGet.FirstClusterOffset() + (ClusterIndex * GuardianGet.ClusterSize);
+            long BlockOffset = GuardianGet.ClusterOffset(ClusterIndex);
 
-            var NodeBlock = new FSNodeCluster(this, GuardianGet.ClusterSize, ClusterIndex);
+            var NodeBlock = new FSNodeCluster<T>((T)GuardianGet, GuardianGet.ClusterSize, ClusterIndex);
             NodeBlock.Read();
 
             _NodeBlocks.Add(NodeBlock);
@@ -1390,40 +1521,25 @@ public class FS
                 }
     }
 
-    /// <summary>
-    /// Schreibt die Knotenblöcke in das Dateisystem
-    /// </summary>
-    /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
     public void WriteNodeBlocks()
     {
         for (int i = 0; i < _NodeBlocks.Count; i++)
             _NodeBlocks[i].Write();
     }
 
-    /// <summary>
-    /// Erstellt einen neuen Knotenblock und fügt ihn ans Ende der Liste
-    /// </summary>
-    /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
     public bool CreateNodeBlock()
     {
-        int ClusterSlot = ClusterMaps.GetFreeSlot();
-        var NextBlock = new FSNodeCluster(GuardianGet, GuardianGet.ClusterSize, ClusterSlot);
+        int ClusterSlot = GuardianGet.ClusterMaps.GetFreeSlot();
+        var NextBlock = new FSNodeCluster<T>((T)GuardianGet, GuardianGet.ClusterSize, ClusterSlot);
 
         _NodeBlocks[_NodeBlocks.Count - 1].NextBlock = ClusterSlot;
-        Header.ClusterMaps[ClusterSlot] = true;
+        GuardianGet.ClusterMaps[ClusterSlot] = true;
 
         _NodeBlocks.Add(NextBlock);
         return true;
     }
 
-    /// <summary>
-    /// Erstellt einen neuen Knoten im Dateisystem
-    /// </summary>
-    /// <param name="Node">Das Ziel für das Ergebnis</param>
-    /// <param name="Id">Die Id welche dem Knoten zugewiesen werden soll</param>
-    /// <param name="Parent">Der Vorgänger des Knotens, 0xFFFF für das Stammverzeichnis</param>
-    /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public FSNode CreateNode(uint Id, uint Parent = 0xFFFFFFFF)
+    public FSNode<T> CreateNode(uint Id, uint Parent = 0xFFFFFFFF)
     {
         for (int i = 0; i < _NodeBlocks.Count; i++)
             if (_NodeBlocks[i].NodesFree > 0)
@@ -1442,13 +1558,13 @@ public class FS
         return _NodeBlocks[_NodeBlocks.Count - 1].CreateNode(Id, Parent);
     }
 
-    public FSDataCluster ReadCluster(int Cluster)
+    public FSDataCluster<T> ReadCluster(int Cluster)
     {
-        FSDataCluster Result = GuardianGet.Cache.Item(Cluster) as FSDataCluster;
+        FSDataCluster<T> Result = GuardianGet.Cache.Item(Cluster) as FSDataCluster<T>;
 
         if (Result == null)
         {
-            Result = new FSDataCluster(GuardianGet, GuardianGet.ClusterSize, Cluster);
+            Result = new FSDataCluster<T>((T)GuardianGet, GuardianGet.ClusterSize, Cluster);
             Result.Read();
 
             GuardianGet.Cache.Append(Result);
@@ -1457,9 +1573,9 @@ public class FS
         return Result;
     }
 
-    public FSDataCluster CreateDataCluster(int Cluster)
+    public FSDataCluster<T> CreateDataCluster(int Cluster)
     {
-        var Result = new FSDataCluster(GuardianGet, GuardianGet.ClusterSize, Cluster);
+        var Result = new FSDataCluster<T>((T)GuardianGet, GuardianGet.ClusterSize, Cluster);
         GuardianGet.Cache.Append(Result);
 
         return Result;
@@ -1476,19 +1592,27 @@ public class FS
                 (((Flags & (uint)FSFlags.SystemUseOnly) == (uint)FSFlags.SystemUseOnly) ? "S" : "-") +
                 (((Flags & (uint)FSFlags.Directory) == (uint)FSFlags.Directory) ? "D" : "-");
     }
-
     #endregion
 
     #region FS-Methods
-    /// <summary>
-    /// Schreibt eventuelle Änderungen in das Dateisystem zurück
-    /// </summary>
-    /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
+    public override void Create(bool ForceOverwrite, string VolumeName = "")
+        => Create(ForceOverwrite, VolumeName, 1, 4096, 4, 32768);
+
+    protected override void Create(bool ForceOverwrite, string VolumeName, int CustomContainerSize, int CustomContainerCount, int ClusterMapCount, int ClusterSize)
+    {
+        base.Create(ForceOverwrite, VolumeName, CustomContainerSize, CustomContainerCount, ClusterMapCount, ClusterSize);
+        
+        _Header = new FSHeader<T>((T)GuardianGet);
+        _Header.Write();
+    }
+
     public override void Flush()
     {
         base.Flush();
         if (IsOpen)
         {
+            if (_Header != null)
+                _Header.Write();
             if (_NodeBlocks != null)
                 WriteNodeBlocks();
         }
@@ -1503,6 +1627,8 @@ public class FS
         base.Close();
         if (GuardianGet.FileHandle == null)
         {
+            if (_Header != null)
+                _Header = null;
             if (_NodeBlocks != null)
                 _NodeBlocks = null;
         }
@@ -1516,30 +1642,36 @@ public class FS
     {
         base.Reload();
 
+        _Header = new FSHeader<T>((T)GuardianGet);
+        _Header.Read();
+
         ReadNodeBlocks();
         BuildTree();
 
         _CurrentFolder = _Root.Root;
     }
 
-    public override void Format(string Name, int ClusterSize)
+    public override void Format(string Name)
     {
-        base.Format(Name, ClusterSize);
+        base.Format(Name, 4096, 2, 4, 32768);
         if (IsOpen)
         {
+            _Header = new FSHeader<T>((T)GuardianGet);
+            _Header.Write();
+
             int first = 0;
-            _NodeBlocks = new List<FSNodeCluster>() { new FSNodeCluster(this, GuardianGet.ClusterSize, first) };
-            Header.ClusterMaps[first] = true;  // Root
+            _NodeBlocks = new List<FSNodeCluster<T>>() { new FSNodeCluster<T>((T)GuardianGet, GuardianGet.ClusterSize, first) };
+            GuardianGet.ClusterMaps[first] = true;  // Root
 
             var Root = _NodeBlocks[first].CreateNode(rootID);
             Root.Name = "ROOT";
             Root.IsDirectory = true;
 
-            _Root = new FSTree(Root);
+            _Root = new FSTree<T>(Root);
 
             Flush();
 
-            GuardianGet.FileHandle.SetLength(GuardianGet.FirstClusterOffset() + GuardianGet.ClusterSize);
+            GuardianGet.FileHandle.SetLength(GuardianGet.ClusterOffset() + GuardianGet.ClusterSize);
 
             BuildTree();
 
@@ -1552,7 +1684,7 @@ public class FS
     /// </summary>
     /// <param name="DirectoryName">Der Name des neuen Verzeichnisses</param>
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public FSDirectory CreateFolder(string DirectoryName)
+    public FSDirectory<T> CreateFolder(string DirectoryName)
     {
         if (_CurrentFolder.FindDirectory(DirectoryName) != null)
             throw new FSException("directory already exists");
@@ -1565,7 +1697,7 @@ public class FS
                 NewDirectory.IsDirectory = true;
                 NewDirectory.Name = DirectoryName;
 
-                var Result = new FSDirectory(NewDirectory);
+                var Result = new FSDirectory<T>(NewDirectory);
 
                 _CurrentFolder.Directories.Add(Result);
 
@@ -1594,7 +1726,7 @@ public class FS
     /// </summary>
     /// <param name="DirectoryName">Der Name des vorhandene Verzeichnisses</param>
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public FSDirectory ChangeToFolder(string DirectoryName)
+    public FSDirectory<T> ChangeToFolder(string DirectoryName)
     {
         var Result = _CurrentFolder.FindDirectory(DirectoryName);
         if (Result == null)
@@ -1607,7 +1739,7 @@ public class FS
     /// Wechselt in das root-Verzeichnis
     /// </summary>
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public FSDirectory ChangeToRoot()
+    public FSDirectory<T> ChangeToRoot()
     {
         var Result = _Root.FindDirectory(rootID);
         if (Result == null)
@@ -1620,7 +1752,7 @@ public class FS
     /// Wechselt ein Verzeichnis nach oben
     /// </summary>
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public FSDirectory ChangeOneUp()
+    public FSDirectory<T> ChangeOneUp()
     {
         if (_CurrentFolder.Id == rootID)
             return _CurrentFolder;
@@ -1681,7 +1813,7 @@ public class FS
     /// </summary>
     /// <param name="Filename">Der Name der Datei</param>
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public FSNode Touch(string Filename)
+    public FSNode<T> Touch(string Filename)
     {
         var Result = _CurrentFolder.FindFile(Filename);
 
@@ -1689,7 +1821,7 @@ public class FS
             throw new FSException("FILE ALREADY EXISTS");
         else
         {
-            FSNode NewFile = null;
+            FSNode<T> NewFile = null;
 
             try
             {
@@ -1717,12 +1849,12 @@ public class FS
         }
     }
 
-    public FSStream Patch(string SourceFilePath, string DestFilePath, IFSPatchTransform Transform = null)
+    public FSStream<T> Patch(string SourceFilePath, string DestFilePath, IFSPatchTransform Transform = null)
     {
         if (!File.Exists(SourceFilePath))
             throw new FSException("SOURCEFILE NOT FOUND");
 
-        FSNode DestFileNode = GetFile(DestFilePath);
+        FSNode<T> DestFileNode = GetFile(DestFilePath);
         if (DestFileNode == null)
             DestFileNode = Touch(DestFilePath);
 
@@ -1788,7 +1920,7 @@ public class FS
             return GetFileStream(DestFileNode);
     }
 
-    public FSStream Copy(string SourceFile)
+    public FSStream<T> Copy(string SourceFile)
     {
         if (!File.Exists(SourceFile))
             throw new FSException("SOURCEFILE NOT FOUND");
@@ -1835,7 +1967,7 @@ public class FS
 
             for (int i = 0; i < _NodeBlocks.Count; i++)
             {
-                FSNode Node = _NodeBlocks[i].FindNode(Directory.Id);
+                FSNode<T> Node = _NodeBlocks[i].FindNode(Directory.Id);
                 if (Node != null)
                 {
                     try
@@ -1868,14 +2000,14 @@ public class FS
     {
         try
         {
-            FSNode File = _CurrentFolder.FindFile(Name);
+            FSNode<T> File = _CurrentFolder.FindFile(Name);
             if (File == null)
                 throw new FSException("FILE NOT FOUND");
 
             using (var FS = GetFileStream(Name))
                 FS.SetLength(0);
 
-            FSNode Node;
+            FSNode<T> Node;
             for (int i = 0; i < _NodeBlocks.Count; i++)
                 if ((Node = _NodeBlocks[i].FindNode(File.Id)) != null)
                 {
@@ -1908,11 +2040,11 @@ public class FS
         }
     }
 
-    public FSNode GetFile(string Name)
+    public FSNode<T> GetFile(string Name)
     {
         if (Name.Contains("\\"))
         {
-            FSDirectory Runner = _CurrentFolder;
+            FSDirectory<T> Runner = _CurrentFolder;
 
             // switch to root if name starts with /
             if (Name.StartsWith("\\"))
@@ -1932,7 +2064,7 @@ public class FS
                     default:
                         if (Last)
                         {
-                            FSNode File = Runner.FindFile(Item);
+                            FSNode<T> File = Runner.FindFile(Item);
                             if (File == null)
                                 throw new FSException("file " + Item + " not found in " + Name);
                             else
@@ -1959,28 +2091,38 @@ public class FS
         return null;
     }
 
-    public FSStream GetFileStream(string Name)
+    public FSStream<T> GetFileStream(string Name)
     {
-        FSNode Node = GetFile(Name);
+        FSNode<T> Node = GetFile(Name);
 
         if (Node != null)
-            return new FSStream(this, Node);
+            return new FSStream<T>(this, (T)GuardianGet, Node);
         else
             return null;
     }
 
-    public FSStream GetFileStream(FSNode Node)
+    public FSStream<T> GetFileStream(FSNode<T> Node)
     {
         if (Node != null)
-            return new FSStream(this, Node);
+            return new FSStream<T>(this, (T)GuardianGet, Node);
         else
             return null;
     }
     #endregion
 
     public FS(string Filename)
-        : base(Filename)
+        : base(new FSGuardian(FILE_SIGNATURE), Filename)
     {
         rootID = Hash.HashFNV1a32("ROOT");
+    }
+
+
+}
+public class FS
+    : FS<IFSGuardian>
+{
+    public FS(string Filename) 
+        : base(Filename)
+    {
     }
 }

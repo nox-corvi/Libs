@@ -34,7 +34,7 @@
 
 
 	structure
-		Header | Container0, Container1, Container[n], ClusterMap, Cluster0, Cluster[n]
+		Header | Container0, Container1, Container[n] | ClusterMap | Cluster0, Cluster[n]
 
 
 	class structure

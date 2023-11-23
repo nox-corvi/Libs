@@ -25,6 +25,7 @@
 using Microsoft.Extensions.Logging;
 using Nox.Component;
 using Nox.Hosting;
+using Nox.IO.FS;
 using Nox.Security;
 using System;
 using System.Collections.Generic;
@@ -44,37 +45,56 @@ public interface IDFGuardian
     string Filename { get;  }
     FileStream FileHandle { get;  }
     
-    DFCache<DFCluster> Cache { get;  }
-    DFHeader Header { get; }
+    DFCache Cache { get;  }
+    //IDFHeader<IDFGuardian> Header { get; }
 
     // security
     ICryptoTransform CreateEncryptor();
     ICryptoTransform CreateDecryptor();
 
     // properties for lazy coding
+    int CustomContainerCount { get; }
+    int CustomContainerSize { get; }
     int ClusterMapCount { get; }
-    int ContainerCount { get; }
     int ClusterSize { get; }
 
     // calculating methods
     int HeaderOffset();
-    int ContainerOffset(int Index = 0);
+    int CustomContainerOffset(int Index = 0);
     int ClusterMapOffset(int Index = 0);
     int ClusterOffset(int Index = 0);
 
     // access methods
+    DFClusterMaps ClusterMaps { get; }
+}
+public interface IDFCluster
+{
+    bool Dirty { get; }
+    int ClusterId { get; }
+
+    void Write();
+}
+public interface IDFHeader
+{
 
 }
 
+public interface IDFCache//<T>
+    //where T : IFSGuardian
+{
+    void Append(object Value);
+    void Flush();
+}
 
-public abstract class DFBase
+public abstract class DFBase<T>
     : ObservableObject
+    where T : class, IDFGuardian
 {
     protected const uint HASH_MASTER = 0x1494BFDA;
     protected readonly uint _DefaultSignature;
 
     #region Properties
-    protected IDFGuardian GuardianGet { get; }
+    protected T GuardianGet { get; }
 
     public uint DefaultSignature { get => _DefaultSignature; }
     #endregion
@@ -96,12 +116,11 @@ public abstract class DFBase
     public static uint HashSignature(Type type)
         => (uint)HASH_MASTER ^ Hash.HashFNV1a32(type.FullName);
 
-
-    public static int SizeOf<T>(T value) where T : struct
+    public static int SizeOf<U>(U value) where U : struct
         => Marshal.SizeOf(value);
     #endregion
 
-    public DFBase(IDFGuardian guardian)
+    public DFBase(T guardian)
     {
         GuardianGet = guardian;
         _DefaultSignature = HashSignature(GetType());
@@ -124,8 +143,9 @@ public class DFException
 }
 
 
-public abstract class DFElement
-    : DFBase
+public abstract class DFElement<T>
+    : DFBase<T>
+    where T : class, IDFGuardian
 {
     public virtual bool Dirty { get; protected set; }
 
@@ -135,7 +155,7 @@ public abstract class DFElement
 
     public abstract void UserDataCRC(tinyCRC CRC);
 
-    public DFElement(IDFGuardian guardian)
+    public DFElement(T guardian)
         : base(guardian)
     {
         PropertyChanged += (s, e) =>
@@ -143,54 +163,9 @@ public abstract class DFElement
     }
 }
 
-public class DFContainerDescriptors
-    : DFElement
-{
-    private int _Size;
-    private int _Offset;
-
-    #region Properties
-    public int Size
-    {
-        get => _Size;
-        set => SetProperty(ref _Size, value);
-    }
-
-    public int Offset
-    {
-        get => _Offset;
-        set => SetProperty(ref _Offset, value);
-    }
-    #endregion
-
-    public override void Read(BinaryReader Reader)
-    {
-        _Size = Reader.ReadInt32();
-        _Offset = Reader.ReadInt32();
-    }
-
-    public override void UserDataCRC(tinyCRC CRC)
-    {
-        CRC.Push(_Size);
-        CRC.Push(_Offset);
-    }
-
-    public override void Write(BinaryWriter Writer)
-    {
-        Writer.Write(Size);
-        Writer.Write(Offset);
-    }
-
-    public DFContainerDescriptors(IDFGuardian guardian) 
-        : base(guardian)
-    {
-
-    }
-
-}
-
-public class DFClusterMap
-    : DFElement
+public class DFClusterMap<T>
+    : DFElement<T>
+    where T : class, IDFGuardian
 {
     private uint[] _Map;
 
@@ -343,7 +318,7 @@ public class DFClusterMap
             CRC.Push(_Map[i]);
     }
 
-    public DFClusterMap(IDFGuardian guardian, int ClusterSize)
+    public DFClusterMap(T guardian, int ClusterSize)
         : base(guardian)
     {
         _SlotsFree = _SlotCount = (ClusterSize) << 3;
@@ -351,8 +326,9 @@ public class DFClusterMap
     }
 }
 
-public abstract class DFContainer
-    : DFBase
+public abstract class DFContainerFree<T>
+    : DFBase<T>
+    where T : class, IDFGuardian
 {
     private uint _Signature;
     private uint _CRC;
@@ -423,11 +399,12 @@ public abstract class DFContainer
                     // userdata are always encrypted
 
                     WriteUserData(CSWriter);
-                    
+
                     CSWriter.Flush(); // force
                     CryptoStream.Flush(); // flush 
                     CryptoStream.FlushFinalBlock(); // finalize
-                } else
+                }
+                else
                     WriteUserData(Writer);
 
                 // write crc of unencrypted data plain 
@@ -476,16 +453,11 @@ public abstract class DFContainer
 
     public int ContainerSize()
         // signature and crc
-        => sizeof(uint) << 1 + UserDataSize();
+        => (sizeof(uint) << 1) + UserDataSize();
     #endregion
 
-    public DFContainer(IDFGuardian guardian, uint Signature)
-        : this(guardian)
-    {
-        _Signature = Signature;
-    }
 
-    public DFContainer(IDFGuardian guardian)
+    public DFContainerFree(T guardian)
         : base(guardian)
     {
         PropertyChanged += (s, e) => { Dirty = true; };
@@ -495,10 +467,49 @@ public abstract class DFContainer
     }
 }
 
-public class DFClusterMaps
-    : DFContainer
+public abstract class DFContainerIndexed<T>
+    : DFContainerFree<T>
+    where T : class, IDFGuardian
 {
-    private DFClusterMap[] _Map;
+    private int _Index = 0;
+
+    private uint _Signature;
+    private uint _CRC;
+
+    #region Properties
+    public int Index { get => _Index; }
+    #endregion
+
+    public DFContainerIndexed(T guardian, int Index)
+        : base(guardian)
+    {
+        _Index = Index; // container index
+        PropertyChanged += (s, e) => { Dirty = true; };
+
+        _Signature = DefaultSignature;
+        Dirty = true;
+    }
+}
+
+public abstract class DFContainerCustom<T>
+    : DFContainerIndexed<T>
+    where T : class, IDFGuardian
+{
+    public override void Read()
+        => Read(GuardianGet.FileHandle, GuardianGet.CustomContainerOffset(Index));
+    public override void Write()
+        => Write(GuardianGet.FileHandle, GuardianGet.CustomContainerOffset(Index));
+
+    protected DFContainerCustom(T guardian, int Index) 
+        : base(guardian, Index)
+    {
+    }
+}
+
+public sealed class DFClusterMaps
+    : DFContainerFree<IDFGuardian>
+{
+    private DFClusterMap<IDFGuardian>[] _Map;
 
     public override bool Encrypted { get => false; }
 
@@ -597,10 +608,10 @@ public class DFClusterMaps
         => Read(GuardianGet.FileHandle, 0);
     public override void ReadUserData(BinaryReader Reader)
     {
-        _Map = new DFClusterMap[GuardianGet.ClusterMapCount];
+        _Map = new DFClusterMap<IDFGuardian>[GuardianGet.ClusterMapCount];
         for (int i = 0; i < GuardianGet.ClusterMapCount; i++)
         {
-            _Map[i] = new DFClusterMap(GuardianGet, GuardianGet.ClusterSize);
+            _Map[i] = new DFClusterMap<IDFGuardian>(GuardianGet, GuardianGet.ClusterSize);
             _Map[i].Read(Reader);
         }
     }
@@ -647,18 +658,18 @@ public class DFClusterMaps
     public DFClusterMaps(IDFGuardian guardian)
         : base(guardian)
     {
-        _Map = new DFClusterMap[GuardianGet.ClusterMapCount];
+        _Map = new DFClusterMap<IDFGuardian>[GuardianGet.ClusterMapCount];
         for (int i = 0; i < GuardianGet.ClusterMapCount; i++)
-            _Map[i] = new DFClusterMap(GuardianGet, GuardianGet.ClusterSize);
+            _Map[i] = new DFClusterMap<IDFGuardian>(GuardianGet, GuardianGet.ClusterSize);
     }
 }
 
-public abstract class DFCluster
-    : DFContainer
+public abstract class DFCluster<T>
+    : DFContainerIndexed<T>, IDFCluster
+    where T : class, IDFGuardian
 {
-    private int _ClusterSize;
-
     private int _ClusterId;
+    private int _ClusterSize;
 
     #region Properties
     public int ClusterSize { get => _ClusterSize; }
@@ -691,26 +702,24 @@ public abstract class DFCluster
         CRC.Push(_ClusterId);
     }
 
-    public DFCluster(IDFGuardian guardian, int ClusterSize, int ClusterId)
-        : base(guardian)
+    public DFCluster(T guardian, int ClusterSize, int ClusterId)
+        : base(guardian, ClusterId)
     {
         PropertyChanged += (s, e)
             => Dirty = true;
 
-        _ClusterSize = ClusterSize;
         _ClusterId = ClusterId;
+        _ClusterSize = ClusterSize;
 
         Dirty = true;
     }
 }
 
-public class DFCache<U>
-    : DFBase
-    where U : DFCluster
+public class DFCache
 {
     public const int FREE = -1;
 
-    private U[] Clusters;
+    private IDFCluster[] Clusters;
     private int Index;
 
     #region Cache-Methods
@@ -764,7 +773,7 @@ public class DFCache<U>
     /// </summary>
     /// <param name="Cluster">Die ClusterNummer die gesucht werden soll</param>
     /// <returns>FSDataCluster wenn vorhanden, sonst null</returns>
-    public U Item(int Cluster)
+    public IDFCluster Item(int Cluster)
     {
         int Position = Exists(Cluster);
 
@@ -779,7 +788,7 @@ public class DFCache<U>
     /// </summary>
     /// <param name="Value">Der DataCluster der eingefügt werden soll</param>
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
-    public void Append(U Value)
+    public void Append(IDFCluster Value)
     {
         try
         {
@@ -820,10 +829,9 @@ public class DFCache<U>
     }
     #endregion
 
-    public DFCache(IDFGuardian guardian, int CacheSize)
-        : base(guardian)
+    public DFCache(int CacheSize)
     {
-        Clusters = new U[CacheSize];
+        Clusters = new IDFCluster[CacheSize];
         for (int i = 0; i < CacheSize; i++)
             Clusters[i] = null;
 
@@ -832,10 +840,11 @@ public class DFCache<U>
 }
 
 
-public class DFHeader
-    : DFContainer
+public sealed class DFHeader
+    : DFContainerFree<IDFGuardian>
 {
     public const uint CURRENT_VERSION = 0x0001;
+    private const int NAME_LENGTH = 32;
 
     private uint _Version;
     private int _Build;
@@ -848,8 +857,8 @@ public class DFHeader
     private int _ClusterMapCount = 4;
     private int _ClusterSize = 8192;
 
-    private int _ContainerCount;
-    private int[] _ContainerSizes;
+    private int _CustomContainerCount = 4;
+    private int _CustomContainerSize = 4096;
 
     public override bool Encrypted { get => false; }
 
@@ -861,7 +870,7 @@ public class DFHeader
     public string Name
     {
         get => BytesToString(_Name);
-        set => SetProperty(ref _Name, GetStringBytes(value, 32));
+        set => SetProperty(ref _Name, GetStringBytes(value, NAME_LENGTH));
     }
 
     public DateTime Created
@@ -876,16 +885,17 @@ public class DFHeader
         set => SetProperty(ref _Modified, value);
     }
 
-    public int ContainerCount
+    public int CustomContainerCount
     {
-        get => _ContainerCount;
-        set => SetProperty(ref _ContainerCount, value);
+        get => _CustomContainerCount;
+        set => SetProperty(ref _CustomContainerCount, value);
     }
 
-    public int GetContainerSize(int Index)
-        => _ContainerSizes[Index];
-    public void SetContainerSize(int Index, int Size)
-        => SetProperty(_ContainerSizes[Index], Size, (d) => _ContainerSizes[Index] = d);
+    public int CustomContainerSize
+    {
+        get => _CustomContainerSize;
+        set => SetProperty(ref _CustomContainerSize, value);
+    }
 
     public int ClusterMapCount
     {
@@ -911,15 +921,13 @@ public class DFHeader
             throw new InvalidDataException("version mismatch");
 
         _Build = Reader.ReadInt32();
-        _Name = Reader.ReadBytes(32);
+        _Name = Reader.ReadBytes(NAME_LENGTH);
 
         _Created = DateTime.FromFileTimeUtc(Reader.ReadInt64());
         _Modified = DateTime.FromFileTimeUtc(Reader.ReadInt64());
 
-        _ContainerCount = Reader.ReadInt32();
-        _ContainerSizes = new int[_ContainerCount];
-        for (int i = 0; i < _ContainerCount; i++)
-            _ContainerSizes[i] = Reader.ReadInt32();
+        _CustomContainerCount = Reader.ReadInt32();
+        _CustomContainerSize = Reader.ReadInt32();
 
         _ClusterMapCount = Reader.ReadInt32();
         _ClusterSize = Reader.ReadInt32();
@@ -932,14 +940,13 @@ public class DFHeader
         Writer.Write(_Version);
         Writer.Write(_Build);
 
-        Writer.Write(_Name, 0, 32);
+        Writer.Write(_Name, 0, NAME_LENGTH);
 
         Writer.Write(_Created.ToFileTimeUtc());
         Writer.Write(_Modified.ToFileTimeUtc());
 
-        Writer.Write(_ContainerCount);
-        for (int i = 0; i < _ContainerSizes.Length; i++)
-            Writer.Write(_ContainerSizes[i]);
+        Writer.Write(_CustomContainerCount);
+        Writer.Write(_CustomContainerSize);
 
         Writer.Write(_ClusterMapCount);
         Writer.Write(_ClusterSize);
@@ -951,15 +958,15 @@ public class DFHeader
         int Size = 0;
         Size += SizeOf(_Version);
         Size += SizeOf(_Build);
-        Size += Name.Length;
-        Size += SizeOf(_Created);
-        Size += SizeOf(_Modified);
+        Size += NAME_LENGTH;
+        Size += SizeOf(_Created.ToFileTimeUtc());
+        Size += SizeOf(_Modified.ToFileTimeUtc());
 
-        Size += SizeOf(_ContainerCount);
-        Size += _ContainerCount * sizeof(uint);  // _ContainerSizes;
+        Size += SizeOf(_CustomContainerCount);
+        Size += SizeOf(_CustomContainerCount);
 
-        Size += Size += SizeOf(_ClusterSize);
         Size += Size += SizeOf(_ClusterMapCount);
+        Size += Size += SizeOf(_ClusterSize);
 
         return Size;
     }
@@ -972,12 +979,11 @@ public class DFHeader
         CRC.Push(_Modified.ToFileTimeUtc());
         CRC.Push(_Created.ToFileTimeUtc());
         
-        CRC.Push(_ContainerCount);
-        for (int i = 0; i < _ContainerCount; i++)
-            CRC.Push(_ContainerSizes[i]);
+        CRC.Push(_CustomContainerCount);
+        CRC.Push(_CustomContainerSize);
 
-        CRC.Push(_ClusterSize);
         CRC.Push(_ClusterMapCount);
+        CRC.Push(_ClusterSize);
     }
 
     public DFHeader(IDFGuardian guardian, int ClusterSize)
@@ -996,15 +1002,19 @@ public class DFHeader
         _Version = CURRENT_VERSION;
         _Build = Assembly.GetEntryAssembly().GetName().Version.Build;
 
-        _Name = GetStringBytes(Guid.NewGuid().ToString(), 64);
+        _Name = GetStringBytes(Guid.NewGuid().ToString(), NAME_LENGTH);
     }
 }
 
-public class DF
-    : DFContainer
+public class DF<T>
+    : DFBase<T>
+    where T : class, IDFGuardian
 {
     // Konstanten
+    public const int DEFAULT_CUSTOM_CONTAINER_SIZE = 4096;
     public const int DEFAULT_CLUSTER_SIZE = 32768;
+
+    public const uint FILE_SIGNATURE = 0x3F534652;
 
     protected class DFGuardian
         : IDFGuardian
@@ -1021,7 +1031,7 @@ public class DF
             0x9B, 0xAA, 0xB9, 0xC8, 0xD7, 0xE6, 0xF5, 0x04,
             0x5F, 0x6E, 0x7D, 0x8C, 0x9B, 0xAA, 0xB9, 0xC8 };
 
-        private uint _FileSignature;
+        protected uint _FileSignature;
 
         #region Properties
         public uint FileSignature { get; set; }
@@ -1032,8 +1042,8 @@ public class DF
         public string Filename { get; set; }
         public FileStream FileHandle { get; set; }
         
-        public DFCache<DFCluster> Cache { get; set; }
-
+        public DFCache Cache { get; set; }
+      
         public DFHeader Header { get; set; }
         #endregion
 
@@ -1065,47 +1075,38 @@ public class DF
         }
 
         #region Helpers
+        public int CustomContainerCount { get => Header.CustomContainerCount; }
+        public int CustomContainerSize { get => Header.CustomContainerSize; }
         public int ClusterMapCount { get => Header.ClusterMapCount; }
-        public int ContainerCount { get => Header.ContainerCount; }
         public int ClusterSize { get => Header.ClusterSize; }
 
         public int HeaderOffset()
             => SizeOf(_FileSignature);
 
-        public int ContainerOffset(int Index = 0)
-        {
-            int Size = HeaderOffset() + Header.ContainerSize();
-
-            for (int i = 0; i < Index; i++)
-                Size += Header.GetContainerSize(i);
-
-            return Size;
-        }
+        public int CustomContainerOffset(int Index = 0)
+            => HeaderOffset() + Header.ContainerSize() + 
+            (Math.Min(Header.CustomContainerCount - 1, Index) * Header.CustomContainerSize);
 
         public int ClusterMapOffset(int Index = 0)
-        {
-            int Size = ContainerOffset(Header.ContainerCount + 1);
-            
-            Size += Math.Min(Index, Header.ClusterMapCount) * Header.ClusterSize;
-
-            return Size;
-        }
+            => CustomContainerOffset(Header.CustomContainerCount) +
+             (Math.Min(Header.ClusterMapCount - 1, Index) * Header.ClusterSize);
 
         public int ClusterOffset(int Index = 0)
             => ClusterMapOffset(Header.ClusterMapCount + 1) + Header.ClusterSize;
+
+
+        public DFClusterMaps ClusterMaps { get; set; }
         #endregion
 
-        private DFGuardian()
+        protected DFGuardian()
         {
             Laverna = new Laverna(_DF_KEY, _DF_IV);
-            Hosting.Hosting.CreateDefaultLogger<DF>();
+            Log = Hosting.Hosting.CreateDefaultLogger<DF<T>>();
         }
 
         public DFGuardian(uint FileSignature)
             : this() => this.FileSignature = FileSignature;
     }
-
-    public override bool Encrypted { get => false; }
 
     #region Properties
     public virtual string Extension { get; } = ".dfs";
@@ -1117,12 +1118,21 @@ public class DF
 
     private DFGuardian GuardianSet { get => (GuardianGet as DFGuardian); }
 
-    #region Container Methods
-    private List<DFContainer> _Containers = new();
-    public void RegisterContainer<T>(T container)
-        where T : DFContainer, new()
-        => _Containers.Add(container);
-    #endregion
+    //#region Container Methods
+    //private List<DFContainerFree<T>> _Containers = new();
+    //public void RegisterContainer<T>(U container)
+    //    where U : DFContainerFree<U>, new()
+    //{
+    //    if (GuardianGet.CustomContainerCount < _Containers.Count)
+    //    {
+    //        if (container.ContainerSize() > GuardianGet.CustomContainerSize)
+    //            throw new DFException($"CustomContainerSize exceeded ( > {GuardianGet.CustomContainerSize}");
+
+    //        _Containers.Add(container);
+    //    } else
+    //        throw new DFException($"CustomContainerCount exceeded ( > {GuardianGet.CustomContainerCount}");
+    //}
+    //#endregion
 
     #region FS-Helpers
     internal void ClearCluster(int Cluster)
@@ -1143,16 +1153,12 @@ public class DF
     }
     #endregion
 
-    private DFHeader CreateHeader()
-        => new DFHeader(GuardianGet);
-    private DFHeader CreateHeader(int ClusterSize)
-        => new DFHeader(GuardianGet, ClusterSize);
-
     #region FS-Methods
-    public void Create(bool ForceOverwrite, string VolumeName = "")
-        => Create(ForceOverwrite, VolumeName, DEFAULT_CLUSTER_SIZE);
+    public virtual void Create(bool ForceOverwrite, string VolumeName = "")
+        => Create(ForceOverwrite, VolumeName, DEFAULT_CLUSTER_SIZE >> 3, 0, 4, DEFAULT_CLUSTER_SIZE);
 
-    public void Create(bool ForceOverwrite, string VolumeName, int ClusterSize)
+    protected virtual void Create(bool ForceOverwrite, string VolumeName,
+        int CustomContainerSize, int CustomContainerCount, int ClusterMapCount, int ClusterSize)
     {
         Close();
 
@@ -1164,7 +1170,7 @@ public class DF
         {
             GuardianSet.FileHandle = File.Open(this.Filename + Extension, FileMode.Create);
 
-            Format(VolumeName, ClusterSize);
+            Format(VolumeName, CustomContainerSize, CustomContainerCount, ClusterMapCount, ClusterSize);
 
             GuardianSet.FileHandle.Flush();
         }
@@ -1175,7 +1181,7 @@ public class DF
         }
     }
 
-    public void Open()
+    public virtual void Open()
     {
         Close();
 
@@ -1206,11 +1212,11 @@ public class DF
     {
         if (IsOpen)
         {
-            if (GuardianGet.Header != null)
-                GuardianGet.Header.Write();
+            if (GuardianSet.Header != null)
+                GuardianSet.Header.Write();
 
-            if (GuardianGet.Cache != null)
-                GuardianGet.Cache.Flush();
+            if (GuardianSet.Cache != null)
+                GuardianSet.Cache.Flush();
         }
     }
 
@@ -1247,9 +1253,10 @@ public class DF
     /// <returns>Wahr wenn erfolgreich, sonst Falsch</returns>
     public virtual void Reload()
     {
-        GuardianSet.Header = CreateHeader(GuardianGet.ClusterSize);
-        GuardianGet.Header.Read();
-        GuardianSet.Cache = new DFCache<DFCluster>(GuardianGet, 64);
+        GuardianSet.Header = new DFHeader(GuardianGet, GuardianGet.ClusterSize);
+        GuardianSet.Cache = new DFCache(64);
+
+        GuardianSet.Header.Read();
     }
 
     public void Label(string Name)
@@ -1260,17 +1267,23 @@ public class DF
         Flush();
     }
 
-    public void Format(string Name)
-        => Format(Name, DEFAULT_CLUSTER_SIZE);
+    public virtual void Format(string Name)
+        => Format(Name, DEFAULT_CLUSTER_SIZE >> 3, 0, 4, DEFAULT_CLUSTER_SIZE);
 
-    public virtual void Format(string Name, int ClusterSize)
+    protected virtual void Format(string Name, int CustomContainerSize, int CustomContainerCount, int ClusterMapCount, int ClusterSize)
     {
         if (IsOpen)
         {
-            GuardianSet.Header = CreateHeader(GuardianGet.ClusterSize);
-            GuardianGet.Header.Name = Name;
-
-            GuardianSet.Cache = new DFCache<DFCluster>(GuardianGet, 64);
+            GuardianSet.Header = new DFHeader(GuardianGet)
+            {
+                Name = Name,
+                CustomContainerSize = CustomContainerSize,
+                CustomContainerCount = CustomContainerCount,
+                ClusterMapCount = ClusterMapCount,
+                ClusterSize = ClusterSize,
+            };
+            GuardianSet.Cache = new DFCache(64);
+            
             Flush();
 
             try
@@ -1286,35 +1299,9 @@ public class DF
     }
     #endregion
 
-
-    public override void Read()
-        => Read(GuardianGet.FileHandle, GuardianGet.HeaderOffset());
-
-    public override void ReadUserData(BinaryReader Reader)
-    {
-        
-    }
-    public override void Write()
-        => Write(GuardianGet.FileHandle, GuardianGet.HeaderOffset());
-
-    public override void WriteUserData(BinaryWriter Writer)
-    {
-        throw new NotImplementedException();
-    }
-    public override int UserDataSize()
-    {
-        throw new NotImplementedException();
-    }
-    public override void UserDataCRC(tinyCRC CRC)
-    {
-        throw new NotImplementedException();
-    }
-
-    public DF(string Filename)
-        : base(null)
-    {
-        GuardianSet.Filename = Filename;
-    }
+    public DF(T Guardian, string Filename)
+        : base(Guardian)        
+        => GuardianSet.Filename = Filename;
 
     public void Dispose()
     {
@@ -1322,5 +1309,3 @@ public class DF
         Close();
     }
 }
-
-
