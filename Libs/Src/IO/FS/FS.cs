@@ -23,6 +23,7 @@
  * 
 */
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nox.IO.Buffer;
 using Nox.IO.DF;
@@ -33,6 +34,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Nox.IO.FS;
 
@@ -52,7 +54,7 @@ public enum FSFlags
     Directory = 8192,
 }
 public interface IFSGuardian
-    : IDFGuardian
+    : IGuardian
 {
     int NodeSize { get; }
     int NodesPerBlock { get; }
@@ -81,7 +83,7 @@ public class FSException
     #endregion
 }
 public class FSMap<T>
-    : DFElement<T>
+    : Element<T>
     where T : class, IFSGuardian
 {
     private int _SlotCount;
@@ -213,7 +215,7 @@ public class FSMap<T>
     }
 }
 public class FSNode<T>
-    : DFElement<T>
+    : Element<T>
     where T : class, IFSGuardian
 {
     // Vars
@@ -421,7 +423,7 @@ public class FSNode<T>
     }
 }
 public class FSHeader<T>
-    : DFContainerCustom<T>
+    : ContainerCustom<T>
     where T : class, IFSGuardian
 {
     // Konstanten
@@ -436,51 +438,6 @@ public class FSHeader<T>
     public uint Revision
     {
         get => _Revision;
-    }
-
-    /// <summary>
-    /// Liefert die Größe eines Knoten in Bytes zurück.
-    /// </summary>
-    public int NodeSize
-    {
-        get => NODE_SIZE;
-    }
-
-    /// <summary>
-    /// Liefert die maximal für Nutzdaten verwendbare Größe zurück.
-    /// </summary>
-    public int UseableClusterSize
-    {
-        get => GuardianGet.ClusterSize - 16;
-    }
-
-    /// <summary>
-    /// Liefert die maximale Anzahl an Knoten zurück, welche in einem NodeBlock gespeichert werden können.
-    /// </summary>
-    public int NodesPerBlock
-    {
-        get
-        {
-            if (_NodesPerBlock == -1)
-            {
-                _NodesPerBlock = 32;
-                while (_NodesPerBlock * NodeSize < UseableClusterSize)
-                    _NodesPerBlock++;
-
-                while (_NodesPerBlock * NodeSize > UseableClusterSize)
-                    _NodesPerBlock--;
-            }
-
-            return _NodesPerBlock;
-        }
-    }
-
-    /// <summary>
-    /// Liefert die Anzahl an möglichen Positionen pro Cluster zurück.
-    /// </summary>
-    public int PositionsPerCluster
-    {
-        get => GuardianGet.ClusterSize - 12;
     }
 
     public override bool Encrypted => false;
@@ -513,7 +470,7 @@ public class FSHeader<T>
     }
 }
 public class FSNodeCluster<T>
-    : DFCluster<T>
+    : Cluster<T>
     where T : class, IFSGuardian
 {
     private int _NextBlock;
@@ -742,7 +699,7 @@ public class FSNodeCluster<T>
     }
 }
 public class FSDataCluster<T>
-    : DFCluster<T>
+    : Cluster<T>
     where T : class, IFSGuardian
 {
     private int _Previous;
@@ -1386,11 +1343,31 @@ public class FS<T>
             Log = Hosting.Hosting.CreateDefaultLogger<FS>();
         }
 
-        public int NodeSize { get; set; }
+        public int NodeSize { get; set; } = 128;
 
-        public int NodesPerBlock { get; set; }
+        private int _NodesPerBlock = -1;
+        public int NodesPerBlock 
+        { 
+            get
+            {
+                if (_NodesPerBlock == -1)
+                {
+                    _NodesPerBlock = 32;
+                    while (_NodesPerBlock * NodeSize < UseableClusterSize)
+                        _NodesPerBlock++;
 
-        public int UseableClusterSize { get; set; }
+                    while (_NodesPerBlock * NodeSize > UseableClusterSize)
+                        _NodesPerBlock--;
+                }
+
+                return _NodesPerBlock;
+            }
+                }
+
+        public int UseableClusterSize 
+        {
+            get => ClusterSize - 16;
+        }
     }
 
     public struct DirectoryInfo
@@ -1596,7 +1573,7 @@ public class FS<T>
 
     #region FS-Methods
     public override void Create(bool ForceOverwrite, string VolumeName = "")
-        => Create(ForceOverwrite, VolumeName, 1, 4096, 4, 32768);
+        => Create(ForceOverwrite, VolumeName, 1, 2048, 4, 8192);
 
     protected override void Create(bool ForceOverwrite, string VolumeName, int CustomContainerSize, int CustomContainerCount, int ClusterMapCount, int ClusterSize)
     {
@@ -1651,9 +1628,9 @@ public class FS<T>
         _CurrentFolder = _Root.Root;
     }
 
-    public override void Format(string Name)
+    protected override void Format(string Name, int CustomContainerSize, int CustomContainerCount, int ClusterMapCount, int ClusterSize)
     {
-        base.Format(Name, 4096, 2, 4, 32768);
+        base.Format(Name, CustomContainerSize, CustomContainerCount, ClusterMapCount, ClusterSize);
         if (IsOpen)
         {
             _Header = new FSHeader<T>((T)GuardianGet);

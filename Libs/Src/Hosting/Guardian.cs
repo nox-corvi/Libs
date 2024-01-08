@@ -40,6 +40,8 @@ public abstract class Guardian
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "{Message}", ex.Message);
+                    Thread.Sleep((new Random()).Next(5000));
+
                     _ErrorCounter++;
                 }
 

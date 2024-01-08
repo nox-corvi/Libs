@@ -2,20 +2,20 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <BaseOutputPath>bin\</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
-    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
+    <PackageReference Include="System.DirectoryServices" Version="8.0.0" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Miru\Libs\Miru\Miru7x\Miru7x.csproj" />
-    <ProjectReference Include="..\..\Libs\Libs7x\Libs7x.csproj" />
+    <ProjectReference Include="..\..\..\Miru\Libs\Miru\Miru8x\Miru8x.csproj" />
+    <ProjectReference Include="..\..\Libs\Libs8x\Libs8x.csproj" />
   </ItemGroup>
 
 </Project>

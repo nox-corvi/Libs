@@ -32,27 +32,32 @@
 	header is the first container, followed by several other possible ones
 	the structure of all other containers is described in the header object.
 
+	interfaces
+		IGuardian
+		ICluster
 
-	structure
-		Header | Container0, Container1, Container[n] | ClusterMap | Cluster0, Cluster[n]
-
-
-	class structure
-
-		DFBase					
-			DFContainer			
-				DFClusterMaps
-
-				DFCluster				
-
-
-			DFElement
-				DFClusterMap
-
+	classes / structured
+		DFBase
+			Element<T>
+				ClusterMap<T>
+			ContainerFree<T>
+				Header
+				ClusterMaps
+			ContainerIndexed<T>
+				Cluster<T>
+			ContainerCustom<T>
+				
+			DF<T>
+		
+		Cache
+		DF<T>
+		
 
 	file structure
+	Header | Container0, Container[n] | ClusterMap | Cluster0, Cluster[n]
 
-	# DF (:DFContainer)
+	# DF<T> (: DFBase<T>)
 
-	0 .. 3	Signature		
-	4 .. 
+	0 .. 3	FileSignature		
+	
+	# DF

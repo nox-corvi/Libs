@@ -13,15 +13,21 @@ using System.Threading.Tasks;
 
 namespace Nox.Data
 {
-    public interface IRRDBGuardian
-    : IDFGuardian
+    public interface IRRDBMaster
     {
 
     }
 
-    public class RRDB<T>
+    public interface IRRDBGuardian
+    : IGuardian
+    {
+
+    }
+     
+    public class RRDB<T, U>
         : DF<IRRDBGuardian>
-            where T : class, IRRDBGuardian
+        where T : class, IRRDBGuardian
+        where U : class, IRRDBMaster, new()
     {
         protected class RRDBGuardian
             : DFGuardian, IRRDBGuardian

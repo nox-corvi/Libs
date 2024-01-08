@@ -247,7 +247,7 @@ namespace Nox.Net.Com
             GC.SuppressFinalize(this);
         }
 
-        public NetServer(uint Signature1, ILogger<NetServer<T>> logger)
+        public NetServer(uint Signature1, ILogger logger)
             : this(Signature1)
             => this._Logger = logger;
 
@@ -299,7 +299,7 @@ namespace Nox.Net.Com
         }
 
 
-        public NetGenericServer(uint Signature1, ILogger<NetGenericServer<T>> logger)
+        public NetGenericServer(uint Signature1, ILogger logger)
             : base(Signature1, logger) { }
 
         public NetGenericServer(uint Signature1)
@@ -357,7 +357,7 @@ namespace Nox.Net.Com
             SocketListener.ObtainPublicKey += OnObtainPublicKey;
         }
 
-        public NetSecureServer(uint Signature1, ILogger<NetSecureServer<T>> logger)
+        public NetSecureServer(uint Signature1, ILogger logger)
             : base(Signature1, logger) { }
         public NetSecureServer(uint Signature1)
            : base(Signature1) { }
