@@ -15,4 +15,8 @@
 	<ItemGroup>
 		<Compile Include="..\Src\**\*.cs" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Libs.CI\Libs8x.CI\Libs8x.CI.csproj" />
+	  <ProjectReference Include="..\..\Libs\Libs8x\Libs8x.csproj" />
+	</ItemGroup>
 </Project>
