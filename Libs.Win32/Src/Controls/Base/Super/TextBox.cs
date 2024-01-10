@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Nox.Win32.Controls.Base.Super
 {
-    class TextBox
+    public class TextBox
+        : System.Windows.Forms.TextBox  
     {
+
+
+
     }
 }

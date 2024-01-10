@@ -18,7 +18,8 @@ namespace Nox.Win32.Controls.Base.Super
         Location, 
     }
 
-    public class Panel : System.Windows.Forms.Panel
+    public class Panel 
+        : System.Windows.Forms.Panel
     {
         public bool AutoAlignControls { get; set; } = false;
         public AlignDirectionEnum AutoAlignDirection { get; set; } = AlignDirectionEnum.LeftToRight;
@@ -28,8 +29,7 @@ namespace Nox.Win32.Controls.Base.Super
             base.OnResize(eventargs);
         }
 
-
-        private void InitializeComponents()
+        protected virtual void InitializeComponents()
         {
 
         }
