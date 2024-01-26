@@ -17,6 +17,9 @@
 	<ItemGroup>
 		<Compile Include="..\Src\**\*.cs" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Libs\Libs8x\Libs8x.csproj" />
+	</ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>$(DefineConstants);CORE</DefineConstants>
   </PropertyGroup>
