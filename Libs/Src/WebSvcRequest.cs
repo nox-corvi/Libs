@@ -211,6 +211,16 @@ namespace Nox
         protected readonly IConfiguration _configuration;
         protected readonly ILogger _logger;
 
+        #region Properties
+        public IConfiguration Configuration
+        {
+            get => _configuration;
+        }
+
+        public ILogger Logger
+        {
+            get => _logger;
+        }
         /// <summary>
         /// Gibt einen Status zurück der angibt ob die Aktion erfolgreich war
         /// </summary>
@@ -220,6 +230,7 @@ namespace Nox
         /// Gibt eine Statusnachricht zurück.
         /// </summary>
         public string Message { get; set; } = "";
+        #endregion
 
         public WebSvcResponse(ILogger logger, IConfiguration configuration)
         {

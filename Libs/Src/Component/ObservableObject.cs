@@ -1,10 +1,4 @@
-﻿/*
- * special thanks to 
- * https://github.com/MicrosoftDocs/CommunityToolkit
- * 
- */
-
-using System;
+﻿using System;
 using System.Runtime;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,6 +7,15 @@ using System.Runtime.CompilerServices;
 
 namespace Nox.Component
 {
+    /*
+     * The MIT License (MIT)
+     * Copyright (c) Microsoft Corporation
+     * ---
+     * special thanks to 
+     * https://github.com/MicrosoftDocs/CommunityToolkit
+     * 
+     */
+
     public abstract class ObservableObject : INotifyPropertyChanged, INotifyPropertyChanging
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -35,7 +38,6 @@ namespace Nox.Component
 
         protected void OnPropertyChanging([CallerMemberName] string propertyName = null) =>
             OnPropertyChanging(new PropertyChangingEventArgs(propertyName));
-
 
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
         {

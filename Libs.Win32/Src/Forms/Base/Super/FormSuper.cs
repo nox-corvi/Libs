@@ -8,51 +8,51 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Nox.Win32.Forms.Base.Super
+namespace Nox.Win32.Forms.Base.Super;
+
+public partial class FormSuper 
+    : Form
 {
-    public partial class FormSuper : Form
+    #region Form Extensions
+    /// <summary>
+    /// Gibt eine Liste aller geöffneten Formulare zurück
+    /// </summary>
+    /// <returns>Eine Liste vom Typ SuperForm</returns>
+    protected List<FormSuper> OpenForms() => Application.OpenForms.OfType<FormSuper>().ToList<FormSuper>();
+
+    protected MdiContainer FindMdiParent() => Application.OpenForms.OfType<MdiContainer>().Where(f => f.IsMdiContainer).FirstOrDefault();
+
+    protected IEnumerable<Control> FindControls(Func<Control, bool> Match)
     {
-        #region Form Extensions
-        /// <summary>
-        /// Gibt eine Liste aller geöffneten Formulare zurück
-        /// </summary>
-        /// <returns>Eine Liste vom Typ SuperForm</returns>
-        protected List<FormSuper> OpenForms() => Application.OpenForms.OfType<FormSuper>().ToList<FormSuper>();
+        var Result = new List<Control>();
+        var Next = new Stack<Control>();
 
-        protected MdiContainer FindMdiParent() => Application.OpenForms.OfType<MdiContainer>().Where(f => f.IsMdiContainer).FirstOrDefault();
-
-        protected IEnumerable<Control> FindControls(Func<Control, bool> Match)
+        Next.Push(this);
+        while (Next.Count() > 0)
         {
-            var Result = new List<Control>();
-            var Next = new Stack<Control>();
+            var C = Next.Pop();
 
-            Next.Push(this);
-            while (Next.Count() > 0)
+            if (Match.Invoke(C))
             {
-                var C = Next.Pop();
-
-                if (Match.Invoke(C))
-                {
-                    Result.Add(C);
-                    foreach (var Item in C.Controls)
-                        Next.Push((Control)Item);
-                }
+                Result.Add(C);
+                foreach (var Item in C.Controls)
+                    Next.Push((Control)Item);
             }
-
-            return Result;
         }
 
-        protected void SetAllMargins(Padding Margin)
-        {
-            foreach (var Item in FindControls(f => true))
-                Item.Margin = Margin;
-        }
-
-        protected void SetAllMargins(int Margin) =>
-            SetAllMargins(new Padding(Margin));
-        #endregion  
-
-        public FormSuper() => 
-            InitializeComponent();
+        return Result;
     }
+
+    protected void SetAllMargins(Padding Margin)
+    {
+        foreach (var Item in FindControls(f => true))
+            Item.Margin = Margin;
+    }
+
+    protected void SetAllMargins(int Margin) =>
+        SetAllMargins(new Padding(Margin));
+    #endregion  
+
+    public FormSuper() => 
+        InitializeComponent();
 }

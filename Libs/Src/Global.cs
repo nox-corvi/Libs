@@ -1,4 +1,6 @@
-﻿using Nox;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Nox;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,19 +12,29 @@ namespace Nox
 {
     public class Global
     {
-        private static Global _self;
+        protected static Global _self;
 
-        private Log4 _Log;
+        protected IConfiguration _configuration;
+        protected ILogger _logger;
 
-        public static Log4 Log => _self._Log;
+        #region Properties
+        public static IConfiguration Configuration { get => _self._configuration; }
+        public static ILogger Logger { get => _self._logger; }
+        #endregion
 
         static Global() =>
             _self = new Global();
 
         public Global()
         {
-            _Log = new Log4($"{(new StackFrame(1)).GetMethod().DeclaringType.FullName}.log");
-            _Log.LogMessage($"create global instance at {DateTime.UtcNow.ToString()}", Log4.Log4LevelEnum.Debug);
+            _configuration = new ConfigurationBuilder()
+                 .AddJsonFile("appsettings.json")
+                 .Build();
+
+            _logger = Hosting.Hosting.CreateDefaultLogger<Global>(
+                bool.Parse(_configuration["global:debug"] ?? "false"),
+                bool.Parse(_configuration["global:single_line"] ?? "true"),
+                bool.Parse(_configuration["global:include_scope"] ?? "true"));
         }
     }
 }

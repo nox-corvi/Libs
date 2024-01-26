@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace Nox
@@ -251,6 +252,20 @@ namespace Nox
 
         }
 
+        public static string SQLJoin(string[] args, string seperator = ", ")
+        {
+            //return String.Join(",".ToString(), ValidationResult.Select(x => x.Trim(',')))));
+            var Result = new StringBuilder();
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (Result.Length > 0)
+                    Result.Append(seperator);
+                Result.Append(args[i]);
+            }
+
+            return Result.ToString();
+        }
 
         public static string ToBase64(this string s, Encoding e) =>
             Convert.ToBase64String(e.GetBytes(s));

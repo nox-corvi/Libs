@@ -146,7 +146,9 @@ namespace Nox.Data.SqlServer
 
 			return c.ExecuteReader(commandBehavior);
 		}
-		
+        public SqlDataReader GetReader(string SQL, CommandType commandType, params SqlParameter[] Parameters) =>
+            GetReader(SQL, commandType, CommandBehavior.CloseConnection, Parameters);
+
         public SqlDataReader GetReader(string SQL, params SqlParameter[] Parameters) =>
             GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, Parameters);
 
