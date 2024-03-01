@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,11 +7,10 @@ using System.Text;
 
 namespace Nox
 {
-    public class Cache<T> : IDisposable
+    public class Cache<T>
+        : IDisposable
     {
         public enum CacheExpirationEnum { NoExpiration, SlidingExpiration, AbsoluteExpiration }
-
-        private Log4 _Log;
 
         private class CacheItem
         {
@@ -58,6 +58,8 @@ namespace Nox
         private Dictionary<string, CacheItem> _Cache = new();
         private bool disposedValue;
 
+        private readonly ILogger _logger = null!;
+
         #region Properties
         public int CacheExpirationTime { get; set; } = 300; // in Seconds, 5min default time
 
@@ -81,7 +83,7 @@ namespace Nox
             {
                 if (!_Cache.TryGetValue(Key, out CacheItem Value))
                 {
-                    _Log.LogMessage($"Add to Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
+                    _logger.LogDebug($"Add to Cache {Key}:{Helpers.NZ(Value)}");
 
                     var CacheValue = new CacheItem(Key)
                     {
@@ -95,7 +97,7 @@ namespace Nox
                 }
                 else
                 {
-                    _Log.LogMessage($"Get from Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
+                    _logger.LogDebug($"Get from Cache {Key}:{Helpers.NZ(Value)}");
 
                     switch (Value.Expiration)
                     {
@@ -120,7 +122,7 @@ namespace Nox
             }
             catch (Exception ex)
             {
-                _Log.LogException(ex);
+                _logger.LogError(ex.ToString());
                 throw;
             }
         }
@@ -131,7 +133,7 @@ namespace Nox
             {
                 if (!_Cache.TryGetValue(Key, out CacheItem Value))
                 {
-                    _Log.LogMessage($"Add to Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
+                    _logger.LogDebug($"Add to Cache {Key}:{Helpers.NZ(Value)}");
 
                     var CacheValue = new CacheItem(Key)
                     {
@@ -149,7 +151,7 @@ namespace Nox
             }
             catch (Exception ex)
             {
-                _Log.LogException(ex);
+                _logger.LogError(ex.ToString());
                 throw;
             }
         }
@@ -162,7 +164,7 @@ namespace Nox
             }
             catch (Exception ex)
             {
-                _Log.LogException(ex);
+                _logger.LogError(ex.ToString());
 
                 return false;
             }
@@ -174,7 +176,7 @@ namespace Nox
             {
                 if (_Cache.TryGetValue(Key, out CacheItem Value))
                 {
-                    _Log.LogMessage($"Get from Cache {Key}:{Helpers.NZ(Value)}", Log4.Log4LevelEnum.Trace);
+                    _logger.LogDebug($"Get from Cache {Key}:{Helpers.NZ(Value)}");
 
                     return Value.Value;
                 }
@@ -183,14 +185,14 @@ namespace Nox
             }
             catch (Exception ex)
             {
-                _Log.LogException(ex);
+                _logger.LogError(ex.ToString());
                 return default;
             }
         }
         #endregion
 
         public Cache() =>
-            _Log = new Log4("Cache");
+             _logger = Hosting.Hosting.CreateDefaultLogger<Cache<T>>();
 
         protected virtual void Dispose(bool disposing)
         {
@@ -340,15 +342,14 @@ namespace Nox
 
     {
         private List<T> _List = new();
-        private Log4 _Log = null!;
+
+        private readonly ILogger _logger = null!;
 
         #region IList
         public T this[int index]
         {
             get
             {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
-
                 lock (_List)
                 {
                     return _List[index];
@@ -356,8 +357,6 @@ namespace Nox
             }
             set
             {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
-
                 lock (_List)
                 {
                     _List[index] = value;
@@ -370,8 +369,6 @@ namespace Nox
         {
             get
             {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
                 lock (_List)
                 {
                     return _List.Count;
@@ -381,18 +378,11 @@ namespace Nox
 
         public bool IsReadOnly
         {
-            get
-            {
-                _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
-                return false;
-            }
+            get => false;
         }
 
         public void Add(T value)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
-
             lock (_List)
             {
                 _List.Add(value);
@@ -401,8 +391,6 @@ namespace Nox
 
         public void AddRange(IEnumerable<T> collection)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, collection);
-
             lock (_List)
             {
                 _List.AddRange(collection);
@@ -411,8 +399,6 @@ namespace Nox
 
         public void Insert(int index, T value)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index, value);
-
             lock (_List)
             {
                 _List.Insert(index, value);
@@ -420,8 +406,6 @@ namespace Nox
         }
         public bool Remove(T item)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, item);
-
             lock (_List)
             {
                 return _List.Remove(item);
@@ -430,8 +414,6 @@ namespace Nox
 
         public void RemoveAt(int index)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index);
-
             lock (_List)
             {
                 _List.RemoveAt(index);
@@ -440,8 +422,6 @@ namespace Nox
 
         public void RemoveRange(int index, int count)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, index, count);
-
             lock (_List)
             {
                 _List.RemoveRange(index, count);
@@ -450,8 +430,6 @@ namespace Nox
 
         public void Clear()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
             lock (_List)
             {
                 _List.Clear();
@@ -459,8 +437,6 @@ namespace Nox
         }
         public void CopyTo(T[] array, int arrayIndex)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, array, arrayIndex);
-
             lock (_List)
             {
                 _List.CopyTo(array, arrayIndex);
@@ -476,8 +452,6 @@ namespace Nox
 
         public bool Contains(T value)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
-
             lock (_List)
             {
                 return _List.Contains(value);
@@ -485,8 +459,6 @@ namespace Nox
         }
         public IEnumerator GetEnumerator()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
             lock (_List)
             {
                 return _List.GetEnumerator();
@@ -494,8 +466,6 @@ namespace Nox
         }
         public int IndexOf(T value)
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace, value);
-
             lock (_List)
             {
                 return _List.IndexOf(value);
@@ -503,8 +473,6 @@ namespace Nox
         }
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
             lock (_List)
             {
                 return _List.GetEnumerator();
@@ -515,8 +483,6 @@ namespace Nox
         #region ICloneable
         public object Clone()
         {
-            _Log?.LogMethod(Log4.Log4LevelEnum.Trace);
-
             var Result = new ThreadSafeDataList<T>();
             lock (_List)
             {
@@ -528,11 +494,8 @@ namespace Nox
         }
         #endregion
 
-        public ThreadSafeDataList(Log4 Log)
-            : base()
-            => (_Log = Log)?.LogMethod(Log4.Log4LevelEnum.Trace);
-
         public ThreadSafeDataList()
-            : base() { }
+            : base()
+             => _logger = Hosting.Hosting.CreateDefaultLogger<ThreadSafeDataList<T>>();
     }
 }

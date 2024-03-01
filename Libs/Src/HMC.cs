@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -147,7 +149,7 @@ namespace Nox.HMC
     {
         private const string HMC_BASE_URL = "http://<IP>/config/xmlapi/*";
 
-        private Log4 _Log = Log4.Create();
+        private readonly ILogger _logger = null!;
 
         private string _IP = "";
         private string _Version = "";
@@ -577,5 +579,8 @@ namespace Nox.HMC
             }
         }
         #endregion
+
+        public HMCore0()
+            => Hosting.Hosting.CreateDefaultLogger<HMCore0>();
     }
 }

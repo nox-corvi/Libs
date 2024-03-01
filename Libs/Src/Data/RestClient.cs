@@ -12,7 +12,7 @@ public class RestClient
     public string BaseURL { get; } = null!;
 
     public T RestGet<T>(string Path, string Arguments = null!)
-        where T : WebSvcResponse
+        where T : class
     {
         string URL = Path;
         if (Arguments != null)
@@ -29,7 +29,7 @@ public class RestClient
     }
 
     public async Task<T> RestGetAsync<T>(string Path, string Arguments = null!)
-        where T : WebSvcResponse
+        where T : class
     {
         string URL = Path;
         if (Arguments != null)

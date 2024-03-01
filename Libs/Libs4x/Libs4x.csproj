@@ -9,7 +9,7 @@
 		<Product>Libs</Product>
 		<Authors>Libs</Authors>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<LangVersion>11.0</LangVersion>
+    <LangVersion>12.0</LangVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Include="..\Src\**\*.cs" />
@@ -26,6 +26,7 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
 	</ItemGroup>
 	<ItemGroup>

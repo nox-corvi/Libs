@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Nox
 {
-    public class Log4
+    public class Log4_blub
         : ILogger
     {
         public enum Log4LevelEnum
@@ -354,7 +354,7 @@ namespace Nox
 
         public bool TestLogWriteable(string Filename) => AppendLogFile("", Filename);
 
-        public static Log4 Create(ILogger logger = null, Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
+        public static Log4_blub Create(ILogger logger = null, Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
             new($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
@@ -372,11 +372,11 @@ namespace Nox
             throw new NotImplementedException();
         }
 
-        public Log4(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
+        public Log4_blub(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
             : this(LogFile, LogLevel)
             => this._Echo = Echo;
 
-        public Log4(string LogFile, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
+        public Log4_blub(string LogFile, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
         {
             this._LogFile = LogFile;
             this._LogLevel = LogLevel;

@@ -236,7 +236,8 @@ namespace Nox
             return set;
         }
 
-        public static string RandomChars(int Length, bool Hex = false)
+        [Obsolete]
+        public static string RandomChars(int Length, bool Hex)
         {
             string HEX = "0123456789ABCDEF";
             var r = new Random(DateTime.Now.Millisecond);
@@ -246,10 +247,33 @@ namespace Nox
                 if (Hex)
                     Result.Append(HEX.Substring(r.Next(HEX.Length - 1)));
                 else
-                    Result.Append((char)r.Next(127));
+                    Result.Append((char)r.Next(32, 127));
 
             return Result.ToString();
+        }
 
+        public static string RandomChars(int Length)
+        {
+            string HEX = "0123456789ABCDEF";
+            var r = new Random(DateTime.Now.Millisecond);
+
+            var Result = new StringBuilder();
+            for (int i = 0; i < Length; i++)
+                Result.Append((char)r.Next(32, 127));
+
+            return Result.ToString();
+        }
+
+        public static string RandomHex(int Length)
+        {
+            string HEX = "0123456789ABCDEF";
+            var r = new Random(DateTime.Now.Millisecond);
+
+            var Result = new StringBuilder();
+            for (int i = 0; i < Length; i++)
+                Result.Append(HEX.Substring(r.Next(0, HEX.Length - 1), 1));
+
+            return Result.ToString();
         }
 
         public static string SQLJoin(string[] args, string seperator = ", ")

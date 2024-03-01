@@ -55,13 +55,13 @@ namespace Nox
             if (xmlRequest.Length != 0)
             {
                 // ins Log schreiben wenn LogLevel erreicht
-                Global.Log.LogFunc(action: () => xmlRequest.ToString(), LogLevel: Log4.Log4LevelEnum.Debug);
+                //Global.Log.LogFunc(action: () => xmlRequest.ToString(), LogLevel: Log4.Log4LevelEnum.Debug);
 
                 // aufrufen !
                 var xmlResponse = action?.Invoke(xmlRequest);
 
                 // ins Log schreiben wenn LogLevel erreicht
-                Global.Log.LogFunc(action: () => xmlResponse.ToString(), LogLevel: Log4.Log4LevelEnum.Debug);
+                //Global.Log.LogFunc(action: () => xmlResponse.ToString(), LogLevel: Log4.Log4LevelEnum.Debug);
 
                 // und response schreiben
                 c.Response.Write(xmlResponse);
@@ -77,7 +77,7 @@ namespace Nox
             message.Body = Message;
             message.Subject = Subject;
 
-            Global.Log.LogMessage(Subject + ": " + Message, Log4.Log4LevelEnum.Debug);
+            //Global.Log.LogMessage(Subject + ": " + Message, Log4.Log4LevelEnum.Debug);
 
             SmtpClient Client = new SmtpClient(SmtpServer);
             // Credentials are necessary if the server requires the client 
@@ -93,7 +93,7 @@ namespace Nox
             catch (Exception ex)
             {
                 //TODO: sendmail with true/false, log if possible ...
-                Global.Log.LogException(ex);
+                //Global.Log.LogException(ex);
                 return false;
             }
         }

@@ -28,8 +28,4 @@ public static class Hosting
                 });
             })
             .CreateLogger<T>();
-
-
-
-
 }

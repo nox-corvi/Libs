@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Security.Policy;
 using System.Text;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Nox.Win32.Forms.Base
 {
@@ -99,7 +100,7 @@ namespace Nox.Win32.Forms.Base
             }
         }
 
-        private Button ChooseButton(MessageBoxDefaultButton button)
+        private System.Windows.Forms.Button ChooseButton(MessageBoxDefaultButton button)
         {
             switch (button)
             {
@@ -263,6 +264,5 @@ namespace Nox.Win32.Forms.Base
 
         private void FormDialog_Resize(object sender, EventArgs e) =>
             Align();
-
     }
 }

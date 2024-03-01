@@ -20,6 +20,7 @@ namespace Nox.Data.SqlServer
         public string ColumnDefault;
         public bool IsNullable;
         public string DataType;
+        public string DataTypeAsComparable;
         public int MaxLength;
         public int OctetLength;
         public int NumericPrecision;
@@ -112,7 +113,8 @@ namespace Nox.Data.SqlServer
             using (var r = _dba.GetReader(@qry,
                 new SqlParameter("table", Table)))
                 while (r.Read())
-                    Result.Add(new SqlColumn()
+                {
+                    var newItem = new SqlColumn()
                     {
                         TableCatalog = Helpers.NZ(r.GetValue(r.GetOrdinal("table_catalog"))),
                         TableSchema = Helpers.NZ(r.GetValue(r.GetOrdinal("table_schema"))),
@@ -120,14 +122,39 @@ namespace Nox.Data.SqlServer
                         ColumnName = Helpers.NZ(r.GetValue(r.GetOrdinal("column_name"))),
                         OrdinalPosition = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("ordinal_position")), "0")),
                         ColumnDefault = Helpers.NZ(r.GetValue(r.GetOrdinal("column_default"))),
-                        IsNullable = Helpers.NZ(r.GetValue(r.GetOrdinal("is_nullable")),"") == "YES",
+                        IsNullable = Helpers.NZ(r.GetValue(r.GetOrdinal("is_nullable")), "") == "YES",
                         DataType = Helpers.NZ(r.GetValue(r.GetOrdinal("data_type"))),
                         MaxLength = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("character_maximum_length")), "0")),
                         OctetLength = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("character_octet_length")), "0")),
                         NumericPrecision = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("numeric_precision")), "0")),
                         NumericScale = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("numeric_scale")), "0")),
                         DateTimePrecision = int.Parse(Helpers.NZ(r.GetValue(r.GetOrdinal("datetime_precision")), "0")),
-                    });
+                    };
+
+                    switch (newItem.DataType)
+                    {
+                        case "char":
+                        case "nchar":
+                        case "nvarchar":
+                        case "varchar":
+                            string length = "max";
+                            if (newItem.MaxLength > 0)
+                            {
+                                length = newItem.MaxLength.ToString();
+                            }
+
+                            newItem.DataTypeAsComparable = $"{newItem.DataType}({length})";
+                            break;
+                        case "decimal":
+                            newItem.DataTypeAsComparable = $"{newItem.DataType}({newItem.NumericPrecision},{newItem.NumericScale})";
+                            break;
+                        default:
+                            newItem.DataTypeAsComparable = $"{newItem.DataType}";
+                            break;
+                    }
+
+                    Result.Add(newItem);
+                }
 
             return Result.ToArray();
         }

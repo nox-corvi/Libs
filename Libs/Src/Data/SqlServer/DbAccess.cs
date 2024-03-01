@@ -89,7 +89,6 @@ namespace Nox.Data.SqlServer
 		}
         #endregion
 
-
         protected void EnsureConnectionEstablished()
         {
             if ((_DatabaseConnection == null) || _DatabaseConnection.State != ConnectionState.Open)

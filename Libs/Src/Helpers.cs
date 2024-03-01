@@ -81,7 +81,7 @@ namespace Nox
             Success?.Invoke(Result);
         }
 
-        public static T OnXTry<T>(Func<T> exec, Func<Exception, T> exception) where T : struct
+        public static T OnXTry<T>(Func<T> exec, Func<Exception, T> exception)// where T : struct
         {
             try
             {
@@ -89,7 +89,7 @@ namespace Nox
             }
             catch (Exception e)
             {
-                return exception?.Invoke(e) ?? default;
+                return exception.Invoke(e) ?? default;
             }
         }
 

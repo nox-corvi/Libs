@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -29,6 +30,9 @@ namespace Nox
 
     public interface IWebSvcResponseSeed
     {
+        /// <summary>
+        /// each object must have an id
+        /// </summary>
         Guid ObjectId { get; }
     }
 
@@ -212,11 +216,13 @@ namespace Nox
         protected readonly ILogger _logger;
 
         #region Properties
+        [Newtonsoft.Json.JsonIgnore]
         public IConfiguration Configuration
         {
             get => _configuration;
         }
 
+        [Newtonsoft.Json.JsonIgnore]
         public ILogger Logger
         {
             get => _logger;
