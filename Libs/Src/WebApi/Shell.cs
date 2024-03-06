@@ -31,12 +31,36 @@ public class Shell
     public string Message { get; set; } = "";
     #endregion
 
+
+    #region Helpers
+    public static Shell DefaultHandler(Shell Shell, Func<Shell> OnSuccess,
+        string FailureMessage = null, string ErrorMessage = null)
+    {
+        switch (Shell.State)
+        {
+            case StateEnum.Success:
+                return Helpers.OnXTry(OnSuccess, (e) => new Shell(StateEnum.Error, e.ToString()));
+            case StateEnum.Failure:
+                return new Shell(StateEnum.Failure, FailureMessage ?? Shell.Message);
+            default:
+                return new Shell(StateEnum.Error, ErrorMessage ?? Shell.Message);
+        }
+    }
+    #endregion  
+
     public Shell() { }
+
+    public Shell(StateEnum State)
+        => this.State = State;
+
+    public Shell(StateEnum State, string Message)
+        : this(State)
+        => this.Message = Message; 
 }
 
 [Serializable()]
 public abstract class Shell<T>
-       : Shell
+    : Shell
 {
     /// <summary>
     /// Gibt das Datenobjekt vom Typ ISeed zurück wenn erfolgreich, sonst null
@@ -84,6 +108,17 @@ public abstract class Shell<T>
 
     public Shell()
         : base() { }
+
+    public Shell(StateEnum State)
+       : base(State)
+    {
+        //this.Response = Response;
+    }
+
+    public Shell(StateEnum State, string Message)
+        : base(State, Message)
+    {
+    }
 }
 
 public class ResponseShell
@@ -97,19 +132,15 @@ public class ResponseShell
     public string AdditionalData4 { get; set; } = "";
 
     #region Helpers
-    public static ResponseShell DefaultHandler(Shell Shell, Func<ResponseShell> OnSuccess, 
+    public new static ResponseShell DefaultHandler(Shell Shell, Func<Shell> OnSuccess,
         string FailureMessage = null, string ErrorMessage = null)
-    {
-        switch (Shell.State)
-        {
-            case StateEnum.Success:
-                return Helpers.OnXTry(OnSuccess, (e) => new ResponseShell(StateEnum.Error, e.ToString()));
-            case StateEnum.Failure:
-                return new ResponseShell(StateEnum.Failure, FailureMessage ?? Shell.Message);
-            default:
-                return new ResponseShell(StateEnum.Error, ErrorMessage ?? Shell.Message);
-        }
-    }
+        => (ResponseShell)Shell.DefaultHandler(Shell, OnSuccess,
+            FailureMessage, ErrorMessage);
+
+    public static ResponseShell DefaultHandler(ResponseShell Shell, Func<Shell> OnSuccess,
+        string FailureMessage = null, string ErrorMessage = null)
+        => DefaultHandler(Shell, OnSuccess, FailureMessage, ErrorMessage);
+
     public static ResponseShell FromShell(Shell Shell)
     {
         switch (Shell.State)
@@ -128,16 +159,15 @@ public class ResponseShell
     {
     }
 
-    public ResponseShell(StateEnum State)//, bool Response)
+    public ResponseShell(StateEnum State)
+        : base(State)
     {
-        this.State = State;
         //this.Response = Response;
     }
 
     public ResponseShell(StateEnum State, string Message)
-        : this(State) //, Response)
+        : base(State, Message)
     {
-        this.Message = Message;
     }
 }
 
