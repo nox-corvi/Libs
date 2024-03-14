@@ -101,13 +101,16 @@ namespace Nox
                 return False();
         }
 
-        public static void OnXCond(Func<bool> Condition, Action True, Action False = null)
+        public static void OnXCond(bool Condition, Action True, Action False = null)
         {
-            if (Condition())
+            if (Condition)
                 True?.Invoke();
             else
                 False?.Invoke();
         }
+
+        public static void OnXCond(Func<bool> Condition, Action True, Action False = null)
+            => OnXCond(Condition(), True, False);
 
         public static bool OnX(Action f)
         {

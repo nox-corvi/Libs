@@ -7,13 +7,50 @@ using System.Linq;
 
 namespace Nox.WebApi;
 
+//public interface IDataShell<T>
+//    : IShell<T>
+//    where T : IDataRow
+//{
+
+//    T GetWhereId(Guid Id);
+//    List<T> Get();
+
+//    int Insert(T Data);
+//    int Update(T Data);
+//    int Delete(T Data);
+//    int Truncate();
+
+//    U Select<U>(string WhereCondition, params SqlParameter[] Parameters)
+//        where U : IDataShell<T>;
+//}
+
+
 [Serializable()]
-public abstract class DataShell<T>
-    : Shell<T>
+public class DataShell<T>
+    : Shell<T>, IShell<T>
     where T : DataRow
 {
-    protected DataModel _dataModel = null!;
-    protected Operate<T> _Operate = null!;
+    [Newtonsoft.Json.JsonIgnore]
+    private DataModel _DataModel = null!;
+
+    [Newtonsoft.Json.JsonIgnore]
+    private Operate<T> _Operate = null!;
+
+    [Newtonsoft.Json.JsonIgnore]
+    public DataModel DataModel
+    {
+        get => _DataModel;
+        set
+        {
+            _Operate = new Operate<T>(_DataModel = value);
+        }
+    }
+
+    [Newtonsoft.Json.JsonIgnore]
+    public Operate<T> Operate
+    {
+        get => _Operate;
+    }
 
     #region Helpers
     //public static ResponseShell UpdateOrInsert<U>(
@@ -40,7 +77,7 @@ public abstract class DataShell<T>
     //            default:
     //                return new ResponseShell(StateEnum.Error, ErrorMessage ?? "error");
     //        }
-           
+
     //    }
     //    catch (Exception e)
     //    {
@@ -68,45 +105,48 @@ public abstract class DataShell<T>
     }
     #endregion
 
-
     public T GetWhereId(Guid Id) =>
-        _Operate.Load("ID = @ID", new SqlParameter("ID", Id)).First();
+        Operate.Load("ID = @ID", new SqlParameter("ID", Id)).First();
 
     public List<T> Get() =>
-        _Operate.Load("", null);
+        Operate.Load("", null);
 
     public int Insert(T Data)
-        => _Operate.Insert(Data);
+        => Operate.Insert(Data);
 
     public static int Insert<U>(DataModel dataModel, T Data)
-        where U : DataShell<T>
+        where U : DataShell<T>, new()
         => ((U)Activator.CreateInstance(typeof(U), dataModel)).Insert(Data);
 
     public int Update(T Data)
-        => _Operate.Update(Data);
+        => Operate.Update(Data);
     public static int Update<U>(DataModel dataModel, T Data)
-        where U : DataShell<T>
+        where U : DataShell<T>, new()
         => ((U)Activator.CreateInstance(typeof(U), dataModel)).Update(Data);
 
     public int Delete(T Data)
-        => _Operate.Delete(Data);
+        => Operate.Delete(Data);
     public static int Delete<U>(DataModel dataModel, T Data)
-        where U : DataShell<T>
+        where U : DataShell<T>, new()
         => ((U)Activator.CreateInstance(typeof(U), dataModel)).Delete(Data);
 
     public int Truncate()
-        => _Operate.Truncate();
+        => Operate.Truncate();
     public static void Truncate<U>(DataModel dataModel)
         where U : DataShell<T>
         => ((U)Activator.CreateInstance(typeof(U), dataModel)).Truncate();
 
+    public U Select<U>(string WhereCondition, params SqlParameter[] Parameters)
+        where U : DataShell<T>, new()
+        => Select<U>(DataModel, WhereCondition, Parameters);
+
     public static U Select<U>(DataModel dataModel, string WhereCondition, params SqlParameter[] Parameters)
-        where U : DataShell<T>
+        where U : DataShell<T>, new()
     {
         try
         {
             var Result = (U)Activator.CreateInstance(typeof(U), dataModel);
-            Result.Data = Result._Operate.Load(WhereCondition, Parameters);
+            Result.Data = Result.Operate.Load(WhereCondition, Parameters);
 
             if (Result.Data.Count != 0)
                 Result.State = StateEnum.Success;
@@ -129,13 +169,15 @@ public abstract class DataShell<T>
         }
     }
 
-    public T First()
-        => Data.First();
-    
     public DataShell(DataModel dataModel)
-    : base()
+    : this()
     {
-        _dataModel = dataModel;
-        _Operate = new Operate<T>(dataModel);
+        DataModel = dataModel;
+    }
+
+    public DataShell()
+        : base()
+    {
+
     }
 }

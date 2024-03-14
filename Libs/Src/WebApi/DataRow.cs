@@ -5,6 +5,17 @@ using System.Reflection;
 
 namespace Nox.WebApi;
 
+public interface IDataRow
+{
+    Guid Id { get; set; }
+
+    object GetPropertyValue(PropertyInfo info);
+    object GetPropertyValue(string PropertyName);
+
+    T GetPropertyValue<T>(PropertyInfo info);
+    T GetPropertyValue<T>(string PropertyName);
+}
+
 public abstract class DataRow
 {
     public abstract Guid Id { get; set; }

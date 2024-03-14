@@ -1,23 +1,69 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Xml.Serialization;
 
 namespace Nox.WebApi;
 
+
 [Flags]
 public enum StateEnum
 {
     Success = 0,    // erfolgreich 
-    Failure = 1,     // nicht erfolgreich
+    Failure = 1,    // nicht erfolgreich
 
     Error = 4,      // es ist ein fehler aufgetreten
 }
 
+
+#region Interface
+public interface IShell
+{
+    StateEnum State { get; set; }
+    string Message { get; set; }
+}
+
+public interface IShell<T> 
+    : IShell
+{
+    List<T> Data { get; }
+
+    T First();
+}
+
+public interface IResponseShell 
+    : IShell
+{
+    // Spezifische Methoden und Eigenschaften für ResponseShell, falls erforderlich
+}
+
+public interface ISingleDataResponseShell 
+    : IResponseShell
+{
+    string AdditionalData1 { get; }
+}
+
+public interface IDoubleDataResponseShell 
+    : ISingleDataResponseShell
+{
+    string AdditionalData2 { get; }
+}
+
+public interface IQuadDataResponseShell 
+    : IDoubleDataResponseShell
+{
+    string AdditionalData3 { get; }
+    string AdditionalData4 { get; }
+}
+#endregion
+
 [Serializable()]
 public class Shell
+    : IShell
 {
     #region Properties
     /// <summary>
@@ -31,22 +77,46 @@ public class Shell
     public string Message { get; set; } = "";
     #endregion
 
-
-    #region Helpers
-    public static Shell DefaultHandler(Shell Shell, Func<Shell> OnSuccess,
-        string FailureMessage = null, string ErrorMessage = null)
+    /// <summary>
+    /// Verarbeitet eine Shell-Instanz und führt bei Erfolg eine gegebene Funktion aus.
+    /// Bei Fehlschlag oder Fehler wird eine neue Shell-Instanz mit entsprechendem Status zurückgegeben.
+    /// </summary>
+    /// <typeparam name="T">Der Typ, der von Shell abgeleitet ist und zurückgegeben wird.</typeparam>
+    /// <param name="shell">Die zu verarbeitende Shell-Instanz.</param>
+    /// <param name="onSuccess">Die Funktion, die bei Erfolg ausgeführt wird.</param>
+    /// <param name="failureMessage">Optionale Nachricht für den Fall eines Fehlschlags.</param>
+    /// <param name="errorMessage">Optionale Nachricht für den Fall eines Fehlers.</param>
+    /// <returns>Eine neue Instanz des Typs T, basierend auf dem Ergebnis der Verarbeitung.</returns>
+    public static T DefaultHandler<T>(Shell shell, Func<T> OnSuccess, 
+        string FailureMessage = null, string ErrorMessage = null) where T : IShell, new()
     {
-        switch (Shell.State)
+        var result = new T();
+
+        try
         {
-            case StateEnum.Success:
-                return Helpers.OnXTry(OnSuccess, (e) => new Shell(StateEnum.Error, e.ToString()));
-            case StateEnum.Failure:
-                return new Shell(StateEnum.Failure, FailureMessage ?? Shell.Message);
-            default:
-                return new Shell(StateEnum.Error, ErrorMessage ?? Shell.Message);
+            switch (shell.State)
+            {
+                case StateEnum.Success:
+                    result = OnSuccess();
+                    break;
+                case StateEnum.Failure:
+                    result.State = StateEnum.Failure;
+                    result.Message = FailureMessage ?? shell.Message;
+                    break;
+                default:
+                    result.State = StateEnum.Error;
+                    result.Message = ErrorMessage ?? shell.Message;
+                    break;
+            }
         }
+        catch (Exception e)
+        {
+            result.State = StateEnum.Error;
+            result.Message = ErrorMessage ?? e.Message;
+        }
+
+        return result;
     }
-    #endregion  
 
     public Shell() { }
 
@@ -55,56 +125,63 @@ public class Shell
 
     public Shell(StateEnum State, string Message)
         : this(State)
-        => this.Message = Message; 
+        => this.Message = Message;
 }
 
 [Serializable()]
-public abstract class Shell<T>
-    : Shell
+public class Shell<T>
+    : Shell, IShell<T>
 {
     /// <summary>
-    /// Gibt das Datenobjekt vom Typ ISeed zurück wenn erfolgreich, sonst null
+    /// Gibt das Datenobjekt vom Typ T zurück, wenn erfolgreich, sonst null.
     /// </summary>
-    public abstract List<T> Data { get; set; }
+    public virtual List<T> Data { get; set; } = null!;
 
     #region Helpers
+    /// <summary>
+    /// Serialisiert eine Exception und ihre InnerException(s) in eine XML-Struktur.
+    /// </summary>
+    /// <param name="ex">Die zu serialisierende Exception.</param>
+    /// <returns>
+    /// Eine XML-String-Repräsentation der Exception. Beinhaltet Elemente für Quelle, Nachricht,
+    /// Stacktrace und alle benutzerdefinierten Daten, die im Data-Property der Exception gespeichert sind.
+    /// Für jede InnerException wird dieser Prozess rekursiv wiederholt, um eine vollständige Hierarchie der Fehlerursache darzustellen.
+    /// Wenn das übergebene Exception-Objekt null ist, wird ein selbstschließendes <exception />-Element zurückgegeben.
+    /// </returns>
+    /// <remarks>
+    /// Diese Methode ist nützlich für Logging-Zwecke oder zur Fehleranalyse, da sie eine detaillierte und strukturierte Darstellung
+    /// von Fehlerinformationen bietet. Durch die Verwendung von XML als Format ist die Ausgabe leicht lesbar und kann
+    /// für die Weiterverarbeitung oder Anzeige in verschiedenen Tools und Umgebungen verwendet werden.
+    /// </remarks>
     protected static string SerializeException(Exception ex)
     {
-        var Result = new StringBuilder();
+        if (ex == null) return "<exception />";
 
-        if (ex != null)
+        var sb = new StringBuilder();
+        sb.Append("<exception>");
+        sb.AppendFormat("<source>{0}</source>", ex.Source);
+        sb.AppendFormat("<message>{0}</message>", ex.Message);
+        sb.AppendFormat("<stacktrace>{0}</stacktrace>", ex.StackTrace);
+
+        sb.Append("<data>");
+        foreach (DictionaryEntry item in ex.Data)
         {
-            Result.Append($"<exception>");
-            Result.Append($"<source>{ex.Source}</source>");
-            Result.Append($"<message>{ex.Message}</message>");
-            Result.Append($"<stacktrace>{ex.StackTrace}</stacktrace>");
-            Result.Append($"<data>");
-            foreach (var Item in ex.Data.Keys)
-                Result.Append($"<{Item}>{ex.Data[Item].ToString()}</{Item}>");
-
-            if (ex.InnerException != null)
-                Result.Append(SerializeException(ex.InnerException));
-
-            Result.Append($"</data>");
-
-            Result.Append($"</exception>");
+            sb.AppendFormat("<{0}>{1}</{0}>", item.Key, item.Value);
         }
-        else
-            Result.Append($"<exception />");
+        sb.Append("</data>");
 
-        return Result.ToString();
+        if (ex.InnerException != null)
+        {
+            sb.Append(SerializeException(ex.InnerException));
+        }
+
+        sb.Append("</exception>");
+        return sb.ToString();
     }
     #endregion
 
-    public string SerializeData()
-    {
-        XmlSerializer writer = new XmlSerializer(typeof(T));
-        using (StringWriter file = new StringWriter())
-        {
-            writer.Serialize(file, Data);
-            return file.ToString();
-        }
-    }
+    public T First()
+        => Data.First();
 
     public Shell()
         : base() { }
@@ -112,7 +189,6 @@ public abstract class Shell<T>
     public Shell(StateEnum State)
        : base(State)
     {
-        //this.Response = Response;
     }
 
     public Shell(StateEnum State, string Message)
@@ -121,39 +197,24 @@ public abstract class Shell<T>
     }
 }
 
+/// <summary>
+/// Basisklasse für Antwortobjekte, die den Zustand und die Nachricht einer Antwort kapselt.
+/// Kann als Grundlage für spezifischere Antworttypen mit zusätzlichen Daten dienen.
+/// </summary>
 public class ResponseShell
-    : Shell
+    : Shell, IResponseShell
 {
-    //public bool Response { get; set; } = default;
-
-    public string AdditionalData1 { get; set; } = "";
-    public string AdditionalData2 { get; set; } = "";
-    public string AdditionalData3 { get; set; } = "";
-    public string AdditionalData4 { get; set; } = "";
-
-    #region Helpers
-    public new static ResponseShell DefaultHandler(Shell Shell, Func<Shell> OnSuccess,
+    /// <summary>
+    /// Behandelt eine ResponseShell basierend auf ihrem Zustand und führt bei Erfolg eine gegebene Funktion aus.
+    /// </summary>
+    /// <param name="shell">Die zu verarbeitende ResponseShell-Instanz.</param>
+    /// <param name="onSuccess">Die Funktion, die bei Erfolg ausgeführt wird und eine ResponseShell zurückgibt.</param>
+    /// <param name="failureMessage">Optionale Nachricht für den Fall eines Fehlschlags.</param>
+    /// <param name="errorMessage">Optionale Nachricht für den Fall eines Fehlers.</param>
+    /// <returns>Eine neue ResponseShell-Instanz basierend auf dem Ergebnis der Verarbeitung.</returns>
+    public static ResponseShell DefaultHandler(ResponseShell shell, Func<ResponseShell> OnSuccess,
         string FailureMessage = null, string ErrorMessage = null)
-        => (ResponseShell)Shell.DefaultHandler(Shell, OnSuccess,
-            FailureMessage, ErrorMessage);
-
-    public static ResponseShell DefaultHandler(ResponseShell Shell, Func<Shell> OnSuccess,
-        string FailureMessage = null, string ErrorMessage = null)
-        => DefaultHandler(Shell, OnSuccess, FailureMessage, ErrorMessage);
-
-    public static ResponseShell FromShell(Shell Shell)
-    {
-        switch (Shell.State)
-        {
-            case StateEnum.Success:
-                return new ResponseShell(StateEnum.Success); //, true);
-            case StateEnum.Failure:
-                return new ResponseShell(StateEnum.Failure, Shell.Message);
-            default:
-                return new ResponseShell(StateEnum.Error, Shell.Message);
-        }
-    }
-    #endregion
+        => Shell.DefaultHandler(shell, OnSuccess, FailureMessage, ErrorMessage);
 
     public ResponseShell()
     {
@@ -171,69 +232,87 @@ public class ResponseShell
     }
 }
 
-//public class ResponseShell
-//    : Shell
-//{
-//    //public bool Response { get; set; } = default;
-//    public string ResponseMessage { get; set; } = null;
+/// <summary>
+/// Erweiterung der ResponseShell für Antworten, die ein einzelnes zusätzliches Datenfeld enthalten.
+/// Geeignet für einfache Antworten, die über den Zustand und die Nachricht hinaus eine zusätzliche Information zurückgeben.
+/// </summary>
+public class SingleDataResponseShell
+    : ResponseShell, ISingleDataResponseShell
+{
+    /// <summary>
+    /// Zusätzliches Datenfeld für die Antwort.
+    /// </summary>
+    public string AdditionalData1 { get; set; } = "";
 
-//    public string AdditionalData1 { get; set; } = "";
-//    public string AdditionalData2 { get; set; } = "";
-//    public string AdditionalData3 { get; set; } = "";
-//    public string AdditionalData4 { get; set; } = "";
+    public SingleDataResponseShell() { }
 
-//    #region Helpers
-//    //public static ResponseShell DefaultHandler(Shell Shell, Func<ResponseShell> OnSuccess)
-//    //{
-//    //    switch (Shell.State)
-//    //    {
-//    //        case StateEnum.Success:
-//    //            return Helpers.OnXTry(OnSuccess, (e) => new ResponseShell(StateEnum.Error, false, e.ToString()));
-//    //        case StateEnum.NoResult:
-//    //            return new ResponseShell(StateEnum.NoResult, false, Shell.Message);
-//    //        default:
-//    //            return new ResponseShell(StateEnum.Error, false, Shell.Message);
-//    //    }
-//    //}
+    /// <summary>
+    /// Konstruktor zur Initialisierung der Antwort mit einem Zustand und einem zusätzlichen Datenfeld.
+    /// </summary>
+    /// <param name="state">Der Zustand der Antwort.</param>
+    /// <param name="additionalData1">Das zusätzliche Datenfeld.</param>
+    public SingleDataResponseShell(StateEnum state, string additionalData1 = "") : base(state)
+    {
+        AdditionalData1 = additionalData1;
+    }
+}
 
-//    public static ResponseShell WithSuccess(string Message)
-//        => new ResponseShell(StateEnum.Success, true, Message);
+/// <summary>
+/// Erweiterung der SingleDataResponseShell für Antworten, die zwei zusätzliche Datenfelder enthalten.
+/// Geeignet für Antworten, die eine moderate Menge an zusätzlichen Informationen zurückgeben.
+/// </summary>
+public class DoubleDataResponseShell
+    : SingleDataResponseShell, IDoubleDataResponseShell
+{
+    /// <summary>
+    /// Zweites zusätzliches Datenfeld für die Antwort.
+    /// </summary>
+    public string AdditionalData2 { get; set; } = "";
 
-//    public static ResponseShell WithNoResult(string Message)
-//        => new ResponseShell(StateEnum.NoResult, false, Message);
+    public DoubleDataResponseShell() { }
 
-//    public static ResponseShell WithError(string Message)
-//        => new ResponseShell(StateEnum.Error, false, Message);
+    /// <summary>
+    /// Konstruktor zur Initialisierung der Antwort mit einem Zustand und zwei zusätzlichen Datenfeldern.
+    /// </summary>
+    /// <param name="state">Der Zustand der Antwort.</param>
+    /// <param name="additionalData1">Das erste zusätzliche Datenfeld.</param>
+    /// <param name="additionalData2">Das zweite zusätzliche Datenfeld.</param>
+    public DoubleDataResponseShell(StateEnum state, string additionalData1 = "", string additionalData2 = "") : base(state, additionalData1)
+    {
+        AdditionalData2 = additionalData2;
+    }
+}
 
+/// <summary>
+/// Erweiterung der DoubleDataResponseShell für Antworten, die vier zusätzliche Datenfelder enthalten.
+/// Geeignet für komplexe Antworten, die eine Vielzahl von zusätzlichen Informationen zurückgeben.
+/// </summary>
+public class QuadDataResponseShell
+    : DoubleDataResponseShell, IQuadDataResponseShell
+{
+    /// <summary>
+    /// Drittes zusätzliches Datenfeld für die Antwort.
+    /// </summary>
+    public string AdditionalData3 { get; set; } = "";
 
-//    public static ResponseShell FromShell(Shell Shell, string NoResultMessage)
-//    {
-//        switch (Shell.State)
-//        {
-//            case StateEnum.Success:
-//                return new ResponseShell(StateEnum.Success, true, "");
-//            case StateEnum.NoResult:
-//                return new ResponseShell(StateEnum.NoResult, false, NoResultMessage);
-//            default:
-//                return new ResponseShell(StateEnum.Error, false, Shell.Message);
-//        }
-//    }
-//    #endregion
+    /// <summary>
+    /// Viertes zusätzliches Datenfeld für die Antwort.
+    /// </summary>
+    public string AdditionalData4 { get; set; } = "";
 
-//    public ResponseShell()
-//    {
-//    }
+    public QuadDataResponseShell() { }
 
-//    public ResponseShell(StateEnum state)
-//        => this.State = state;
-
-//    public ResponseShell(bool Response, string ResponseMessage)
-//    {
-//        this.Response = Response;
-//        this.ResponseMessage = ResponseMessage;
-//    }
-
-//    public ResponseShell(StateEnum state, bool Response, string ResponseMessage)
-//        : this(Response, ResponseMessage)
-//        => this.State = state;
-//}
+    /// <summary>
+    /// Konstruktor zur Initialisierung der Antwort mit einem Zustand und vier zusätzlichen Datenfeldern.
+    /// </summary>
+    /// <param name="state">Der Zustand der Antwort.</param>
+    /// <param name="additionalData1">Das erste zusätzliche Datenfeld.</param>
+    /// <param name="additionalData2">Das zweite zusätzliche Datenfeld.</param>
+    /// <param name="additionalData3">Das dritte zusätzliche Datenfeld.</param>
+    /// <param name="additionalData4">Das vierte zusätzliche Datenfeld.</param>
+    public QuadDataResponseShell(StateEnum state, string additionalData1 = "", string additionalData2 = "", string additionalData3 = "", string additionalData4 = "") : base(state, additionalData1, additionalData2)
+    {
+        AdditionalData3 = additionalData3;
+        AdditionalData4 = additionalData4;
+    }
+}
