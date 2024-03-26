@@ -432,7 +432,7 @@ public class FSHeader<T>
 
     // Variablen
     private uint _Revision = CURRENT_REVISION;
-    private int _NodesPerBlock = -1;
+    //private int _NodesPerBlock = -1;
 
     #region Properties
     public uint Revision

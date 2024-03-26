@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Nox.WebApi;
@@ -117,6 +118,54 @@ public class Shell
 
         return result;
     }
+
+
+    public static T DefaultHandlerAsync<T>(Task<T> shell, Func<T, T> OnSuccess,
+        string FailureMessage = null, string ErrorMessage = null) 
+        where T : IShell, new()
+    {
+        var result = new T();
+
+        try
+        {
+            var Result = shell.ContinueWith((a) =>
+            {
+                try
+                {
+                    var s = a.Result;
+                    switch (s.State)
+                    {
+                        case StateEnum.Success:
+                            result = OnSuccess(s);
+                            break;
+                        case StateEnum.Failure:
+                            result.State = StateEnum.Failure;
+                            result.Message = FailureMessage ?? s.Message;
+                            break;
+                        default:
+                            result.State = StateEnum.Error;
+                            result.Message = ErrorMessage ?? s.Message;
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    result.State = StateEnum.Error;
+                    result.Message = ErrorMessage ?? e.Message;
+                }
+            
+            });
+        }
+        catch (Exception e)
+        {
+            result.State = StateEnum.Error;
+            result.Message = ErrorMessage ?? e.Message;
+        }
+
+        return result;
+    }
+
+
 
     public Shell() { }
 

@@ -462,7 +462,7 @@ public abstract class ContainerIndexed<T>
     private int _Index = 0;
 
     private uint _Signature;
-    private uint _CRC;
+    //private uint _CRC;
 
     #region Properties
     public int Index { get => _Index; }

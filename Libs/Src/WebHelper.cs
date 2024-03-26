@@ -79,7 +79,7 @@ namespace Nox
 
             //Global.Log.LogMessage(Subject + ": " + Message, Log4.Log4LevelEnum.Debug);
 
-            SmtpClient Client = new SmtpClient(SmtpServer);
+            SmtpClient Client = new(SmtpServer);
             // Credentials are necessary if the server requires the client 
             // to authenticate before it will send email on the client's behalf.
             Client.UseDefaultCredentials = true;
@@ -90,7 +90,7 @@ namespace Nox
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //TODO: sendmail with true/false, log if possible ...
                 //Global.Log.LogException(ex);

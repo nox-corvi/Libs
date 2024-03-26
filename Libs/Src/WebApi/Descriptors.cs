@@ -207,9 +207,9 @@ public class ColumnCastDescriptor
 
     public Type ToType()
     {
-        Func<ColumnCastDescriptor> NotSupported(string TypeName) => throw new NotSupportedException($"{TypeName} is not supported for database mapping");
-        Func<ColumnCastDescriptor> AttributeMismatch(string RequiredAttributeName, Exception innerException)
-            => throw new Exception($"{nameof(String)} requires a {nameof(ColumnDecimalAttribute)}", innerException);
+        //Func<ColumnCastDescriptor> NotSupported(string TypeName) => throw new NotSupportedException($"{TypeName} is not supported for database mapping");
+        //Func<ColumnCastDescriptor> AttributeMismatch(string RequiredAttributeName, Exception innerException)
+        //    => throw new Exception($"{nameof(String)} requires a {nameof(ColumnDecimalAttribute)}", innerException);
 
         // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql/linq/sql-clr-type-mapping
         // https://docs.microsoft.com/en-us/dotnet/api/system.data.dbtype?view=netcore-3.1

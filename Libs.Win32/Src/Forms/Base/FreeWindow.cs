@@ -4,15 +4,15 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Text;
-using System.Windows.Forms;
 
 namespace Nox.Win32.Forms.Base
 {
-    public partial class FormFree : Super.FormSuper
+    public class FormFree : Super.CustomWindow
     {
         public FormFree()
+            : base()
         {
-            InitializeComponent();
+            //InitializeComponent();
         }
     }
 }

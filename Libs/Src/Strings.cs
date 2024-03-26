@@ -254,7 +254,6 @@ namespace Nox
 
         public static string RandomChars(int Length)
         {
-            string HEX = "0123456789ABCDEF";
             var r = new Random(DateTime.Now.Millisecond);
 
             var Result = new StringBuilder();

@@ -8,7 +8,7 @@ namespace Nox.WebApi;
 public abstract class DataModel
     : IDisposable
 {
-    private readonly ILogger<DataModel> _Logger = null!;
+    //private readonly ILogger<DataModel> _Logger = null!;
 
     private Assembly _Assembly = null!;
     private string _Namespace = "";

@@ -4,22 +4,18 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Text;
-using System.Windows.Forms;
-
+using System.Windows;
+using System.Windows.Controls; 
+using System.Windows.Media; 
 
 namespace Nox.Win32.Controls.Base.Super
 {
-    public class Button : System.Windows.Forms.Button
+    public class XButton 
+        : Button
     {
-
-        private void InitializeComponents()
-        { 
-        }
-
-        public Button()
+        public XButton()
             : base()
         {
-            InitializeComponents();    
         }
     }
 }

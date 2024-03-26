@@ -5,58 +5,55 @@ using System.Security.Cryptography;
 
 namespace Nox.Security
 {
-    public class ECDH : IDisposable
-    {
-        public enum ECDHCurveEnum
-        {
-            nistP256,
-            nistP384,
-            nistP521
-        }
+    //public class ECDH : IDisposable
+    //{
+    //    public enum ECDHCurveEnum
+    //    {
+    //        nistP256,
+    //        nistP384,
+    //        nistP521
+    //    }
 
-        private byte[] _PK;
-        private ECDiffieHellman _DH;
+    //    private byte[] _PK;
+    //    private ECDiffieHellman _DH;
 
-        #region Properties 
-        public byte[] PublicKey { get => _PK; }
-        #endregion
+    //    #region Properties 
+    //    public byte[] PublicKey { get => _PK; }
+    //    #endregion
 
 
 
-        public void b()
-        {
-            //_DH.DeriveKeyMaterial();
-        }
+    //    public void b()
+    //    {
+    //        //_DH.DeriveKeyMaterial();
+    //    }
 
-        public byte[] ExtractDerivedKey(byte[] rawForeignKey)
-        {
-            var ForeignKey = new ECDHPublicKey(rawForeignKey);
-            var key = _DH.DeriveKeyFromHash(ForeignKey, HashAlgorithmName.SHA256);
+    //    public byte[] ExtractDerivedKey(byte[] rawForeignKey)
+    //    {
+    //        var ForeignKey = new ECDHPublicKey(rawForeignKey);
+    //        var key = _DH.DeriveKeyFromHash(ForeignKey, HashAlgorithmName.SHA256);
 
-            return key;
-        }
+    //        return key;
+    //    }
 
-        public ECDH(ECDHCurveEnum Curve)
-        {
-            switch (Curve)
-            {
-                case ECDHCurveEnum.nistP256:
-                    _DH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-                    break;
-                case ECDHCurveEnum.nistP384:
-                    _DH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP384);
-                    break;
-                case ECDHCurveEnum.nistP521:
-                    _DH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP521);
-                    break;
-            }
+    //    public ECDH(ECDHCurveEnum Curve)
+    //    {
+    //        switch (Curve)
+    //        {
+    //            case ECDHCurveEnum.nistP256:
+    //                _DH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
+    //                break;
+    //            case ECDHCurveEnum.nistP384:
+    //                _DH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP384);
+    //                break;
+    //            case ECDHCurveEnum.nistP521:
+    //                _DH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP521);
+    //                break;
+    //        }
+    //    }
 
-            // retrieve public key
-            _PK = _DH.PublicKey.ToByteArray();
-        }
-
-        public void Dispose() =>
-            _DH.Dispose();
-    }
+    //    public void Dispose() =>
+    //        _DH.Dispose();
+    //}
 }
 #endif
