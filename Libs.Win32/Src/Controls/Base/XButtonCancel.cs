@@ -13,11 +13,11 @@ namespace Nox.Win32.Controls.Base
     public class XButtonCancel
         : Super.XButton
     {
-        public XButtonCancel()
-            : base()
+        public XButtonCancel(LocaleService localeService)
+            : base(localeService)
         {
             this.IsCancel = true;
-            this.Content = "&Cancel";
+            Content = localeService.GetLocalizedString(LocaleKey.BUTTON_CANCEL);
         }
     }
 }

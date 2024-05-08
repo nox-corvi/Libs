@@ -3,18 +3,25 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Markup;
+using System.Xml;
 
 
-namespace Nox.Win32.Forms.Base.Super;
+namespace Nox.Win32.Forms.Base.Super.Dooper;
 
 public partial class CustomWindow
-    : System.Windows.Window
+    : Window
 {
+    private readonly LocaleService _localeService;
+
+    public LocaleService LocaleService { get => _localeService; }
+
     #region Form Extensions
     protected List<CustomWindow> OpenForms() => Application.Current.Windows.OfType<CustomWindow>().ToList<CustomWindow>();
 
@@ -47,12 +54,42 @@ public partial class CustomWindow
 
     //protected void SetAllMargins(int Margin) =>
     //    SetAllMargins(new Padding(Margin));
-    #endregion  
+    #endregion
 
+    #region Xaml Helpers
+    public static T LoadFromXamlFile<T>(string xamlFilePath)
+        where T : Window
+        => LoadFromXaml<T>(new FileStream(xamlFilePath, FileMode.Open));
+
+    public static T LoadFromXamlString<T>(string xaml)
+        where T : Window
+        => LoadFromXaml<T>(xaml.ToStream());
+
+    public static T LoadFromXaml<T>(Stream stream)
+        where T : Window
+    {
+        var xmlReader = XmlReader.Create(stream);
+        return (T)XamlReader.Load(xmlReader);
+    }
+    #endregion
+
+    protected virtual void Initialize()
+    {
+        Title = Name;
+
+        Width = 800;
+        Height = 600;
+    }
 
     public CustomWindow()
     {
-        this.Width = 800;
-        this.Height = 600;
+        Initialize();
     }
+
+    public CustomWindow(LocaleService localeService)
+    {
+        _localeService = localeService;
+        Initialize();
+    }
+
 }

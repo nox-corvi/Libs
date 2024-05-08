@@ -1,0 +1,26 @@
+﻿
+.group-box {
+    border: 2px solid #000; /* Stellen Sie die Dicke und Farbe des Rands ein */
+    position: relative; /* Wichtig für die Positionierung des Titels */
+    padding: 10px; /* Abstand innen, damit der Inhalt nicht am Rand klebt */
+    margin-top: 10px; /* Abstand oben, um Platz für den Titel zu schaffen */
+
+    width: 100%;
+    border-radius: 5px; /* Etwas abgerundete Ecken */
+}
+
+.group-box .title {
+    position: absolute; /* Absolut zur group-box positioniert */
+    top: -14px; /* Halbe Höhe des Titels nach oben verschieben, Wert anpassen */
+    left: 10px; /* Abstand vom linken Rand */
+    background: #fff; /* Hintergrundfarbe wie die der Seite oder des Containers */
+
+    padding: 0 10px; /* Kleiner Abstand links und rechts innerhalb des Titels */
+
+    font-size: large;
+    font-weight: bold;
+}
+
+.group-box .content {
+    padding: 10px;
+}

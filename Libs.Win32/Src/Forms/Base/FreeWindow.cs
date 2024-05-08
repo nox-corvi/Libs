@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Nox.Win32.Forms.Base
 {
-    public class FormFree : Super.CustomWindow
+    public class FormFree : Super.Dooper.CustomWindow
     {
         public FormFree()
             : base()

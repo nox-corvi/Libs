@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Libs.Linux</id>
+    <version>1.0.0</version>
+    <authors>Gottung, Oliver</authors>
+    <owners>Gottung, Oliver</owners>
+    <description>Was man so braucht</description>
+    <releaseNotes>B1ub</releaseNotes>
+  </metadata>
+</package>

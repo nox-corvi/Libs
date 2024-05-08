@@ -203,6 +203,32 @@ namespace Nox.Cli
         { }
     }
 
+    public class ConsoleColors
+    {
+        public ConsoleColors(ConsoleColor? ForeColor, ConsoleColor? BackColor)
+        {
+            this.ForeColor = ForeColor;
+            this.BackColor = BackColor;
+        }
+
+        public ConsoleColor? ForeColor { get; }
+
+        public ConsoleColor? BackColor { get; }
+
+
+        public void Set()
+        {
+            Console.ResetColor();
+
+            if (ForeColor != null)
+                Console.ForegroundColor = (ConsoleColor)ForeColor;
+
+            if (BackColor != null)
+                Console.BackgroundColor = (ConsoleColor)BackColor;
+
+        }
+    }
+
     public class ConPrint
         : ConBase
     {
@@ -351,43 +377,24 @@ namespace Nox.Cli
         }
 
         public string GetStateText(StateEnum StateValue)
-        {
-            switch (StateValue)
+            => StateValue switch
             {
-                case StateEnum.done:
-                    return " OK ";
-                case StateEnum.fail:
-                    return "FAIL";
-                case StateEnum.warn:
-                    return "WARN";
-                case StateEnum.info:
-                    return "INFO";
-                default:
-                    return " -- ";
-            }
-        }
+                StateEnum.done => " OK ",
+                StateEnum.fail => "FAIL",
+                StateEnum.warn => "WARN",
+                StateEnum.info => "INFO",
+                _ => " -- ",
+            };
 
         private void SetStateColor(StateEnum StateValue)
-        {
-            switch (StateValue)
+            => Console.ForegroundColor = StateValue switch
             {
-                case StateEnum.done:
-                    Console.ForegroundColor = __layout.StateDone;
-                    break;
-                case StateEnum.fail:
-                    Console.ForegroundColor = __layout.StateFail;
-                    break;
-                case StateEnum.warn:
-                    Console.ForegroundColor = __layout.StateWarn;
-                    break;
-                case StateEnum.info:
-                    Console.ForegroundColor = __layout.StateInfo;
-                    break;
-                default:
-                    Console.ForegroundColor = __layout.Text;
-                    break;
-            }
-        }
+                StateEnum.done => __layout.StateDone,
+                StateEnum.fail => __layout.StateFail,
+                StateEnum.warn => __layout.StateWarn,
+                StateEnum.info => __layout.StateInfo,
+                _ => __layout.Text,
+            };
 
         public void PrintState(StateEnum StateValue, bool LineFeed = true)
         {

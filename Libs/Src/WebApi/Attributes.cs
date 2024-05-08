@@ -14,7 +14,8 @@ public class TableAttribute : Attribute
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
-public class ColumnAttribute : Attribute
+public class ColumnAttribute 
+    : Attribute
 {
     public string Source { get; set; }
 
@@ -36,10 +37,9 @@ public class ColumnAttribute : Attribute
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
-public class ColumnGuidAttribute : ColumnAttribute
+public class ColumnGuidAttribute(string Source) 
+    : ColumnAttribute(Source, SqlDbType.UniqueIdentifier)
 {
-    public ColumnGuidAttribute(string Source)
-        : base(Source, SqlDbType.UniqueIdentifier) { }
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
@@ -109,4 +109,20 @@ public class IndexAttribute : Attribute
     public IndexAttribute(string Name, bool IsUnique)
         : this(Name) =>
         this.IsUnique = IsUnique;
+}
+
+
+
+[AttributeUsage(AttributeTargets.Property)]
+public class RelationAttribute
+    : Attribute
+{
+    public Type ReferenceType { get; }
+    public string ColumnName { get; }
+
+    public RelationAttribute(Type referenceType, string columnName)
+    {
+        ReferenceType = referenceType;
+        ColumnName = columnName;
+    }
 }

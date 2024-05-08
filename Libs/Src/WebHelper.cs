@@ -72,10 +72,11 @@ namespace Nox
 
         public static bool SendMail(string SmtpServer, string From, string To, string Subject, string Message)
         {
-            var message = new MailMessage(From, To);
-
-            message.Body = Message;
-            message.Subject = Subject;
+            var message = new MailMessage(From, To)
+            {
+                Body = Message,
+                Subject = Subject
+            };
 
             //Global.Log.LogMessage(Subject + ": " + Message, Log4.Log4LevelEnum.Debug);
 

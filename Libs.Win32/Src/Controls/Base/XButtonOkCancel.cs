@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Text;
 using System.Windows;
@@ -17,16 +18,21 @@ namespace Nox.Win32.Controls.Base
         private readonly XButtonCancel xButtonCancel;
 
         public XButtonOkCancel()
-            : base()
+            : this(null)
         {
-            xButtonOkay = new XButtonOkay();
-            xButtonCancel = new XButtonCancel();
+        }
+
+        public XButtonOkCancel(LocaleService localeService)
+            : base(localeService)
+        {
+            xButtonOkay = new XButtonOkay(localeService);
+            xButtonCancel = new XButtonCancel(localeService);
 
             var Container = new Super.XWrapPanel();
             Container.Children.Add(xButtonOkay);
             Container.Children.Add(new Super.XSeperator()
             {
-                Width = 10
+                Width = 5
             });
             Container.Children.Add(xButtonCancel);
 

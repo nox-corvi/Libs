@@ -14,11 +14,10 @@ namespace Nox.CI
     {
         const int MAX_BLOCK_SIZE = 1024;
 
-       // get the crc of a stream
+        // get the crc of a stream
         public uint CalculateCRC(Stream stream, bool Rewind)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, stream, Rewind);
-            _logger?.LogMessage(Message(ResEnum._calc_crc), Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._calc_crc));
 
             try
             {
@@ -33,7 +32,9 @@ namespace Nox.CI
                 while ((read = stream.Read(data, 0, MAX_BLOCK_SIZE)) > 0)
                     t.Push(data, 0, read);
 
-                _logger?.LogMessage(Message(ResEnum._calc_crc_done,t.CRC32.ToString()), Log4.Log4LevelEnum.Debug);
+                _logger?.LogMessage(LogLevelEnum.Debug, 
+                    Message(ResEnum._calc_crc_done, t.CRC32.ToString()));
+                
                 return t.CRC32;
             }
             catch (Exception e)
@@ -47,8 +48,7 @@ namespace Nox.CI
 
         public bool ValidateFileCRC(string Filename, uint crc32value)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Filename, crc32value);
-            _logger?.LogMessage(Message(ResEnum._validate_file_crc, crc32value.ToString()), Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._validate_file_crc, crc32value.ToString()));
 
             try
             {
@@ -56,8 +56,8 @@ namespace Nox.CI
                 {
                     uint crc32 = CalculateCRC((Stream)file, false);
 
-                    _logger?.LogMessage(Message(ResEnum._calc_crc_done, crc32.ToString()), Log4.Log4LevelEnum.Debug);
-                    
+                    _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._calc_crc_done, crc32.ToString()));
+
                     return (crc32 == crc32value);
                 }
             }
@@ -72,8 +72,8 @@ namespace Nox.CI
 
         private bool ValidateFileCRC(string Filename, string crc32string)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Filename, crc32string);
-            _logger?.LogMessage(Message(ResEnum._validate_file_crc, NullStr(crc32string)), Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, 
+                Message(ResEnum._validate_file_crc, NullStr(crc32string)));
 
             try
             {
@@ -99,8 +99,8 @@ namespace Nox.CI
 
         public bool Encode(Stream inputStream, Stream outputStream, string Key, string Salt)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, inputStream, outputStream, Key, Salt);
-            _logger?.LogMessage(Message(ResEnum._encode), Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, 
+                Message(ResEnum._encode));
 
             try
             {
@@ -118,8 +118,7 @@ namespace Nox.CI
 
         public bool Decode(Stream inputStream, Stream outputStream, string Key, string Salt)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, inputStream, outputStream, Key, Salt);
-            _logger?.LogMessage(Message(ResEnum._decode), Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._decode));
 
             try
             {
@@ -137,9 +136,8 @@ namespace Nox.CI
 
         public string EncodeString(string Key, string Salt, string Value)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Key, Salt, Value);
-            _logger?.LogMessage(Message(ResEnum._encode_laverna, NullStr(Value)), Log4.Log4LevelEnum.Debug);
- 
+            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._encode_laverna, NullStr(Value)));
+
             try
             {
                 using (var l = new Laverna(Key, Salt))
@@ -156,8 +154,7 @@ namespace Nox.CI
 
         public string DecodeString(string Key, string Salt, string Value)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Debug, Key, Salt, Value);
-            _logger?.LogMessage(Message(ResEnum._decode_laverna, NullStr(Value)), Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._decode_laverna, [Value]));
 
             try
             {

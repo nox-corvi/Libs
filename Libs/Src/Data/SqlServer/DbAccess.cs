@@ -124,13 +124,12 @@ namespace Nox.Data.SqlServer
                 _DatabaseConnection.Open();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:SQL-Abfragen auf Sicherheitsrisiken überprüfen")]
         public SqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, 
 			CommandBehavior commandBehavior = CommandBehavior.CloseConnection, params SqlParameter[] Parameters)
 		{
             EnsureConnectionEstablished();
 
-            SqlCommand c = new SqlCommand(SQL, _DatabaseConnection)
+            SqlCommand c = new(SQL, _DatabaseConnection)
 			{
 				CommandTimeout = SqlCommandTimeout,
 				Transaction = _Transaction,
@@ -160,43 +159,41 @@ namespace Nox.Data.SqlServer
 
         public bool Exists(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
         {
-            using (var Reader = GetReader(SQL, commandType, CommandBehavior.CloseConnection, Parameters))
-                return (Reader.Read());
+			using var Reader = GetReader(SQL, commandType, CommandBehavior.CloseConnection, Parameters);
+            return Reader.Read();
         }
 
         public bool Exists(string SQL, params SqlParameter[] Parameters)
         {
-            using (var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection,Parameters))
-                return (Reader.Read());
+            using var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, Parameters);
+            return (Reader.Read());
         }
 
         public bool Exists(string SQL)
         {
-            using (var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, null))
-                return (Reader.Read());
+            using var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, null);
+            return (Reader.Read());
         }
 
         public long Execute(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
 		{
             EnsureConnectionEstablished();
 
-            using (SqlCommand CMD = new SqlCommand(SQL, _DatabaseConnection)
-			{
-				CommandTimeout = SqlCommandTimeout,
+            using SqlCommand CMD = new(SQL, _DatabaseConnection)
+            {
+                CommandTimeout = SqlCommandTimeout,
                 CommandType = commandType,
-				Transaction = _Transaction
-			})
-			{
-                OpenDatabaseConnection();
+                Transaction = _Transaction
+            };
+            OpenDatabaseConnection();
 
-				if (Parameters != null)
-					foreach (SqlParameter Param in Parameters)
-						CMD.Parameters.AddWithValue(Param.ParameterName, Param.Value);
+            if (Parameters != null)
+                foreach (SqlParameter Param in Parameters)
+                    CMD.Parameters.AddWithValue(Param.ParameterName, Param.Value);
 
-				var Result = CMD.ExecuteNonQuery();
-				return Result;
-			}
-		}
+            var Result = CMD.ExecuteNonQuery();
+            return Result;
+        }
 
         public long Execute(string SQL, params SqlParameter[] Parameters) =>
             Execute(SQL, CommandType.Text, Parameters);

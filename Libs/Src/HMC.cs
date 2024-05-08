@@ -484,7 +484,7 @@ namespace Nox.HMC
                                     });
                                 }
 
-                    return Result.ToList();
+                    return [.. Result];
                 }
                 else
                     return new();
@@ -510,7 +510,7 @@ namespace Nox.HMC
 
                     Variable = int.Parse(f.Attribute("variable").Value),
                     Value = f.Attribute("value").Value,
-                    ValueList = f.Attribute("value_list").Value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList(),
+                    ValueList = [.. f.Attribute("value_list").Value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)],
 
                     Min = f.Attribute("min").Value,
                     Max = f.Attribute("max").Value,

@@ -95,7 +95,7 @@ public class ColumnCastDescriptor
             switch (Type.Name)
             {
                 case nameof(System.Object):
-                    if (Type.IsSerializable)
+                    if (Attribute.IsDefined(Type, typeof(SerializableAttribute)))
                         return new ColumnCastDescriptor()
                         {
                             TargetType = SqlDbType.NText,

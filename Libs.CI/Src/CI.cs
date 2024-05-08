@@ -29,7 +29,7 @@ namespace Nox.CI
             {
                 if (_Process1 == null)
                 {
-                    _logger?.LogMessage("create process1 handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create process1 handler");
                     _Process1 = new ProcessHandler(this, _logger);
                 }
                 return _Process1;
@@ -42,7 +42,7 @@ namespace Nox.CI
             {
                 if (_Security1 == null)
                 {
-                    _logger?.LogMessage("create security1 handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create security1 handler");
                     _Security1 = new SecurityHandler(this, _logger);
                 }
                 return _Security1;
@@ -55,7 +55,7 @@ namespace Nox.CI
             {
                 if (_IaC1 == null)
                 {
-                    _logger?.LogMessage("create iac1 handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create iac1 handler");
                     _IaC1 = new IaCHandler(this, _logger);
                 }
                 return _IaC1;
@@ -68,7 +68,7 @@ namespace Nox.CI
             {
                 if (_Helpers1 == null)
                 {
-                    _logger?.LogMessage("create helper1 object", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create helper1 object");
                     _Helpers1 = new Helpers(this, _logger);
                 }
 
@@ -78,9 +78,9 @@ namespace Nox.CI
         #endregion
 
         #region Con
-        public bool CancelWithMessage(string Message, Log4.Log4LevelEnum LogLevel = Log4.Log4LevelEnum.Error)
+        public bool CancelWithMessage(string Message, LogLevelEnum LogLevel = LogLevelEnum.Error)
         {
-            _logger?.LogMessage(Message, LogLevel);
+            _logger?.LogMessage(LogLevel, Message);
             return false;
         }
         #endregion

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -436,6 +438,58 @@ namespace Nox
 
             // Compile and return the value.
             return e.Compile().Invoke();
+        }
+
+
+        /// <summary>
+        /// Serialisiert eine Exception und ihre InnerException(s) in eine XML-Struktur.
+        /// </summary>
+        /// <param name="ex">Die zu serialisierende Exception.</param>
+        /// <returns>
+        /// Eine XML-String-Repräsentation der Exception. Beinhaltet Elemente für Quelle, Nachricht,
+        /// Stacktrace und alle benutzerdefinierten Daten, die im Data-Property der Exception gespeichert sind.
+        /// Für jede InnerException wird dieser Prozess rekursiv wiederholt, um eine vollständige Hierarchie der Fehlerursache darzustellen.
+        /// Wenn das übergebene Exception-Objekt null ist, wird ein selbstschließendes <exception />-Element zurückgegeben.
+        /// </returns>
+        /// <remarks>
+        /// Diese Methode ist nützlich für Logging-Zwecke oder zur Fehleranalyse, da sie eine detaillierte und strukturierte Darstellung
+        /// von Fehlerinformationen bietet. Durch die Verwendung von XML als Format ist die Ausgabe leicht lesbar und kann
+        /// für die Weiterverarbeitung oder Anzeige in verschiedenen Tools und Umgebungen verwendet werden.
+        /// </remarks>
+        public static string SerializeException(Exception ex)
+        {
+            if (ex == null) return "<exception />";
+
+            var sb = new StringBuilder();
+            sb.Append("<exception>");
+            sb.AppendFormat("<source>{0}</source>", ex.Source);
+            sb.AppendFormat("<message>{0}</message>", ex.Message);
+            sb.AppendFormat("<stacktrace>{0}</stacktrace>", ex.StackTrace);
+
+            sb.Append("<data>");
+            foreach (DictionaryEntry item in ex.Data)
+            {
+                sb.AppendFormat("<{0}>{1}</{0}>", item.Key, item.Value);
+            }
+            sb.Append("</data>");
+
+            if (ex.InnerException != null)
+            {
+                sb.Append(SerializeException(ex.InnerException));
+            }
+
+            sb.Append("</exception>");
+            return sb.ToString();
+        }
+
+        public static IEnumerable<KeyValuePair<TKey, TValue>> ToEnumerable<TKey, TValue>(KeyValuePair<TKey, TValue> pair)
+        {
+            // Erstelle eine Liste mit dem einzelnen KeyValuePair
+            List<KeyValuePair<TKey, TValue>> list = new List<KeyValuePair<TKey, TValue>>();
+            list.Add(pair);
+
+            // Gib die Liste als IEnumerable zurück
+            return list;
         }
     }
 }

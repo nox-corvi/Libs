@@ -8,7 +8,7 @@ using System.Text;
 namespace Nox.Win32.Forms.Base;
 
 public class MdiContainer 
-    : Super.CustomWindow
+    : Super.Dooper.CustomWindow
 {
 
     #region Form Extensions

@@ -9,11 +9,11 @@ public abstract class DataModel
     : IDisposable
 {
     //private readonly ILogger<DataModel> _Logger = null!;
-
     private Assembly _Assembly = null!;
     private string _Namespace = "";
 
     public readonly string ConnectionString;
+    public Operate Operate { get; } = null;
 
     private Cache<TableDescriptor> TableDesciptors = new Cache<TableDescriptor>();
     private List<string> TableKeys = new();
@@ -103,10 +103,10 @@ public abstract class DataModel
     {
         CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
         this.ConnectionString = ConnectionString;
+
+        this.Operate = new Operate(ConnectionString);
     }
 
     public virtual void Dispose()
-    {
-        TableDesciptors.Dispose();
-    }
+        => TableDesciptors.Dispose();
 }

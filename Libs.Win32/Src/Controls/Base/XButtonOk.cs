@@ -13,11 +13,18 @@ namespace Nox.Win32.Controls.Base
     public class XButtonOkay
         : Super.XButton
     {
+
         public XButtonOkay()
-            : base()
+            : base(null)
+        {
+
+        }
+
+        public XButtonOkay(LocaleService localeService)
+            : base(localeService)
         {
             this.IsDefault = true;
-            this.Content = "$Ok";
+            Content = localeService.GetLocalizedString(LocaleKey.BUTTON_OK);
         }
     }
 }

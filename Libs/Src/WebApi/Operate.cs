@@ -4,7 +4,8 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Linq;
 using System.Text;
-
+using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
 
 namespace Nox.WebApi;
 
@@ -23,8 +24,7 @@ public class Operate
     /// </summary>
     protected void EnsureConnectionEstablished()
     {
-        if (_DatabaseConnection == null)
-            _DatabaseConnection = new SqlConnection(ConnectionString);
+        _DatabaseConnection ??= new SqlConnection(ConnectionString);
 
         switch (_DatabaseConnection.State)
         {
@@ -97,8 +97,7 @@ public class Operate
         EnsureConnectionEstablished();
         OpenDatabaseConnection();
 
-        if (_Transaction == null)
-            _Transaction = _DatabaseConnection.BeginTransaction();
+        _Transaction ??= _DatabaseConnection.BeginTransaction();
     }
 
     /// <summary>
@@ -122,12 +121,11 @@ public class Operate
         _Transaction = null;
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:SQL-Abfragen auf Sicherheitsrisiken überprüfen")]
     public SqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
     {
         EnsureConnectionEstablished();
 
-        SqlCommand CMD = new SqlCommand(SQL, _DatabaseConnection)
+        var CMD = new SqlCommand(SQL, _DatabaseConnection)
         {
             CommandType = commandType,
             CommandTimeout = SqlCommandTimeout,
@@ -154,23 +152,23 @@ public class Operate
     {
         EnsureConnectionEstablished();
 
-        using (SqlCommand CMD = new SqlCommand(SQL, _DatabaseConnection)
+        using var CMD = new SqlCommand(SQL, _DatabaseConnection)
         {
             CommandType = commandType,
             CommandTimeout = SqlCommandTimeout,
 
             Transaction = _Transaction
-        })
-        {
-            OpenDatabaseConnection();
+        };
 
-            if (Parameters != null)
-                foreach (SqlParameter Param in Parameters)
-                    CMD.Parameters.Add(Param);
+        OpenDatabaseConnection();
 
-            var Result = CMD.ExecuteNonQuery();
-            return Result;
-        }
+        if (Parameters != null)
+            foreach (SqlParameter Param in Parameters)
+                CMD.Parameters.Add(Param);
+
+        var Result = CMD.ExecuteNonQuery();
+        return Result;
+
     }
 
     public long Execute(string SQL, params SqlParameter[] Parameters) =>
@@ -179,7 +177,7 @@ public class Operate
     public long Execute(string SQL) =>
         Execute(SQL, CommandType.Text, null);
 
-    public K GetValue<K>(string SQL, CommandType commandType, SqlParameter[] Parameters, K DefaultValue = default(K)) where K : IComparable
+    public K GetValue<K>(string SQL, CommandType commandType, SqlParameter[] Parameters, K DefaultValue = default) where K : IComparable
     {
         using (var Reader = GetReader(SQL, commandType, Parameters))
             if (Reader.Read())
@@ -197,14 +195,14 @@ public class Operate
         return DefaultValue;
     }
 
-    public K GetValue<K>(string SQL, SqlParameter[] Parameters, K DefaultValue = default(K)) where K : IComparable =>
+    public K GetValue<K>(string SQL, SqlParameter[] Parameters, K DefaultValue = default) where K : IComparable =>
         GetValue<K>(SQL, CommandType.Text, Parameters, DefaultValue);
 
-    public K GetValue<K>(string SQL, K DefaultValue = default(K)) where K : IComparable =>
+    public K GetValue<K>(string SQL, K DefaultValue = default) where K : IComparable =>
         GetValue<K>(SQL, CommandType.Text, null, DefaultValue);
 
     public K GetValue<K>(string SQL) where K : IComparable =>
-        GetValue<K>(SQL, CommandType.Text, null, default(K));
+        GetValue<K>(SQL, CommandType.Text, null, default);
     #endregion
 
     public Operate(string ConnectionString)
@@ -213,15 +211,60 @@ public class Operate
         this.ConnectionString = ConnectionString;
     }
 
-    public void Dispose()
+    public Operate Clone(Operate operate)
+        => new(operate.ConnectionString)
+        {
+            _DatabaseConnection = operate._DatabaseConnection,
+            _Transaction = operate._Transaction,
+        };
+
+    public Operate(Operate operate)
+    {
+        ConnectionString = operate.ConnectionString;
+        SqlCommandTimeout = operate.SqlCommandTimeout;
+
+        _DatabaseConnection = operate._DatabaseConnection;
+        _Transaction = operate._Transaction;
+    }
+
+    public virtual void Dispose()
     {
         Rollback();
         CloseDatabaseConnection();
 
         _DatabaseConnection?.Dispose();
     }
+}
+
+public abstract class OperateMods
+{
+    public abstract void BeforeUpdate(DataRow r, CancelEventArgs e);
+
+    public abstract void BeforeInsert(DataRow r, CancelEventArgs e);
+
+    public abstract void BeforeDelete(DataRow r, CancelEventArgs e);
 
 }
+
+//public class OperateNullMods
+//    : OperateMods
+//{
+//    public override void BeforeInsert(DataRow r, CancelEventArgs e)
+//    {
+
+//    }
+
+//    public override void BeforeUpdate(DataRow r, CancelEventArgs e)
+//    {
+
+//    }
+
+//    public override void BeforeDelete(DataRow r, CancelEventArgs e)
+//    {
+
+//    }
+//}
+
 
 /// <summary>
 /// Stellt Werkzeuge zur Datenmanipulation zur Verfügung
@@ -235,13 +278,15 @@ public class Operate<T>
     protected string _PrimaryKeyField;
 
     protected TableDescriptor _TableDescriptor;
-    private PropertyDescriptor _PrimaryKeyPropertyDescriptor;
+    private readonly PropertyDescriptor _PrimaryKeyPropertyDescriptor;
 
     protected DataRow dataRow;
 
     #region Properties
     public string TableSource { get => _TableSource; }
     public string PrimaryKey { get => _PrimaryKeyField; }
+
+    public OperateMods OperateMods { get; set; }
     #endregion
 
     #region Stmt
@@ -254,22 +299,50 @@ public class Operate<T>
     private string CreateExistsSelect(string SubSelect) =>
         $"SELECT CASE WHEN EXISTS ({SubSelect}) THEN 1 ELSE 0 END";
 
-    private string CreateSelectStmt(string Where) =>
-       $"SELECT * FROM {TableSource} {Helpers.OnXCond(() => Where != "", () => "WHERE ", () => " ")} {Where}";
-
-    private string CreateSelectStmt(string Where, List<string> FieldList)
+    private string CreateSelectStmt(string Suffix)
     {
-        StringBuilder Fields = new StringBuilder();
+        var stmt = new StringBuilder($"SELECT * FROM {TableSource}");
+        //if (Suffix.StartsWith("LEFT JOIN", StringComparison.InvariantCultureIgnoreCase) ||
+        //    Suffix.StartsWith("LEFT OUTER JOIN", StringComparison.InvariantCultureIgnoreCase) ||
+        //    Suffix.StartsWith("RIGHT JOIN", StringComparison.InvariantCultureIgnoreCase) ||
+        //    Suffix.StartsWith("RIGHT OUTER JOIN", StringComparison.InvariantCultureIgnoreCase) ||
+        //    Suffix.StartsWith("INNER JOIN", StringComparison.InvariantCultureIgnoreCase))
+        //{
+        //    stmt.Append(Suffix);
+        //}
+        //else
+        //    stmt.Append(" WHERE ").Append(Suffix);
+
+        if (!Suffix.StartsWith("WHERE", StringComparison.InvariantCultureIgnoreCase))
+            if (!string.IsNullOrEmpty(Suffix))
+                stmt.Append(" WHERE ");
+
+        stmt.Append(Suffix);
+
+        return stmt.ToString();
+    }
+
+
+    private string CreateSelectStmt(List<string> FieldList, string Suffix)
+    {
+        StringBuilder Fields = new();
 
         for (int i = 0; i < FieldList.Count; i++)
             Fields.Append(i > 0 ? ", " : "").Append(FieldList[i]);
 
-        return $"SELECT {Fields.ToString()} FROM {TableSource} WHERE ";
+        var stmt = new StringBuilder($"SELECT {Fields} FROM {TableSource}");
+
+        if (!Suffix.StartsWith("WHERE", StringComparison.InvariantCultureIgnoreCase))
+            stmt.Append(" WHERE ");
+
+        stmt.Append(Suffix);
+
+        return stmt.ToString();
     }
 
     private string CreateInsertStmt(List<string> FieldList)
     {
-        StringBuilder Fields = new StringBuilder(), Values = new StringBuilder();
+        StringBuilder Fields = new(), Values = new();
 
         for (int i = 0; i < FieldList.Count; i++)
         {
@@ -277,21 +350,20 @@ public class Operate<T>
             Values.Append(i > 0 ? ", " : "").Append("@" + FieldList[i]);
         }
 
-        return $"INSERT INTO {TableSource}({Fields.ToString()}) VALUES({Values.ToString()})";
+        return $"INSERT INTO {TableSource}({Fields}) VALUES({Values})";
     }
 
     private string CreateUpdateStmt(List<string> FieldList)
     {
-        StringBuilder FieldValuePair = new StringBuilder();
+        var FieldValuePair = new StringBuilder();
 
         for (int i = 0; i < FieldList.Count; i++)
             FieldValuePair.Append(i > 0 ? ", " : "").Append(FieldList[i] + " = @" + FieldList[i]);
 
-        return $"UPDATE {TableSource} SET {FieldValuePair.ToString()} WHERE {PrimaryKey} = @{PrimaryKey}";
+        return $"UPDATE {TableSource} SET {FieldValuePair} WHERE {PrimaryKey} = @{PrimaryKey}";
     }
     private string CreateDeleteStmt =>
         $"DELETE FROM {TableSource} WHERE {PrimaryKey} = @{PrimaryKey}";
-
 
     private string CreateTruncateStmt() =>
         $"TRUNCATE TABLE {TableSource}";
@@ -310,6 +382,13 @@ public class Operate<T>
 
     public int Insert(T row)
     {
+        var e = new CancelEventArgs();
+        OperateMods?.BeforeInsert(row, e);
+
+        if (e.Cancel)
+            return -1;
+
+
         var KeyFieldValue = row.GetPropertyValue<Guid>(_PrimaryKeyPropertyDescriptor.Property);
 
         if (!Exists(CreateKeySelect, new SqlParameter($"@{PrimaryKey}", KeyFieldValue)))
@@ -341,7 +420,7 @@ public class Operate<T>
             }
 
             // and go ... 
-            return (int)Execute(CreateInsertStmt(Fields), Params.ToArray());
+            return (int)Execute(CreateInsertStmt(Fields), [.. Params]);
         }
         else
             throw new Exception("row already exists");
@@ -349,6 +428,12 @@ public class Operate<T>
 
     public int Update(T row)
     {
+        var e = new CancelEventArgs();
+        OperateMods?.BeforeUpdate(row, e);
+
+        if (e.Cancel)
+            return -1;
+
         // get primary key of row ...
         var KeyFieldValue = row.GetPropertyValue<Guid>(_PrimaryKeyPropertyDescriptor.Property);
 
@@ -380,15 +465,22 @@ public class Operate<T>
             Params.Add(new SqlParameter($"@{_PrimaryKeyPropertyDescriptor.Name}", KeyFieldValue));
 
             // and go ... 
-            return (int)Execute(CreateUpdateStmt(Fields), Params.ToArray());
+            return (int)Execute(CreateUpdateStmt(Fields), [.. Params]);
         }
         else
             throw new Exception("row not found");
     }
 
-    public int Delete(T r)
+    public int Delete(T row)
     {
-        var KeyFieldValue = r.GetPropertyValue<Guid>(_PrimaryKeyPropertyDescriptor.Property);
+        var e = new CancelEventArgs();
+        OperateMods?.BeforeDelete(row, e);
+
+        if (e.Cancel)
+            return -1;
+
+
+        var KeyFieldValue = row.GetPropertyValue<Guid>(_PrimaryKeyPropertyDescriptor.Property);
         return (int)Execute(CreateDeleteStmt, new SqlParameter($"@{_PrimaryKeyPropertyDescriptor.Name}", KeyFieldValue));
     }
 
@@ -433,10 +525,8 @@ public class Operate<T>
 
 
     public Operate(DataModel dataModel)
-        : base(dataModel.ConnectionString)
+        : base(dataModel.Operate)
     {
-        //this.dataRow = dataRow;
-
         var data = dataModel.GetType();
 
         _TableDescriptor = dataModel.GetTableDescriptor($"{typeof(T).Namespace}.{typeof(T).Name}");

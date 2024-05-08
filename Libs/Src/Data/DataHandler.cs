@@ -136,7 +136,7 @@ namespace Nox.Data
                 // stop worker 
                 if (_worker.IsBusy)
                 {
-                    _Logger.LogTrace("cancel worker");
+                    _Logger?.LogTrace("cancel worker");
                     _worker.Cancel();
 
                     _worker = null;

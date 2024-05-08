@@ -13,11 +13,11 @@ namespace Nox.Security
 
         private void Prepare(string Key, string Salt, int Iterations = 1000)
         {
-            if (Salt.Length < 8)
-                throw new ArgumentOutOfRangeException("salt must be at least 8 characters long");
+            if (Salt.Length < 25)
+                throw new ArgumentOutOfRangeException("salt must be at least 25 characters long");
 
-            if (Iterations < 1)
-                throw new ArgumentOutOfRangeException("the number of iterations must be at least 1");
+            if (Iterations < 100)
+                throw new ArgumentOutOfRangeException("the number of iterations must be at least 100");
 
             var _salt = new byte[Salt.Length]; byte pred = 0;
             for (int i = 0; i < Salt.Length;)

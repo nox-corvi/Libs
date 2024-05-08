@@ -13,9 +13,12 @@ namespace Nox.Win32.Controls.Base.Super
     public class XUserControl 
         : UserControl
     {
-        public XUserControl()
+        private readonly LocaleService _LocaleService;
+
+        public XUserControl(LocaleService LocaleService)
             : base()
         {
+            _LocaleService = LocaleService;
         }
     }
 }

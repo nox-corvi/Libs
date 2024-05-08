@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Miru\Libs\Miru\Miru8x\Miru8x.csproj" />
-    <ProjectReference Include="..\..\Libs\Libs8x\Libs8x.csproj" />
   </ItemGroup>
 
 </Project>

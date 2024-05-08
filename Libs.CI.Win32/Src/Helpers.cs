@@ -13,32 +13,28 @@ namespace Nox.Win32.CI
     {
         public int PSExec(string Command, ProcessCredential Credential, out string OutMessage, out string ErrMessage)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Command, Credential);
-            _logger?.LogMessage($"{nameof(PSExec)} {Command}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"{nameof(PSExec)} {Command}");
 
             return (_CI as CI).GetProcessHandler.RunCliApplication("powershell.exe", $"-Command \"{Command}\"", Credential, out OutMessage, out ErrMessage);
         }
 
         public int UModExec(string Command, ProcessCredential Credential, out string OutMessage, out string ErrMEssage)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Command, Credential);
-            _logger?.LogMessage($"{nameof(UModExec)} {Command}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"{nameof(UModExec)} {Command}");
 
             return (_CI as CI).GetProcessHandler.RunCliApplication("umod.exe", Command, Credential, out OutMessage, out ErrMEssage);
         }
 
         public int NetExec(string Command, ProcessCredential Credential, out string OutMessage, out string ErrMEssage)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Command, Credential);
-            _logger?.LogMessage($"{nameof(NetExec)} {Command}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"{nameof(NetExec)} {Command}");
 
             return (_CI as CI).GetProcessHandler.RunCliApplication("net.exe", Command, Credential, out OutMessage, out ErrMEssage);
         }
 
         public int IISExec(string Command, ProcessCredential Credential, out string OutMessage, out string ErrMEssage)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Command, Credential);
-            _logger?.LogMessage($"{nameof(IISExec)} {Command}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"{nameof(IISExec)} {Command}");
 
             return (_CI as CI).GetProcessHandler.RunCliApplication(Environment.GetEnvironmentVariable("windir", EnvironmentVariableTarget.Machine).AddIfMiss("\\") +
                 "\\SYSTEM32\\INETSRV\\appcmd.exe", Command, Credential, out OutMessage, out ErrMEssage);
@@ -46,16 +42,14 @@ namespace Nox.Win32.CI
 
         public int NetShellExec(string Command, ProcessCredential Credential, out string OutMessage, out string ErrMEssage)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Command, Credential);
-            _logger?.LogMessage($"{nameof(NetShellExec)} {Command}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"{nameof(NetShellExec)} {Command}");
 
             return (_CI as CI).GetProcessHandler.RunCliApplication("netsh.exe", Command, Credential, out OutMessage, out ErrMEssage);
         }
 
         public int DISMExec(string Arguments, ProcessCredential Credential, out string OutMessage, out string ErrMessage)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Arguments, Credential);
-            _logger?.LogMessage($"{nameof(DISMExec)} {Arguments}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"{nameof(DISMExec)} {Arguments}");
 
             return (_CI as Nox.Win32.CI.CI).GetProcessHandler.RunCliApplication("dism.exe", Arguments, Credential, out OutMessage, out ErrMessage);
         }

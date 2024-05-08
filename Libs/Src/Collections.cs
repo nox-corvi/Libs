@@ -480,6 +480,9 @@ namespace Nox
         }
         #endregion
 
+        void blub()
+            => _logger.LogInformation("");
+
         #region ICloneable
         public object Clone()
         {

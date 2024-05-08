@@ -267,7 +267,7 @@ namespace Nox
                 Result.Append($"<stacktrace>{ex.StackTrace}</stacktrace>");
                 Result.Append($"<data>");
                 foreach (var Item in ex.Data.Keys)
-                    Result.Append($"<{Item}>{ex.Data[Item].ToString()}</{Item}>");
+                    Result.Append($"<{Item}>{ex.Data[Item]}</{Item}>");
 
                 if (ex.InnerException != null)
                     Result.Append(SerializeException(ex.InnerException));

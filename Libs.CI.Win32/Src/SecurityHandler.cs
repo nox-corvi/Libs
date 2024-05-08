@@ -26,8 +26,7 @@ namespace Nox.Win32.CI
         /// <returns>true if valid, false if not</returns>
         public bool ValidateSID(string input)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, input);
-            _logger?.LogMessage($"validate sid {input}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"validate sid {input}");
 
             return Regex.IsMatch(input, @"^S-\d-\d+-(\d+-){1,14}\d+$");
         }
@@ -43,8 +42,7 @@ namespace Nox.Win32.CI
         /// <exception cref="ApplicationException"></exception>
         public bool NetExecute(string Command, ProcessCredential Credential, Func<string, bool> ParseResult, Func<int, string, bool> EvaluateExitCode)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Command, Credential);
-            _logger?.LogMessage($"execute net.exe", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"execute net.exe");
 
             try
             {
@@ -73,10 +71,7 @@ namespace Nox.Win32.CI
 
         public ProcessCredential GetProcessCredentials(CID CID, string Key, string Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Credential);
-
-            _logger?.LogMessage($"get process credentials", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"get process credentials");
             try
             {
                 var c = CID.Credentials;
@@ -112,10 +107,7 @@ namespace Nox.Win32.CI
         }
         public string DetermineDomainFromCredential(Nox.CI.CID.CID CID, CredentialType Type)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CID, Type);
-
-            _logger?.LogMessage($"get domain from credential", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"get domain from credential");
             switch (Type)
             {
                 case CredentialType._domain:  // check in the domain ..
@@ -130,8 +122,7 @@ namespace Nox.Win32.CI
 
         public bool UserExists(CID CID, ProcessCredential CR, CredentialType Type, string User)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CID, CR, Type, User);
-            _logger?.LogMessage($"check if user {User ?? "<null>"} exists ", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check if user {User ?? "<null>"} exists ");
 
             try
             {
@@ -157,7 +148,7 @@ namespace Nox.Win32.CI
                         throw new ApplicationException(ErrMsg);
                 }
 
-                _logger?.LogMessage("umodexec with " + Command, Log4.Log4LevelEnum.Trace);
+                _logger?.LogMessage(LogLevelEnum.Trace, "umodexec with " + Command);
                 if ((Result = (_CI as CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
@@ -185,10 +176,7 @@ namespace Nox.Win32.CI
 
         public string GetUserSID(CID CID, ProcessCredential CR, CredentialType Type, string User)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CID, CID, Type, User);
-
-            _logger?.LogMessage($"get user {User ?? "<null>"} sid", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"get user {User ?? "<null>"} sid");
             try
             {
                 //var CR = GetProcessCredentials(Credential);
@@ -264,10 +252,7 @@ namespace Nox.Win32.CI
 
         public bool UserInGroup(string User, string Group, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, User, Group, Credential);
-
-            _logger?.LogMessage($"check if user {User ?? "<null>"} in group {Group ?? ""}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check if user {User ?? "<null>"} in group {Group ?? ""}");
             try
             {
                 int Result;
@@ -313,8 +298,7 @@ namespace Nox.Win32.CI
         public bool GroupExists(string Group, ProcessCredential Credential)
         {
             // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Group, Credential);
-            _logger?.LogMessage($"check if group {Group ?? "<null>"} exists", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check if group {Group ?? "<null>"} exists");
             try
             {
                 int Result;
@@ -358,10 +342,7 @@ namespace Nox.Win32.CI
 
         public bool CreateGroup(string Group, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Group, Credential);
-
-            _logger?.LogMessage($"create group {Group ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"create group {Group ?? "<null>"}");
             try
             {
                 int Result;
@@ -401,10 +382,7 @@ namespace Nox.Win32.CI
 
         public bool AddUserLocalGroup(string User, string Group, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, User, Group, Credential);
-
-            _logger?.LogMessage($"add user {User ?? "<null>"} to local group {Group ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"add user {User ?? "<null>"} to local group {Group ?? "<null>"}");
             try
             {
                 int Result;
@@ -445,10 +423,7 @@ namespace Nox.Win32.CI
 
         public void ChangePass(CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, User, _CI.GetHelper.MaskPass(Pass), Credential);
-
-            _logger?.LogMessage($"change pass of {User ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"change pass of {User ?? "<null>"}");
             try
             {
                 //var CR = GetProcessCredentials(Credential);
@@ -495,10 +470,7 @@ namespace Nox.Win32.CI
 
         public bool ValidatePass(CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, User, _CI.GetHelper.MaskPass(Pass), Credential);
-
-            _logger?.LogMessage($"validate pass of user {User ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"validate pass of user {User ?? "<null>"}");
             try
             {
                 switch (Credential.ToLower())
@@ -528,10 +500,7 @@ namespace Nox.Win32.CI
 
         public void CreateUser(CID CID, ProcessCredential CR, CredentialType Type, string User, string DisplayName, string Pass, string OU)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, CR, Type, User, DisplayName, _CI.GetHelper.MaskPass(Pass), OU);
-
-            _logger?.LogMessage($"create user {User ?? "<null>"} ({DisplayName ?? "<null>"})", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"create user {User ?? "<null>"} ({DisplayName ?? "<null>"})");
             try
             {
                 int Result;
@@ -579,10 +548,7 @@ namespace Nox.Win32.CI
 
         public bool ShareExists(string Share, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Share, Credential);
-
-            _logger?.LogMessage($"check if share {Share ?? "<null>"} exists", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check if share {Share ?? "<null>"} exists");
 
             return NetExecute($"share {Share}", Credential, (string Out) =>
             {
@@ -610,10 +576,7 @@ namespace Nox.Win32.CI
 
         public bool ShareMatch(string Share, string Destination, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Share, Destination, Credential);
-
-            _logger?.LogMessage($"check if share {Share ?? "<null>"} matches destination {Destination ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check if share {Share ?? "<null>"} matches destination {Destination ?? "<null>"}");
 
             return NetExecute($"share {Share}", Credential, (string Out) =>
             {
@@ -633,6 +596,7 @@ namespace Nox.Win32.CI
                                     p.Equals(Destination, StringComparison.InvariantCultureIgnoreCase));
                         }
                     }
+
                 return false;
             }, (int Result, string ErrMessage) =>
             {
@@ -645,15 +609,13 @@ namespace Nox.Win32.CI
 
         public bool CreateShare(string Share, string Destination, string Grant, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Share, Destination, Credential);
-            _logger?.LogMessage($"check if share {Share ?? "<null>"} exists", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check if share {Share ?? "<null>"} exists");
 
             string Command = $"share {Share}={Destination} {Grant} /REMARK:\"Created by NUVTY\"";
 
             return NetExecute(Command, Credential, (string Out) =>
             {
-                string line, s = null, p = null;
+                string line;
                 using (var reader = new StringReader(Out))
                     while ((line = reader.ReadLine()) != null)
                     {
@@ -672,9 +634,7 @@ namespace Nox.Win32.CI
 
         public bool DeleteShare(string Share, ProcessCredential Credential)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Share, Credential);
-            _logger?.LogMessage($"delete share {Share ?? "<null>"}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"delete share {Share ?? "<null>"}");
 
             return NetExecute($"share {Share} /delete /yes", Credential, (string Out) =>
             {

@@ -18,7 +18,7 @@
   <ItemGroup>
     <Compile Include="..\Src\**\*.cs" />
   </ItemGroup>
-
+ 
   <ItemGroup>
     <Compile Remove="Libs.Win32\obj\Debug\net6.0-windows\**" />
     <Compile Remove="obj\**" />

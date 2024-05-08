@@ -27,8 +27,8 @@ namespace Nox.CI
         /// <returns>password string</returns>
         public string PassGen(int Length)
         {
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Length);
-            _logger?.LogMessage($"pass gen using length {Length}", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, 
+                $"pass gen using length {Length}");
 
             var r = new Random((int)(DateTime.Now.Ticks & 0xFFFF));
 

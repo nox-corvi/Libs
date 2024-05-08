@@ -24,8 +24,7 @@ namespace Nox.Win32.CI
         private bool RegValueExist(ProcessCredential Credential, string RegRoot, string Key, string Value, string Pattern)
         {
             // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Credential, RegRoot, Key, Value, Pattern);
-            _logger?.LogMessage($"check reg value exists", Log4.Log4LevelEnum.Debug);
+            _logger?.LogMessage(LogLevelEnum.Debug, $"check reg value exists");
 
             string OutMessage, ErrMessage;
             try
@@ -34,8 +33,8 @@ namespace Nox.Win32.CI
                     .GetProcessHandler
                     .RunCliApplication("regquery.exe", $"query --root:{RegRoot} --key \"{Key}\" --value {Value} \"{Pattern}\"", Credential, out OutMessage, out ErrMessage);
 
-                _logger?.LogMessage("RegValueExists->Out: " + OutMessage, Log4.Log4LevelEnum.Debug);
-                _logger?.LogMessage("RegValueExists->Err: " + OutMessage, Log4.Log4LevelEnum.Debug);
+                _logger?.LogMessage(LogLevelEnum.Debug, "RegValueExists->Out: " + OutMessage);
+                _logger?.LogMessage(LogLevelEnum.Debug, "RegValueExists->Err: " + OutMessage);
                 if (Result < 0)
                     return false;
                 else if (Result == 0)

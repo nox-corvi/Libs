@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Nox
 {
@@ -289,6 +291,21 @@ namespace Nox
 
             return Result.ToString();
         }
+
+        public static Stream ToStream(this string text)
+        {
+            var memoryStream = new MemoryStream();
+            var writer = new StreamWriter(memoryStream);
+
+            writer.Write(text);
+            writer.Flush();
+
+            memoryStream.Position = 0;
+
+            return memoryStream;
+
+        }
+
 
         public static string ToBase64(this string s, Encoding e) =>
             Convert.ToBase64String(e.GetBytes(s));

@@ -8,14 +8,12 @@ using System.Data.SqlClient;
 
 namespace Nox.Data.SqlServer
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2229:ImplementSerializationConstructors")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2240:ImplementISerializableCorrectly")]
     [Serializable()]
 	public class SqlEditTable : System.Data.DataTable
 	{
 		private SqlCommand          _Command;
 		private SqlDataAdapter      _Adapt;
-		private SqlCommandBuilder   _Scb;
+		//private SqlCommandBuilder   _Scb;
 		private SqlConnection       _Conn;
 
 		private SqlTransaction      _Transaction;
@@ -116,7 +114,7 @@ namespace Nox.Data.SqlServer
 				_Command.Transaction = _Transaction;
 
 			_Adapt = new SqlDataAdapter(_Command);
-			_Scb = new SqlCommandBuilder(_Adapt);
+			//_Scb = new SqlCommandBuilder(_Adapt);
 
 			_Adapt.Fill(this);
 		}
@@ -126,7 +124,7 @@ namespace Nox.Data.SqlServer
         private bool UpdateTable(bool EndTransaction = false)
 		{
 			int RetryCount = 3; bool SqlSuccess = false;
-			Random RND = new Random(DateTime.Now.Millisecond);
+			var RND = new Random(DateTime.Now.Millisecond);
 
 			while ((RetryCount >= 0) && (!SqlSuccess))
 			{

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -11,61 +13,97 @@ using System.Xml.Serialization;
 namespace Nox.WebApi;
 
 
-[Flags]
 public enum StateEnum
 {
     Success = 0,    // erfolgreich 
-    Failure = 1,    // nicht erfolgreich
+    Failure = 1,    // fehlgeschlagen
 
-    Error = 4,      // es ist ein fehler aufgetreten
+    Error = 4,      // es ist ein Fehler aufgetreten
 }
 
+public class KeyValue(string key = "", string value = "")
+{
+    public string Key { get; set; } = key;
+    public string Value { get; set; } = value;
+
+    public override string ToString()
+        => $"{Key}:{Value ?? "<null>"}";
+}
 
 #region Interface
 public interface IShell
 {
     StateEnum State { get; set; }
     string Message { get; set; }
+
 }
 
-public interface IShell<T> 
+public interface IDataShell<T>
     : IShell
+    where T : class, new()
 {
     List<T> Data { get; }
 
     T First();
 }
 
-public interface IResponseShell 
+public interface IResponseShell
     : IShell
 {
     // Spezifische Methoden und Eigenschaften für ResponseShell, falls erforderlich
 }
 
-public interface ISingleDataResponseShell 
+public interface IPostShell
+{
+}
+
+public interface ISingleDataResponseShell
     : IResponseShell
 {
     string AdditionalData1 { get; }
 }
 
-public interface IDoubleDataResponseShell 
+public interface ISingleDataPostShell
+    : IPostShell
+{
+    string Value1 { get; }
+} 
+
+
+public interface IDoubleDataResponseShell
     : ISingleDataResponseShell
 {
     string AdditionalData2 { get; }
 }
 
-public interface IQuadDataResponseShell 
+public interface IDoubleDataPostShell
+    : ISingleDataPostShell
+{
+    string Value2 { get; }
+}
+
+public interface IQuadDataResponseShell
     : IDoubleDataResponseShell
 {
     string AdditionalData3 { get; }
     string AdditionalData4 { get; }
 }
+public interface IQuadeDataPostShell
+    : IDoubleDataResponseShell
+{
+    string Value3 { get; }
+    string Value4 { get; }
+}
+
 #endregion
 
 [Serializable()]
 public class Shell
     : IShell
 {
+    public static string NO_RESULT { get; } = "no result";
+    public static string NOT_AUTHORIZED { get; } = "not authorized";
+
     #region Properties
     /// <summary>
     /// Gibt einen Status zurück der angibt ob die Aktion erfolgreich war
@@ -78,6 +116,76 @@ public class Shell
     public string Message { get; set; } = "";
     #endregion
 
+    public T Pass<T>()
+        where T : IShell, new()
+        => new() { State = State, Message = Message };
+
+    public static async Task<T> SwitchHandlerAsync<T, U>(U Shell,
+        Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFailure, Func<string, Task<T>> OnError)
+        where T : IShell, new()
+        where U : IShell
+    {
+        try
+        {
+            //var SyncShell = await Shell;
+            return Shell.State switch
+            {
+                StateEnum.Success => await OnSuccess(Shell),
+                StateEnum.Failure => await OnFailure(Shell),
+                _ => await OnError(Shell.Message),
+            };
+        }
+        catch (Exception e)
+        {
+            return await OnError(Helpers.SerializeException(e));
+        }
+    }
+
+    public static async Task<T> SwitchHandlerAsync<T, U>(U Shell,
+        Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFailure)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync(Shell, OnSuccess, OnFailure, (s) => Task.FromResult(new T() { State = StateEnum.Error, Message = s }));
+
+    public static async Task<T> SwitchHandlerAsync<T, U>(Task<U> Shell,
+        Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFailure, Func<string, Task<T>> OnError)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync(Shell, OnSuccess, OnFailure, OnError);
+
+    public static async Task<T> SwitchHandlerAsync<T, U>(Task<U> Shell,
+        Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFailure)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync(Shell, OnSuccess, OnFailure, (s) => Task.FromResult(new T() { State = StateEnum.Error, Message = s }));
+
+    public static T SwitchHandler<T, U>(U Shell,
+        Func<U, T> OnSuccess, Func<U, T> OnFailure, Func<string, T> OnError)
+        where T : IShell, new()
+        where U : IShell
+    {
+        try
+        {
+            return Shell.State switch
+            {
+                StateEnum.Success => OnSuccess(Shell),
+                StateEnum.Failure => OnFailure(Shell),
+                _ => OnError(Shell.Message),
+            };
+        }
+        catch (Exception e)
+        {
+            return OnError(Helpers.SerializeException(e));
+        }
+    }
+
+    public static T SwitchHandler<T, U>(U Shell,
+        Func<U, T> OnSuccess, Func<U, T> OnFailure)
+        where T : IShell, new()
+        where U : IShell
+        => SwitchHandler(Shell, OnSuccess, OnFailure, (s) => new T() { State = StateEnum.Error, Message = s });
+
+
     /// <summary>
     /// Verarbeitet eine Shell-Instanz und führt bei Erfolg eine gegebene Funktion aus.
     /// Bei Fehlschlag oder Fehler wird eine neue Shell-Instanz mit entsprechendem Status zurückgegeben.
@@ -88,84 +196,358 @@ public class Shell
     /// <param name="failureMessage">Optionale Nachricht für den Fall eines Fehlschlags.</param>
     /// <param name="errorMessage">Optionale Nachricht für den Fall eines Fehlers.</param>
     /// <returns>Eine neue Instanz des Typs T, basierend auf dem Ergebnis der Verarbeitung.</returns>
-    public static T DefaultHandler<T>(Shell shell, Func<T> OnSuccess, 
-        string FailureMessage = null, string ErrorMessage = null) where T : IShell, new()
-    {
-        var result = new T();
-
-        try
-        {
-            switch (shell.State)
+    public static async Task<T> SuccessHandlerAsync<T, U>(U Shell,
+        Func<U, Task<T>> OnSuccess,
+        string FailureMessage = null, string ErrorMessage = null)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync(Shell, OnSuccess,
+            OnFailure: (s) =>
             {
-                case StateEnum.Success:
-                    result = OnSuccess();
-                    break;
-                case StateEnum.Failure:
-                    result.State = StateEnum.Failure;
-                    result.Message = FailureMessage ?? shell.Message;
-                    break;
-                default:
-                    result.State = StateEnum.Error;
-                    result.Message = ErrorMessage ?? shell.Message;
-                    break;
-            }
-        }
-        catch (Exception e)
-        {
-            result.State = StateEnum.Error;
-            result.Message = ErrorMessage ?? e.Message;
-        }
+                //var q = await s;
+                return Task.FromResult(new T()
+                {
+                    State = StateEnum.Failure,
+                    Message = FailureMessage ?? s.Message
+                });
+            },
+            OnError: (s) =>
+                Task.FromResult(new T()
+                {
+                    State = StateEnum.Error,
+                    Message = ErrorMessage ?? s
+                }));
 
-        return result;
-    }
+    public static T SuccessHandler<T, U>(U Shell, Func<U, T> OnSuccess,
+        string FailureMessage = null, string ErrorMessage = null)
+        where T : IShell, new()
+        where U : IShell
+        => SwitchHandler(Shell, OnSuccess,
+            OnFailure: (s) => new T()
+            {
+                State = StateEnum.Failure,
+                Message = FailureMessage ?? s.Message
+            },
+            OnError: (s) => new T()
+            {
+                State = StateEnum.Error,
+                Message = ErrorMessage ?? s
+            });
 
+    public static async Task<T> FixFailureHandlerAsync<T, U>(Task<U> Shell,
+        Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFixFailure, string ErrorMessage = null!)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync(Shell, OnSuccess,
+            OnFailure: async (s) => await SuccessHandlerAsync(await OnFixFailure(s), (q) => OnSuccess(s)),
+            OnError: (s) =>
+                Task.FromResult(new T()
+                {
+                    State = StateEnum.Error,
+                    Message = ErrorMessage ?? s
+                }));
 
-    public static T DefaultHandlerAsync<T>(Task<T> shell, Func<T, T> OnSuccess,
-        string FailureMessage = null, string ErrorMessage = null) 
+    public static T FixFailureHandler<T, U>(U Shell, Func<U, T> OnSuccess, Func<U, T> OnFixFailure, string ErrorMessage = null!)
+        where T : IShell, new()
+        where U : IShell
+        => SwitchHandler(Shell, OnSuccess,
+            OnFailure: (s) => SuccessHandler(OnFixFailure(s), (q) => OnSuccess(s)),
+            OnError: (s) =>
+                new T()
+                {
+                    State = StateEnum.Error,
+                    Message = ErrorMessage ?? s
+                });
+
+    public static async Task<T> NotFoundHandlerAsync<T, U>(Func<Task<U>> Shell,
+        Func<U, Task<T>> OnSuccess, Func<Task<T>> OnNotFound, string ErrorMessage = null!)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync<T, U>(await Shell(), OnSuccess,
+            OnFailure: async (s) =>
+            {
+                if (s.Message == NO_RESULT)
+                    return await SuccessHandlerAsync(await OnNotFound(),
+                            async (q) => await OnSuccess(await Shell()));
+                else
+                    return new T()
+                    {
+                        State = StateEnum.Failure,
+                        Message = s.Message
+                    };
+            }, OnError: (s) =>
+                Task.FromResult(new T()
+                {
+                    State = StateEnum.Error,
+                    Message = ErrorMessage ?? s
+                }));
+
+    public static T NotFoundHandler<T, U>(Func<U> Shell,
+        Func<U, T> OnSuccess, Func<T> OnNotFound, string ErrorMessage = null)
+        where T : IShell, new()
+        where U : IShell
+        => SwitchHandler(Shell.Invoke(), OnSuccess,
+            OnFailure: (s) =>
+            {
+                if (s.Message == NO_RESULT)
+                    return SuccessHandler(OnNotFound(),
+                        (s) => OnSuccess(Shell.Invoke()));
+                else
+                    return new T()
+                    {
+                        State = StateEnum.Failure,
+                        Message = s.Message
+                    };
+            }, OnError: (s) =>
+                new T()
+                {
+                    State = StateEnum.Error,
+                    Message = ErrorMessage ?? s
+                });
+
+    public static async Task<T> NotErrorHandlerAsync<T, U>(Task<U> Shell,
+        Func<U, Task<T>> OnNotError, string ErrorMessage = null!)
+        where T : IShell, new()
+        where U : IShell
+        => await SwitchHandlerAsync<T, U>(Shell,
+            OnSuccess: OnNotError,
+            OnFailure: OnNotError,
+            OnError: (s) =>
+            {
+                return Task.FromResult(new T()
+                {
+                    State = StateEnum.Error,
+                    Message = ErrorMessage ?? s
+                });
+            });
+
+    public static T NotErrorHandler<T, U>(U Shell,
+        Func<U, T> OnNotError, string ErrorMessage = null)
+        where T : IShell, new()
+        where U : IShell
+        => SwitchHandler(Shell,
+            OnSuccess: OnNotError,
+            OnFailure: OnNotError,
+            OnError: (s) => new T()
+            {
+                State = Shell.State,
+                Message = ErrorMessage ?? Shell.Message
+            });
+
+    public static async Task<T> AndHandlerAsync<T>(
+        params Func<Task<T>>[] Shells)
         where T : IShell, new()
     {
-        var result = new T();
-
-        try
+        for (int i = 0; i < Shells.Length; i++)
         {
-            var Result = shell.ContinueWith((a) =>
+            var Result = await Shells[i]();
+            switch (Result.State)
             {
-                try
-                {
-                    var s = a.Result;
-                    switch (s.State)
+                case StateEnum.Success:
+                case StateEnum.Failure:
+                    continue;
+                default:
+                    return await Task.FromResult(new T()
                     {
-                        case StateEnum.Success:
-                            result = OnSuccess(s);
-                            break;
-                        case StateEnum.Failure:
-                            result.State = StateEnum.Failure;
-                            result.Message = FailureMessage ?? s.Message;
-                            break;
-                        default:
-                            result.State = StateEnum.Error;
-                            result.Message = ErrorMessage ?? s.Message;
-                            break;
-                    }
-                }
-                catch (Exception e)
-                {
-                    result.State = StateEnum.Error;
-                    result.Message = ErrorMessage ?? e.Message;
-                }
-            
-            });
-        }
-        catch (Exception e)
-        {
-            result.State = StateEnum.Error;
-            result.Message = ErrorMessage ?? e.Message;
+                        State = Result.State,
+                        Message = Result.Message
+                    });
+            }
         }
 
-        return result;
+        return new T() { State = StateEnum.Success };
+    }
+    public static T AndHandler<T, U>(
+        params Func<T>[] Shells)
+        where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = Shells[i].Invoke();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                case StateEnum.Failure:
+                    continue;
+                default:
+                    return new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    };
+            }
+        }
+
+        return new T() { State = StateEnum.Success };
+    }
+
+    public static async Task<T> OrHandlerAsync<T>(
+        params Func<Task<T>>[] Shells)
+       where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = await Shells[i].Invoke();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                case StateEnum.Failure:
+                    return await Task.FromResult(new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    });
+                default:
+                    continue;
+            }
+        }
+
+        return new T() { State = StateEnum.Failure, Message = $"no success" };
+    }
+
+    public static T OrHandler<T>(
+        params Func<T>[] Shells)
+        where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = Shells[i].Invoke();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                case StateEnum.Failure:
+                    return new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    };
+                default:
+                    continue;
+            }
+        }
+
+        return new T() { State = StateEnum.Failure, Message = $"no success" };
+    }
+    public static async Task<T> ForHandlerAsync<T>(
+        int Start, int Count, Func<int, Task<T>> For)
+       where T : IShell, new()
+    {
+        for (int i = 0; i < Count; i++)
+        {
+            var Result = await For(i + Start);
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                case StateEnum.Failure:
+                    continue;
+                default:
+                    return await Task.FromResult(new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    });
+            }
+        }
+
+        return await Task.FromResult(new T() { State = StateEnum.Success });
+    }
+
+    public static T ForHandler<T>(
+        int Start, int Count, Func<int, T> For)
+        where T : IShell, new()
+    {
+        for (int i = 0; i < Count; i++)
+        {
+            var Result = For(i + Start);
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                case StateEnum.Failure:
+                    continue;
+                default:
+                    return new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    };
+            }
+        }
+
+        return new T() { State = StateEnum.Success };
     }
 
 
+    public static async Task<T> IfHandlerAsync<T>(Func<bool> CheckIf, Func<Task<T>> OnTrue, Func<Task<T>> OnFalse)
+       where T : IShell, new()
+    {
+        try
+        {
+            var Result = CheckIf.Invoke();
+
+            if (CheckIf.Invoke())
+                return await OnTrue.Invoke();
+            else
+                return await OnFalse();
+        }
+        catch (Exception e)
+        {
+            return (T)Activator.CreateInstance(typeof(T), StateEnum.Error, Helpers.SerializeException(e));
+        }
+    }
+
+    public static T IfHandler<T>(Func<bool> CheckIf, Func<T> OnTrue, Func<T> OnFalse)
+        where T : IShell, new()
+    {
+        try
+        {
+            var Result = CheckIf.Invoke();
+
+            if (CheckIf.Invoke())
+                return OnTrue.Invoke();
+            else
+                return OnFalse();
+        }
+        catch (Exception e)
+        {
+            return (T)Activator.CreateInstance(typeof(T), StateEnum.Error, Helpers.SerializeException(e));
+        }
+    }
+
+    //public static void ErrorHandlerAsync<U>(U Shell,
+    //    Action<U> Error)
+    //    where U : IShell
+    //{
+    //    if (Shell.State == StateEnum.Error)
+    //    {
+    //        Error.Invoke(Shell);
+    //    }
+    //}
+
+    public static void ErrorHandler<U>(U Shell,
+        Action<U> Error)
+        where U : IShell
+    {
+        if (Shell.State == StateEnum.Error)
+        {
+            Error.Invoke(Shell);
+        }
+    }
+
+    public static T Success<T>(string Message = "")
+        where T : IShell, new()
+        => (T)Activator.CreateInstance(typeof(T), StateEnum.Success, Message);
+
+    public static T Failure<T>(string Message = "")
+        where T : IShell, new()
+        => (T)Activator.CreateInstance(typeof(T), StateEnum.Failure, Message);
+
+    public static T Error<T>(string Message = "")
+        where T : IShell, new()
+        => (T)Activator.CreateInstance(typeof(T), StateEnum.Error, Message);
+
+    public static T NotAuthorized<T>()
+        where T : IShell, new()
+        => Error<T>(NOT_AUTHORIZED);
 
     public Shell() { }
 
@@ -177,73 +559,31 @@ public class Shell
         => this.Message = Message;
 }
 
-[Serializable()]
 public class Shell<T>
-    : Shell, IShell<T>
+    : Shell, IDataShell<T>
+    where T : class, new()
 {
-    /// <summary>
-    /// Gibt das Datenobjekt vom Typ T zurück, wenn erfolgreich, sonst null.
-    /// </summary>
-    public virtual List<T> Data { get; set; } = null!;
-
-    #region Helpers
-    /// <summary>
-    /// Serialisiert eine Exception und ihre InnerException(s) in eine XML-Struktur.
-    /// </summary>
-    /// <param name="ex">Die zu serialisierende Exception.</param>
-    /// <returns>
-    /// Eine XML-String-Repräsentation der Exception. Beinhaltet Elemente für Quelle, Nachricht,
-    /// Stacktrace und alle benutzerdefinierten Daten, die im Data-Property der Exception gespeichert sind.
-    /// Für jede InnerException wird dieser Prozess rekursiv wiederholt, um eine vollständige Hierarchie der Fehlerursache darzustellen.
-    /// Wenn das übergebene Exception-Objekt null ist, wird ein selbstschließendes <exception />-Element zurückgegeben.
-    /// </returns>
-    /// <remarks>
-    /// Diese Methode ist nützlich für Logging-Zwecke oder zur Fehleranalyse, da sie eine detaillierte und strukturierte Darstellung
-    /// von Fehlerinformationen bietet. Durch die Verwendung von XML als Format ist die Ausgabe leicht lesbar und kann
-    /// für die Weiterverarbeitung oder Anzeige in verschiedenen Tools und Umgebungen verwendet werden.
-    /// </remarks>
-    protected static string SerializeException(Exception ex)
-    {
-        if (ex == null) return "<exception />";
-
-        var sb = new StringBuilder();
-        sb.Append("<exception>");
-        sb.AppendFormat("<source>{0}</source>", ex.Source);
-        sb.AppendFormat("<message>{0}</message>", ex.Message);
-        sb.AppendFormat("<stacktrace>{0}</stacktrace>", ex.StackTrace);
-
-        sb.Append("<data>");
-        foreach (DictionaryEntry item in ex.Data)
-        {
-            sb.AppendFormat("<{0}>{1}</{0}>", item.Key, item.Value);
-        }
-        sb.Append("</data>");
-
-        if (ex.InnerException != null)
-        {
-            sb.Append(SerializeException(ex.InnerException));
-        }
-
-        sb.Append("</exception>");
-        return sb.ToString();
-    }
-    #endregion
+    public List<T> Data { get; set; } = [];
 
     public T First()
         => Data.First();
+
+    //public Shell ToShell()
+    //    => new Shell()
+    //    {
+    //        State = this.State,
+    //        Message = this.Message,
+    //    };
+
 
     public Shell()
         : base() { }
 
     public Shell(StateEnum State)
-       : base(State)
-    {
-    }
+        : base(State, null) { }
 
     public Shell(StateEnum State, string Message)
-        : base(State, Message)
-    {
-    }
+        : base(State, Message) { }
 }
 
 /// <summary>
@@ -253,33 +593,23 @@ public class Shell<T>
 public class ResponseShell
     : Shell, IResponseShell
 {
-    /// <summary>
-    /// Behandelt eine ResponseShell basierend auf ihrem Zustand und führt bei Erfolg eine gegebene Funktion aus.
-    /// </summary>
-    /// <param name="shell">Die zu verarbeitende ResponseShell-Instanz.</param>
-    /// <param name="onSuccess">Die Funktion, die bei Erfolg ausgeführt wird und eine ResponseShell zurückgibt.</param>
-    /// <param name="failureMessage">Optionale Nachricht für den Fall eines Fehlschlags.</param>
-    /// <param name="errorMessage">Optionale Nachricht für den Fall eines Fehlers.</param>
-    /// <returns>Eine neue ResponseShell-Instanz basierend auf dem Ergebnis der Verarbeitung.</returns>
-    public static ResponseShell DefaultHandler(ResponseShell shell, Func<ResponseShell> OnSuccess,
-        string FailureMessage = null, string ErrorMessage = null)
-        => Shell.DefaultHandler(shell, OnSuccess, FailureMessage, ErrorMessage);
-
     public ResponseShell()
-    {
-    }
+        : base() { }
 
     public ResponseShell(StateEnum State)
-        : base(State)
-    {
-        //this.Response = Response;
-    }
+        : base(State) { }
 
     public ResponseShell(StateEnum State, string Message)
-        : base(State, Message)
-    {
-    }
+        : base(State, Message) { }
 }
+
+public class PostShell
+    : IPostShell
+{
+    public PostShell()
+        : base() { }
+}
+
 
 /// <summary>
 /// Erweiterung der ResponseShell für Antworten, die ein einzelnes zusätzliches Datenfeld enthalten.
@@ -293,17 +623,35 @@ public class SingleDataResponseShell
     /// </summary>
     public string AdditionalData1 { get; set; } = "";
 
-    public SingleDataResponseShell() { }
+    public static SingleDataResponseShell FromShell(IShell Shell, string additionalData1 = "")
+        => new SingleDataResponseShell(Shell.State, Shell.Message, additionalData1);
 
-    /// <summary>
-    /// Konstruktor zur Initialisierung der Antwort mit einem Zustand und einem zusätzlichen Datenfeld.
-    /// </summary>
-    /// <param name="state">Der Zustand der Antwort.</param>
-    /// <param name="additionalData1">Das zusätzliche Datenfeld.</param>
-    public SingleDataResponseShell(StateEnum state, string additionalData1 = "") : base(state)
+    public SingleDataResponseShell()
+        : base() { }
+
+    public SingleDataResponseShell(StateEnum State)
+        : base(State) { }
+
+    public SingleDataResponseShell(StateEnum State, string Message)
+        : base(State, Message) { }
+
+    public SingleDataResponseShell(StateEnum state, string Message, string additionalData1)
+        : base(state, Message)
     {
         AdditionalData1 = additionalData1;
     }
+}
+
+public class SingleDataPostShell
+    : PostShell, ISingleDataPostShell
+{
+    public string Value1 { get; set; } = "";
+
+    public SingleDataPostShell()
+        : base() { }
+
+    public SingleDataPostShell(string Value1)
+        : this() => this.Value1 = Value1;
 }
 
 /// <summary>
@@ -318,19 +666,46 @@ public class DoubleDataResponseShell
     /// </summary>
     public string AdditionalData2 { get; set; } = "";
 
-    public DoubleDataResponseShell() { }
+    public static DoubleDataResponseShell FromShell(IShell Shell, string additionalData1 = "", string additionalData2 = "")
+        => new DoubleDataResponseShell(Shell.State, Shell.Message, additionalData1, additionalData2);
 
-    /// <summary>
-    /// Konstruktor zur Initialisierung der Antwort mit einem Zustand und zwei zusätzlichen Datenfeldern.
-    /// </summary>
-    /// <param name="state">Der Zustand der Antwort.</param>
-    /// <param name="additionalData1">Das erste zusätzliche Datenfeld.</param>
-    /// <param name="additionalData2">Das zweite zusätzliche Datenfeld.</param>
-    public DoubleDataResponseShell(StateEnum state, string additionalData1 = "", string additionalData2 = "") : base(state, additionalData1)
+    public DoubleDataResponseShell()
+        : base() { }
+
+    public DoubleDataResponseShell(StateEnum State)
+        : base(State) { }
+
+    public DoubleDataResponseShell(StateEnum State, string Message)
+        : base(State, Message) { }
+
+    public DoubleDataResponseShell(StateEnum state, string Message, string additionalData1)
+        : base(state, Message, additionalData1)
+    {
+        AdditionalData1 = additionalData1;
+    }
+
+    public DoubleDataResponseShell(StateEnum state, string Message, string additionalData1, string additionalData2)
+        : base(state, Message, additionalData1)
     {
         AdditionalData2 = additionalData2;
     }
 }
+
+public class DoubleDataPostShell
+    : SingleDataPostShell, IDoubleDataPostShell
+{
+    public string Value2 { get; set; } = "";
+
+    public DoubleDataPostShell()
+        : base() { }
+
+    public DoubleDataPostShell(string Value1)
+        : this() => this.Value1 = Value1;
+
+    public DoubleDataPostShell(string Value1, string Value2)
+        : this(Value1) => this.Value2 = Value2;
+}
+
 
 /// <summary>
 /// Erweiterung der DoubleDataResponseShell für Antworten, die vier zusätzliche Datenfelder enthalten.
@@ -349,19 +724,57 @@ public class QuadDataResponseShell
     /// </summary>
     public string AdditionalData4 { get; set; } = "";
 
-    public QuadDataResponseShell() { }
+    public static QuadDataResponseShell FromShell(IShell Shell, string additionalData1 = "", string additionalData2 = "", string additionalData3 = "", string additionalData4 = "")
+        => new QuadDataResponseShell(Shell.State, Shell.Message, additionalData1, additionalData2, additionalData3, additionalData4);
 
-    /// <summary>
-    /// Konstruktor zur Initialisierung der Antwort mit einem Zustand und vier zusätzlichen Datenfeldern.
-    /// </summary>
-    /// <param name="state">Der Zustand der Antwort.</param>
-    /// <param name="additionalData1">Das erste zusätzliche Datenfeld.</param>
-    /// <param name="additionalData2">Das zweite zusätzliche Datenfeld.</param>
-    /// <param name="additionalData3">Das dritte zusätzliche Datenfeld.</param>
-    /// <param name="additionalData4">Das vierte zusätzliche Datenfeld.</param>
-    public QuadDataResponseShell(StateEnum state, string additionalData1 = "", string additionalData2 = "", string additionalData3 = "", string additionalData4 = "") : base(state, additionalData1, additionalData2)
+    public QuadDataResponseShell()
+        : base() { }
+
+    public QuadDataResponseShell(StateEnum State)
+        : base(State) { }
+
+    public QuadDataResponseShell(StateEnum State, string Message)
+        : base(State, Message) { }
+
+    public QuadDataResponseShell(StateEnum state, string Message, string additionalData1)
+        : base(state, Message, additionalData1)
+    {
+        AdditionalData1 = additionalData1;
+    }
+
+    public QuadDataResponseShell(StateEnum state, string Message, string additionalData1, string additionalData2)
+        : base(state, Message, additionalData1)
+    {
+        AdditionalData2 = additionalData2;
+    }
+
+    public QuadDataResponseShell(StateEnum state, string Message, string additionalData1, string additionalData2, string additionalData3, string additionalData4)
+        : base(state, Message, additionalData1, additionalData2)
     {
         AdditionalData3 = additionalData3;
         AdditionalData4 = additionalData4;
     }
+}
+
+
+public class QuadDataPostShell
+    : DoubleDataPostShell, IPostShell
+{
+    public string Value3 { get; set; } = "";
+
+    public string Value4 { get; set; } = "";
+
+    public QuadDataPostShell()
+        : base() { }
+
+    public QuadDataPostShell(string Value1)
+        : this() => this.Value1 = Value1;
+
+    public QuadDataPostShell(string Value1, string Value2)
+        : this(Value1) => this.Value2 = Value2;
+
+    public QuadDataPostShell(string Value1, string Value2, string Value3)
+        : this(Value1, Value2) => this.Value3 = Value3;
+    public QuadDataPostShell(string Value1, string Value2, string Value3, string Value4)
+        : this(Value1, Value2, Value3) => this.Value4 = Value4;
 }

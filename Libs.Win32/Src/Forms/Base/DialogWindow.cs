@@ -8,15 +8,16 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Nox.Win32.Controls;
+using Nox.Win32.Controls.Base.Super;
 
 namespace Nox.Win32.Forms.Base;
 
-public class DialogWindow 
-    : Super.CustomWindow
+public class DialogWindow(LocaleService LocaleService = null)
+    : Super.Dooper.CustomWindow(LocaleService)
 {
-    private Controls.Base.Super.XButton button1 = new();
-    private Controls.Base.Super.XButton button2 = new();
-    private Controls.Base.Super.XButton button3 = new();
+    private Controls.Base.Super.XButton button1;
+    private Controls.Base.Super.XButton button2; 
+    private Controls.Base.Super.XButton button3; 
 
     public EventHandler<EventArgs> ButtonOk;
     public EventHandler<EventArgs> ButtonCancel;
@@ -49,7 +50,7 @@ public class DialogWindow
             {
                 case MessageBoxButton.OK:
                     ButtonCount = 1;
-                    ButtonText("&Ok");
+                    ButtonText(LocaleService.GetLocalizedString(LocaleKey.BUTTON_OK));
 
                     //_defaultButton = MessageBoxDefaultButton.Button1;
                     button1.IsDefault = true;
@@ -57,7 +58,8 @@ public class DialogWindow
                     break;
                 case MessageBoxButton.OKCancel:
                     ButtonCount = 2;
-                    ButtonText("&Ok", "&Cancel");
+                    ButtonText(LocaleService.GetLocalizedString(LocaleKey.BUTTON_OK),
+                        LocaleService.GetLocalizedString(LocaleKey.BUTTON_CANCEL));
 
                     //_defaultButton = MessageBoxDefaultButton.Button1;
                     SetDefaultButton(1);
@@ -66,7 +68,10 @@ public class DialogWindow
                     break;
                 case MessageBoxButton.YesNoCancel:
                     ButtonCount = 3;
-                    ButtonText("&Yes", "&No", "&Cancel");
+                    ButtonText(
+                        LocaleService.GetLocalizedString(LocaleKey.BUTTON_YES),
+                        LocaleService.GetLocalizedString(LocaleKey.BUTTON_NO),
+                        LocaleService.GetLocalizedString(LocaleKey.BUTTON_CANCEL));
 
                     SetDefaultButton(1);
                     SetCancelButton(3);
@@ -74,7 +79,9 @@ public class DialogWindow
                     break;
                 case MessageBoxButton.YesNo:
                     ButtonCount = 2;
-                    ButtonText("&Yes", "&No");
+                    ButtonText(
+                        LocaleService.GetLocalizedString(LocaleKey.BUTTON_YES),
+                        LocaleService.GetLocalizedString(LocaleKey.BUTTON_NO));
 
                     SetDefaultButton(1);
                     SetCancelButton(2);
@@ -84,7 +91,7 @@ public class DialogWindow
         }
     }
 
-    private Controls.Base.Super.XButton ChooseButton(int DefaultButton)
+    private XButton ChooseButton(int DefaultButton)
     {
         switch (DefaultButton)
         {
@@ -124,7 +131,6 @@ public class DialogWindow
         }
     }
 
-
     private void ButtonText(params string[] text)
     {
         for (int i = 0; i < text.Length; i++)
@@ -162,9 +168,18 @@ public class DialogWindow
 
     }
 
-    public DialogWindow()
-        : base()
+    private void FormDialog_Load(object sender, EventArgs e) =>
+        Align();
+
+    private void FormDialog_Resize(object sender, EventArgs e) =>
+        Align();
+
+
+    protected override void Initialize()
     {
+        base.Initialize();
+
+        button1 = new Controls.Base.Super.XButton(LocaleService);
         button1.Click += (object sender, RoutedEventArgs e) =>
         {
             switch (DialogButton)
@@ -179,6 +194,7 @@ public class DialogWindow
                     break;
             }
         };
+        button2 = new Controls.Base.Super.XButton(LocaleService);
         button2.Click += (object sender, RoutedEventArgs e) =>
         {
             switch (DialogButton)
@@ -192,6 +208,7 @@ public class DialogWindow
                     break;
             }
         };
+        button3 = new Controls.Base.Super.XButton(LocaleService);
         button3.Click += (object sender, RoutedEventArgs e) =>
         {
             switch (DialogButton)
@@ -202,7 +219,7 @@ public class DialogWindow
             }
         };
 
-        StackPanel panel = new StackPanel();
+        var panel = new XWrapPanel();
         panel.Children.Add(button1);
         panel.Children.Add(button2);
         panel.Children.Add(button3);
@@ -213,10 +230,4 @@ public class DialogWindow
 
         Align();
     }
-
-    private void FormDialog_Load(object sender, EventArgs e) =>
-        Align();
-
-    private void FormDialog_Resize(object sender, EventArgs e) =>
-        Align();
 }

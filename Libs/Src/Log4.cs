@@ -1,385 +1,476 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Options;
 using Nox.Cli;
+using Nox.IO;
 using System;
+using System.Collections.Concurrent;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
-namespace Nox
+namespace Nox;
+
+public enum LogLevelEnum
 {
-    public class Log4
-        : ILogger
-    {
-        public enum Log4LevelEnum
+    Fatal,
+    Error,
+    Warning,
+    Info,
+    Debug,
+    Trace,
+}
+/* Structure of LogFile Entry
+ * 
+ * 
+ * 
+ * 
+*/
+
+public class Log4
+{
+    private const int __kb = 1024;
+    private const int __mb = __kb << 10;
+
+    private readonly ReaderWriterLockSlim locker = new();
+    private ConPrint Con1 = new();
+
+    #region Properties
+    public string LogPath { get; protected set; } = null;
+    public string LogFile { get; protected set; } = null;
+    public string LogFileExtension { get; protected set; } = null!;
+
+    public LogLevelEnum LogLevel { get; set; } = LogLevelEnum.Trace;
+
+    public bool EchoEnabled { get; set; } = true;
+    //public bool EchoSingleLine { get; set; } = true;
+    public bool EchoColorized {  get; set; } = true;
+
+    public virtual int LogWriterWaitTimeout { get; } = int.MaxValue;
+
+    public virtual int LogWriterRetryCount { get; } = 3;
+
+    /// <summary>
+    /// size of the GZipBuffer in kilobytes
+    /// </summary>
+    public virtual int GZipBufferSize { get; } = 32;
+
+    /// <summary>
+    /// maximum size of an log file in mega bytes
+    /// </summary>
+    public virtual int MaxLogFileSize { get; } = 100;
+    #endregion
+
+    #region Helpers
+    public static string LogClassName(Type type) =>
+        $"{type.Assembly.GetName().Name}::{type.Name}";
+
+    private static int GetSeverity(LogLevelEnum LogLevel)
+        // 'Syslog Message Severities' from https://tools.ietf.org/html/rfc5424.
+        => LogLevel switch
         {
-            Fatal,
-            Error,
-            Warning,
-            Info,
-            Debug,
-            Trace,
+            LogLevelEnum.Trace => 7,
+            LogLevelEnum.Debug => 7,
+            LogLevelEnum.Info => 6,
+            LogLevelEnum.Warning => 4,
+            LogLevelEnum.Error => 3,
+            LogLevelEnum.Fatal => 2,
+            _ => throw new ArgumentOutOfRangeException(nameof(LogLevel))
+        };
+
+    public static string GetLogLevelText(LogLevelEnum LogLevel)
+        => LogLevel switch
+        {
+            LogLevelEnum.Fatal => "FATAL",
+            LogLevelEnum.Error => "ERROR",
+            LogLevelEnum.Warning => "WARN",
+            LogLevelEnum.Info => "INFO",
+            LogLevelEnum.Debug => "DEBUG",
+            LogLevelEnum.Trace => "TRACE",
+            _ => throw new ArgumentOutOfRangeException(nameof(LogLevel))
+        };
+
+    private ConsoleColors GetLogLevelConsoleColors(LogLevelEnum LogLevel)
+        => LogLevel switch
+        {
+            LogLevelEnum.Fatal => new ConsoleColors(ConsoleColor.White, ConsoleColor.DarkRed),
+            LogLevelEnum.Error => new ConsoleColors(ConsoleColor.Black, ConsoleColor.DarkRed),
+            LogLevelEnum.Warning => new ConsoleColors(ConsoleColor.Yellow, ConsoleColor.Black),
+            LogLevelEnum.Info => new ConsoleColors(ConsoleColor.DarkGreen, ConsoleColor.Black),
+            LogLevelEnum.Debug => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
+            LogLevelEnum.Trace => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
+            _ => new ConsoleColors(null, null)
+        };
+
+    public virtual string BuildLogFilename()
+    {
+        string wcLogPath = (LogPath ?? AppContext.BaseDirectory).AddPS();
+        string wcLogFile = LogFile;
+
+        if (!wcLogFile.EndsWith(LogFileExtension, StringComparison.InvariantCultureIgnoreCase))
+            wcLogFile += LogFileExtension;
+
+        return wcLogPath + wcLogFile;
+    }
+    #endregion
+
+    protected async Task ConsoleWriterAsync(LogLevelEnum LogLevel, DateTime Timestamp, 
+        string Source, 
+        string Text)
+    {
+        await Task.Run(() => { });
+    }
+
+    /// <summary>
+    /// Komprimiert asynchron die angegebene Log-Datei im GZip-Format.
+    /// </summary>
+    /// <param name="filename">Der Pfad der zu komprimierenden Log-Datei.</param>
+    /// <param name="deleteAfter">Gibt an, ob die Originaldatei nach der Kompression gelöscht werden soll.</param>
+    /// <returns>
+    /// Ein Task, der True zurückgibt, wenn die Datei erfolgreich komprimiert wurde, andernfalls False.
+    /// </returns>
+    /// <remarks>
+    /// Die Methode prüft, ob die Datei bereits komprimiert oder versteckt ist, und führt in diesem Fall keine Kompression durch.
+    /// Bei der Kompression wird eine neue Datei mit einem Timestamp im Namen erstellt, um Namenskonflikte zu vermeiden.
+    /// Diese asynchrone Methode ermöglicht eine effizientere Nutzung der Ressourcen, insbesondere bei I/O-Operationen.
+    /// Im Fehlerfall wird False zurückgegeben; es wird empfohlen, zusätzliches Logging für Fehlerbehandlung zu implementieren.
+    /// </remarks>
+    protected async Task<bool> CompressLogFileAsync(string filename, bool deleteAfter)
+    {
+        var fileInfo = new FileInfo(filename);
+        if ((File.GetAttributes(filename) & FileAttributes.Hidden) == FileAttributes.Hidden ||
+            fileInfo.Extension.Equals(".gz", StringComparison.OrdinalIgnoreCase))
+        {
+            // Already compressed or hidden
+            return false;
         }
 
-        private const int GZ_BUFFER_MAX = 2 << 14;
-        public const string Extension = ".log";
-
-        private readonly ReaderWriterLock locker = new();
-
-        private Log4LevelEnum _LogLevel = Log4LevelEnum.Trace;
-        private readonly string _LogFile = "";
-
-        private readonly bool _Echo = false;
-
-        #region Properties
-        public string LogFile { get => _LogFile; }
-
-        public Log4LevelEnum LogLevel { get => _LogLevel; set => _LogLevel = value; }
-
-        public bool Echo => _Echo;
-        #endregion
-
-
-        #region Helpers
-        public static string LogClassName(Type type) =>
-            $"{type.Assembly.GetName().Name}->{type.Name}";
-
-        public static string GetLogLevelText(Log4LevelEnum LogLevel) =>
-            LogLevel switch
-            {
-                Log4LevelEnum.Fatal => "FATAL",
-                Log4LevelEnum.Error => "ERROR",
-                Log4LevelEnum.Warning => "WARN",
-                Log4LevelEnum.Info => "INFO",
-                Log4LevelEnum.Debug => "DEBUG",
-                Log4LevelEnum.Trace => "TRACE",
-                _ => "UNKNWN"
-            };
-        #endregion
-
-        public bool CompressLogFile(string Filename, bool DeleteAfter = false)
+        try
         {
-            var FI = new FileInfo(Filename);
+            byte[] buffer = new byte[GZipBufferSize * __kb]; // Assuming GZipBufferSize is defined elsewhere
 
-            if (((File.GetAttributes(Filename) & FileAttributes.Hidden) != FileAttributes.Hidden) &&
-                (FI.Extension != ".gz"))
+            using (var inFileStream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, buffer.Length, true))
             {
-                try
+                string gzFilename = Path.Combine(fileInfo.DirectoryName,
+                    $"{Path.GetFileNameWithoutExtension(filename)}_" +
+                    $"{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(filename)}.gz");
+
+                using (var outFileStream = new FileStream(gzFilename, FileMode.CreateNew, FileAccess.Write, FileShare.None, buffer.Length, true))
+                using (var gzipStream = new GZipStream(outFileStream, CompressionMode.Compress))
                 {
-                    byte[] Buffer = new byte[GZ_BUFFER_MAX];
-                    using (FileStream inFileStream = new(Filename, FileMode.Open))
+                    int read;
+                    while ((read = await inFileStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
-                        string GZFilename = Path.Combine(FI.DirectoryName,
-                            Path.GetFileNameWithoutExtension(Filename) + "_" +
-                            DateTime.Now.ToString("yyyymmddHHMMss") + Path.GetExtension(Filename) + ".gz");
-
-                        using FileStream outFileStream = new(GZFilename, FileMode.CreateNew);
-                        using GZipStream GZip = new(outFileStream, CompressionMode.Compress);
-                        int Read = inFileStream.Read(Buffer, 0, Buffer.Length);
-
-                        while (Read > 0)
-                        {
-                            GZip.Write(Buffer, 0, Read);
-                            Read = inFileStream.Read(Buffer, 0, Buffer.Length);
-                        }
+                        await gzipStream.WriteAsync(buffer, 0, read);
                     }
-                    if (DeleteAfter) File.Delete(Filename);
-
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
                 }
             }
-            else
-                return false;
+
+            if (deleteAfter)
+            {
+                File.Delete(filename);
+            }
+
+            return true;
         }
-
-        private bool AppendLogFile(string Text, string Filename)
+        catch
         {
-            bool HasError = false; int LoopCount = 0;
+            // Consider logging the exception
+            return false;
+        }
+    }
 
-            do
+    /// <summary>
+    /// Versucht, einen gegebenen Text in eine spezifizierte Log-Datei anzuhängen. 
+    /// Sollte die Datei eine definierte Maximalgröße überschreiten, wird sie komprimiert.
+    /// </summary>
+    /// <param name="Text">Der in die Log-Datei zu schreibende Text.</param>
+    /// <param name="Filename">Der Pfad der Log-Datei, in die der Text geschrieben wird.</param>
+    /// <returns>True, wenn der Schreibvorgang erfolgreich war, andernfalls False.</returns>
+    /// <remarks>
+    /// Die Methode implementiert ein Wiederholungsschema mit exponentiellem Backoff für den Fall, dass Schreibfehler auftreten.
+    /// Ein WriterLock wird verwendet, um Thread-Sicherheit beim Schreiben in die Datei zu gewährleisten.
+    /// </remarks>
+    protected bool CompressLogFile(string Filename, bool DeleteAfter)
+        => AsyncHelper.RunSync(() => CompressLogFileAsync(Filename, DeleteAfter));
+
+    /// <summary>
+    /// Versucht, einen gegebenen Text in eine spezifizierte Log-Datei anzuhängen. 
+    /// Sollte die Datei eine definierte Maximalgröße überschreiten, wird sie komprimiert.
+    /// </summary>
+    /// <param name="Text">Der in die Log-Datei zu schreibende Text.</param>
+    /// <param name="Filename">Der Pfad der Log-Datei, in die der Text geschrieben wird.</param>
+    /// <returns>True, wenn der Schreibvorgang erfolgreich war, andernfalls False.</returns>
+    /// <remarks>
+    /// Die Methode implementiert ein Wiederholungsschema mit exponentiellem Backoff für den Fall, dass Schreibfehler auftreten.
+    /// Ein WriterLock wird verwendet, um Thread-Sicherheit beim Schreiben in die Datei zu gewährleisten.
+    /// </remarks>
+#if NETCOREAPP
+    protected async Task<bool> AppendToLogFileAsync(string Filename, string Text)
+#elif NETFRAMEWORK
+    protected bool AppendToLogFile(string Filename, string Text)
+#endif
+    {
+        int LoopCount = 0;
+        bool HasError = false;
+
+        do
+        {
+            try
+            {
+                locker.EnterWriteLock();
+
+#if NETCOREAPP
+                await File.AppendAllTextAsync(Filename, Text);
+#elif NETFRAMEWORK
+                File.AppendAllText(Filename, Text);
+#endif
+
+                if (new FileInfo(Filename).Length > (MaxLogFileSize * __mb))
+                {
+#if NETCOREAPP
+                    await CompressLogFileAsync(Filename, true);
+#elif NETFRAMEWORK
+                    CompressLogFile(Filename, true);
+#endif
+                }
+
+                HasError = false;
+            }
+            catch
             {
                 try
                 {
-                    locker.AcquireWriterLock(int.MaxValue);
-
-                    using (var OutFile = File.AppendText(Filename))
-                        OutFile.Write(Text);
-
-                    var F = new System.IO.FileInfo(Filename);
-                    if (F.Length > (10 * (2 << 20)))
-                        CompressLogFile(Filename, true);
-
-                    HasError = false;
+                    // for this special error ... write something to the console
+                    Con1.PrintError("a write error occurred while accessing the log file. The file might be locked or access permissions may be insufficient");
                 }
-                catch
+                finally
                 {
                     HasError = true;
                     LoopCount += 1;
 
                     Thread.Sleep((int)(2 * LoopCount));
                 }
-                finally
+            }
+            finally
+            {
+                if (locker.IsWriteLockHeld)
                 {
-                    locker.ReleaseWriterLock();
+                    locker.ExitWriteLock();
                 }
-            } while ((HasError) && (LoopCount < 3));
-
-            return !HasError;
-        }
-
-        public bool WriteLog(string Message, string Filename) =>
-            AppendLogFile($"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n", Filename);
-
-        public string BuildLogFile()
-        {
-            string wcLogPath = AppContext.BaseDirectory; //Environment.CurrentDirectory;
-            if (!wcLogPath.EndsWith(@"\"))
-                wcLogPath += @"\";
-
-            string wcLogFile = _LogFile;
-
-            if (!wcLogFile.EndsWith(Extension, StringComparison.InvariantCultureIgnoreCase))
-                wcLogFile += Extension;
-
-            return wcLogPath + wcLogFile;
-        }
-
-        public static string BuildExceptionString(Exception ex)
-        {
-            var frame = new StackFrame(1, true);
-            var method = frame.GetMethod();
-
-            return $"Exception in {frame.GetFileName()}({frame.GetFileLineNumber()}):{method.Name} - {Helpers.XmlEncode(ex.ToString())}";
-        }
-
-        public bool LogException(Exception ex)
-        {
-            string LogFile = BuildLogFile();
-            if (LogFile.Equals(string.Empty))
-                return false;
-
-            var frame = new StackFrame(1, true);
-            var method = frame.GetMethod();
-            string OriginInfo = $"{frame.GetFileName()}({frame.GetFileLineNumber()}):{method.Name}";
-
-            return WriteLog($"{ex.GetType().Name}\t{OriginInfo}: {ex}", LogFile);
-        }
-
-        /// <summary>
-        /// Schreibt den Methodenaufruf mit Parametern und eine Nachricht ins Log
-        /// </summary>
-        /// <param name="Frame">Die Anzahl an zu überspringenden Frames im StackFrame um die aufrufende Methode ermitteln zu können</param>
-        /// <param name="message">Die Nachricht die ins Log geschrieben werden soll</param>
-        /// <param name="LogLevel"></param>
-        /// <returns>Wahr wenn erfolgreich ins Log geschrieben werden konnte, sonst falsch</returns>
-        private bool LogMethodNative(int Frame, string message, Log4LevelEnum LogLevel)
-        {
-            try
-            {
-                if (LogLevel <= _LogLevel)
-                {
-                    string LogFile = BuildLogFile();
-                    if (LogFile.Equals(string.Empty))
-                        return false;
-
-                    var frame = new StackFrame(Frame, true);
-                    var method = frame.GetMethod();
-                    string param = "";
-                    foreach (var item in method.GetParameters())
-                        param += item.ParameterType.ToString() + " " + item.Name + ", ";
-
-                    if (param.EndsWith(", "))
-                        param = param.Remove(param.Length - 2);
-
-                    string OriginInfo = $"{frame.GetFileName()}({frame.GetFileLineNumber()})";
-                    string Message = $"{Enum.GetName(typeof(Log4LevelEnum), LogLevel)}\t{OriginInfo}\t{method.Name}({param}): {message}";
-
-                    return WriteLog(Message, LogFile);
-                }
-                else
-                    return true;
             }
-            // False im Fehlerfall, diese Methode darf keine Ausnahmen auslösen ...
-            catch (Exception)
-            {
-                return false;
-            }
-        }
+        } while ((HasError) && (LoopCount < LogWriterRetryCount));
 
-        /// <summary>
-        /// Schreibt den Methodenaufruf mit eine Nachricht ins Log
-        /// </summary>
-        /// <param name="Frame">Die Anzahl an zu überspringenden Frames im StackFrame um die aufrufende Methode ermitteln zu können</param>
-        /// <param name="message">Die Nachricht die ins Log geschrieben werden soll</param>
-        /// <param name="LogLevel"></param>
-        /// <param name="WithParameters">Gibt an ob die Parameter mit ins Log aufgenommen werden sollen</param>
-        /// <param name="WithValues">Gibt an ob die Werte mit aufgenommen werden sollen</param>
-        /// <returns></returns>
-        public bool LogMethodNative(int Frame, string message, Log4LevelEnum LogLevel, bool WithParameters = false, params object[] args)
+        return !HasError;
+    }
+
+#if NETCOREAPP
+    /// <summary>
+    /// Versucht, einen gegebenen Text in eine spezifizierte Log-Datei anzuhängen. 
+    /// Sollte die Datei eine definierte Maximalgröße überschreiten, wird sie komprimiert.
+    /// </summary>
+    /// <param name="Text">Der in die Log-Datei zu schreibende Text.</param>
+    /// <param name="Filename">Der Pfad der Log-Datei, in die der Text geschrieben wird.</param>
+    /// <returns>True, wenn der Schreibvorgang erfolgreich war, andernfalls False.</returns>
+    /// <remarks>
+    /// Die Methode implementiert ein Wiederholungsschema mit exponentiellem Backoff für den Fall, dass Schreibfehler auftreten.
+    /// Ein WriterLock wird verwendet, um Thread-Sicherheit beim Schreiben in die Datei zu gewährleisten.
+    /// </remarks>
+    protected bool AppendToLogFile(string Filename, string Text)
+        => AsyncHelper.RunSync(() => AppendToLogFileAsync(Filename, Text));
+#endif
+
+#if NETCOREAPP
+    /// <summary>
+    /// Schreibt asynchron eine Log-Nachricht in die angegebene Datei.
+    /// </summary>
+    /// <param name="Message">Die zu loggende Nachricht.</param>
+    /// <param name="Filename">Der vollständige Pfad der Datei, in die die Nachricht geschrieben werden soll.</param>
+    /// <returns>
+    /// Ein Task, der ein Boolean-Ergebnis zurückgibt. True, wenn die Nachricht erfolgreich geschrieben wurde, andernfalls False.
+    /// </returns>
+    /// <remarks>
+    /// Die Methode formatiert die Log-Nachricht, indem sie den aktuellen Zeitstempel, den Namen der Anwendungsdomäne und die eigentliche Nachricht in einem vordefinierten Format anfügt.
+    /// Das Format der Log-Nachricht ist 'Jahr-Monat-Tag Stunde:Minute:Sekunde <Tab> Anwendungsname <Tab> Nachricht <Neue Zeile>'.
+    /// Diese Methode nutzt die 'AppendToLogFileAsync'-Methode, um die formatierte Nachricht in die angegebene Datei anzuhängen.
+    /// Es wird empfohlen, diese Methode innerhalb eines Try-Catch-Blocks aufzurufen, um potenzielle Ausnahmen bei der Dateioperation zu behandeln.
+    /// </remarks>
+
+    public virtual async Task<bool> WriteLogMessageAsync(string Filename, string Message)
+        => await AppendToLogFileAsync($"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n", Filename);
+#endif
+
+    /// <summary>
+    /// Schreibt synchron eine Log-Nachricht in die angegebene Datei.
+    /// </summary>
+    /// <param name="Message">Die zu loggende Nachricht.</param>
+    /// <param name="Filename">Der vollständige Pfad der Datei, in die die Nachricht geschrieben werden soll.</param>
+    /// <returns>
+    /// Ein Task, der ein Boolean-Ergebnis zurückgibt. True, wenn die Nachricht erfolgreich geschrieben wurde, andernfalls False.
+    /// </returns>
+    /// <remarks>
+    /// Die Methode formatiert die Log-Nachricht, indem sie den aktuellen Zeitstempel, den Namen der Anwendungsdomäne und die eigentliche Nachricht in einem vordefinierten Format anfügt.
+    /// Das Format der Log-Nachricht ist 'Jahr-Monat-Tag Stunde:Minute:Sekunde <Tab> Anwendungsname <Tab> Nachricht <Neue Zeile>'.
+    /// Diese Methode nutzt die 'AppendToLogFileAsync'-Methode, um die formatierte Nachricht in die angegebene Datei anzuhängen.
+    /// Es wird empfohlen, diese Methode innerhalb eines Try-Catch-Blocks aufzurufen, um potenzielle Ausnahmen bei der Dateioperation zu behandeln.
+    /// </remarks>
+
+    public virtual bool WriteLogMessage(string Filename, string Message)
+        => AppendToLogFile(Filename, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n");
+
+    #region Log Methods
+    public void Echo(LogLevelEnum LogLevel, string timestamp, string Message)
+    {
+        if (EchoEnabled)
         {
-            try
-            {
-                if (LogLevel <= _LogLevel)
-                {
-                    string LogFile = BuildLogFile();
+            Console.ResetColor();
+            Console.Write(timestamp);
 
-                    // Logdatei konnte nicht ermittelt werden, raus !
-                    if (LogFile.Equals(string.Empty))
-                        return false;
+            Console.Write(" [");
+            if (EchoColorized)
+                GetLogLevelConsoleColors(LogLevel).Set();
 
-                    // Stackframe ermitteln
-                    var frame = new StackFrame(Frame, true);
+            Console.Write(GetLogLevelText(LogLevel));
 
-                    // Methode extrahieren
-                    var method = frame.GetMethod();
+            if (EchoColorized)
+                Console.ResetColor();
 
-                    var LogMessage = new StringBuilder();
-
-                    // Loglevel
-                    LogMessage.Append($"{Enum.GetName(typeof(Log4LevelEnum), LogLevel)}\t");
-
-                    // Origin
-                    LogMessage.Append($"{frame.GetFileName()}({frame.GetFileLineNumber()})\t");
-
-                    // Methode
-                    LogMessage.Append($"{method.Name}(");
-
-                    if (WithParameters)
-                    {
-                        // Parameter
-                        var Parameters = method.GetParameters();
-                        for (int i = 0; i < Parameters.Length; i++)
-                        {
-                            var item = Parameters[i];
-                            if (i != 0)
-                                LogMessage.Append(", ");
-
-                            LogMessage.Append($"{item.ParameterType.ToString()} {item.Name}");
-
-                            if (i < args.Length)
-                            {
-                                if (args != null)
-                                    try
-                                    {
-                                        var arg = args[i];
-                                        if (arg != null)
-                                            LogMessage.Append($" = {arg.ToString()}");
-                                        else
-                                            LogMessage.Append($" = <Null>");
-                                    }
-                                    catch (Exception)
-                                    {
-                                        // ignore
-                                        LogMessage.Append($" -_-");
-                                    }
-                            }
-                            else
-                                LogMessage.Append($" -_-");
-                        }
-                    }
-
-                    LogMessage.Append(")\t");
-
-                    // noch die Nachricht und los gehts ... 
-                    LogMessage.Append(message);
-
-                    return WriteLog(LogMessage.ToString(), LogFile);
-                }
-                else
-                    return true;
-            }
-            // False im Fehlerfall, diese Methode darf keine Ausnahmen auslösen ...
-            catch (Exception)
-            {
-                return false;
-            }
+            Console.Write(" ] ");
+            Console.Write(Message);
         }
+    }
 
-        public bool LogMethod(string message, Log4LevelEnum LogLevel) =>
-            LogMethodNative(2, message, LogLevel);
+    //public bool LogMethod(LogLevelEnum LogLevel, object[] args,
+    //    [CallerFilePath] string sourceFilePath = "",
+    //    [CallerLineNumber] int sourceLineNumber = 0,
+    //    [CallerMemberName] string memberName = "")
+    //{
+    //    try
+    //    {
+    //        if (this.LogLevel > LogLevel)
+    //            return true;
 
-        public bool LogMethod(Log4LevelEnum LogLevel, params object[] args) =>
-            LogMethodNative(2, "", LogLevel, true, args);
+    //        string LogFile = BuildLogFilename();
 
-        public bool LogMethod3(string message, Log4LevelEnum LogLevel) =>
-            LogMethodNative(3, message, LogLevel);
+    //        string timestamp = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
 
-        public bool LogMethod3(Log4LevelEnum LogLevel, params object[] args) =>
-            LogMethodNative(3, "", LogLevel, true, args);
+    //        string LogLevelText = GetLogLevelText(LogLevel);
+    //        string Origin = $"{Path.GetFileName(sourceFilePath)}({sourceLineNumber}):{memberName}";
 
-        public bool LogMessageNative(int Frame, string message, Log4LevelEnum LogLevel)
+    //        StringBuilder LogBuilder = new();
+    //        LogBuilder.Append($"{timestamp}\t{LogLevelText}\t{Origin}");
+
+    //        if (args != null)
+    //        {
+    //            LogBuilder.Append("[");
+    //            for (int i = 0; i < args.Length; i++)
+    //            {
+    //                if (i != 0)
+    //                    LogBuilder.Append(", ");
+
+    //                try
+    //                {
+    //                    if (args[i] != null)
+    //                        LogBuilder.Append($"{args[i].ToString()}");
+    //                    else
+    //                        LogBuilder.Append($"<Null>");
+    //                }
+    //                catch (Exception)
+    //                {
+    //                    // ignore
+    //                    LogBuilder.Append("{..}");
+    //                }
+    //            }
+    //            LogBuilder.Append("]");
+    //        }
+
+    //        if (Message != null)
+    //            LogBuilder.Append($"\t{Message}");
+
+    //        string LogMessage = LogBuilder.ToString();
+    //        Echo(LogLevel, timestamp, Origin, LogMessage);
+    //        return WriteLogMessage(LogFile, LogMessage.ToString());
+    //    }
+    //    // False im Fehlerfall, diese Methode darf keine Ausnahmen auslösen ...
+    //    catch (Exception)
+    //    {
+    //        return false;
+    //    }
+    //}
+
+    public bool LogMessage(LogLevelEnum LogLevel, string Message)
+    {
+        try
         {
-            string LogFile = BuildLogFile();
-            if (LogFile.Equals(string.Empty))
-                return false;
-
-            if (LogLevel <= _LogLevel)
-            {
-                var frame = new StackFrame(Frame, true);
-                var method = frame.GetMethod();
-                string OriginInfo = $"{frame.GetFileName()}({frame.GetFileLineNumber()}):{method.Name}";
-                string Message = $"{Enum.GetName(typeof(Log4LevelEnum), LogLevel)}\t{OriginInfo}: {message}";
-
-                return WriteLog(Message, LogFile);
-            }
-            else
+            if (this.LogLevel > LogLevel)
                 return true;
+
+            string LogFile = BuildLogFilename();
+
+            // Logdatei konnte nicht ermittelt werden, raus !
+            if (string.IsNullOrWhiteSpace(LogFile))
+                return false;
+
+            string timestamp = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+
+            string LogLevelText = GetLogLevelText(LogLevel);
+            
+            string LogMessage = $"{timestamp}\t{LogLevelText}\t{Message}";
+            
+            Echo(LogLevel, timestamp, LogMessage);
+            return WriteLogMessage(LogFile, LogMessage.ToString());
         }
 
-        public bool LogMessage(string message, Log4LevelEnum LogLevel) =>
-            LogMessageNative(2, message, LogLevel);
-
-        public bool LogMessage(string message, Log4LevelEnum LogLevel, params object[] args) =>
-            LogMessageNative(2, string.Format(message, args), LogLevel);
-
-        public bool LogFunc(Func<string> action, Log4LevelEnum LogLevel)
+        catch (Exception)
         {
-            if (LogLevel <= _LogLevel)
-            {
-                string Message = action?.Invoke();
-
-                return LogMessageNative(2, Message, LogLevel);
-            }
-            else
-            {
-                return true;
-            }
+            return false;
         }
+    }
 
-        public bool TestLogWriteable(string Filename) => AppendLogFile("", Filename);
+    //public bool LogMessage(LogLevelEnum LogLevel,
+    //    [CallerFilePath] string sourceFilePath = "",
+    //    [CallerLineNumber] int sourceLineNumber = 0,
+    //    [CallerMemberName] string memberName = "") 
+    //    => LogMessage(LogLevel, "", null, sourceFilePath, sourceLineNumber, memberName);
 
-        public static Log4 Create(ILogger logger = null, Log4LevelEnum LogLevel = Log4LevelEnum.Trace, int SkipFrames = 1) =>
-            new($"{(new StackFrame(SkipFrames)).GetMethod().DeclaringType.FullName}.log");
+    public bool LogException(LogLevelEnum LogLevel, Exception ex)
+        => LogMessage(LogLevel, Helpers.SerializeException(ex));
+    #endregion
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+    private void ConfigureLogger(IConfiguration configuration)
+    {
+        LogFileExtension = configuration["Log4:Extension"] ?? "log";
+        LogPath = configuration?["Log4:LogPath"]
+            // assume current directory by default
+            ?? LogPath;
+        LogFile = configuration?["Log4:LogFile"]
+            // try to get calling assembly from stacktrace if not set
+            ?? $"{new StackFrame(1).GetMethod().DeclaringType.FullName}.log";
+
+#if NETCOREAPP
+        if (Enum.TryParse(typeof(LogLevelEnum), configuration["Log4:Level"], out object level))
+#elif NETFRAMEWORK
+        if (Enum.TryParse<LogLevelEnum>(configuration["Log4:Level"], out LogLevelEnum level))
+#endif
         {
-            throw new NotImplementedException();
+            LogLevel = (LogLevelEnum)level;
         }
 
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            throw new NotImplementedException();
-        }
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
-        {
-            throw new NotImplementedException();
-        }
+    }
 
-        public Log4(string LogFile, bool Echo, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
-            : this(LogFile, LogLevel)
-            => this._Echo = Echo;
 
-        public Log4(string LogFile, Log4LevelEnum LogLevel = Log4LevelEnum.Trace)
-        {
-            this._LogFile = LogFile;
-            this._LogLevel = LogLevel;
-        }
+    public Log4(IConfiguration configuration)
+    {
+        
     }
 }

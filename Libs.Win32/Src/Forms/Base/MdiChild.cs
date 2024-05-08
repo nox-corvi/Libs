@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Nox.Win32.Forms.Base
 {
-    public class MdiChild : Super.CustomWindow
+    public class MdiChild : Super.Dooper.CustomWindow
     {
         #region Form Extensions
         //public void BindToBase()

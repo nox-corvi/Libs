@@ -21,7 +21,7 @@ namespace Nox.Win32.CI
             {
                 if (_Process1 == null)
                 {
-                    _logger?.LogMessage("create process handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create process handler");
                     _Process1 = new ProcessHandler(this, _logger);
                 }
                 return _Process1 as ProcessHandler;
@@ -34,7 +34,7 @@ namespace Nox.Win32.CI
             {
                 if (_Security1 == null)
                 {
-                    _logger?.LogMessage("create security2 handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create security2 handler");
                     _Security1 = new SecurityHandler(this, _logger);
                 }
                 return _Security1 as SecurityHandler;
@@ -59,7 +59,7 @@ namespace Nox.Win32.CI
             {
                 if (_Registry1 == null)
                 {
-                    _logger?.LogMessage("create registry1 handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create registry1 handler");
                     _Registry1 = new RegistryHandler(this, _logger);
                 }
                 return _Registry1;
@@ -72,7 +72,7 @@ namespace Nox.Win32.CI
             {
                 if (_WinUpdateControl == null)
                 {
-                    _logger?.LogMessage("create winupdatecontrol handler", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create winupdatecontrol handler");
                     _WinUpdateControl = new WinUpdateControl(this, _logger);
                 }
 
@@ -86,7 +86,7 @@ namespace Nox.Win32.CI
             {
                 if (_Helpers1 == null)
                 {
-                    _logger?.LogMessage("create helper2 object", Log4.Log4LevelEnum.Info);
+                    _logger?.LogMessage(LogLevelEnum.Info, "create helper2 object");
                     _Helpers1 = new Helpers(this, _logger);
                 }
 

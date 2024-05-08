@@ -1,0 +1,27 @@
+﻿@namespace Nox.Web.Components
+
+<div class="@($"loading-indicator {Visibility}")">
+    <div class="spinner"></div>
+</div>
+
+@code {
+    private string Visibility { get; set; } = "hidden";
+
+    public void Show()
+    {
+        Visibility = "visible";
+        InvokeAsync(() =>
+            {
+                StateHasChanged();
+            });
+    }
+
+    public void Hide()
+    {
+        Visibility = "hidden";
+        InvokeAsync(() =>
+            {
+                StateHasChanged();
+            });
+    }
+}

@@ -45,7 +45,7 @@ namespace Nox.CI
 #endif
             using (var content = await response.Content.ReadAsStreamAsync())
             {
-                _logger?.LogMessage($"read content stream", Log4.Log4LevelEnum.Trace);
+                _logger?.LogMessage(LogLevelEnum.Trace, $"read content stream");
                 while ((read = content.Read(data, 0, MAX_BLOCK_SIZE)) > 0)
                 {
                     outStream.Write(data, 0, read);
@@ -69,8 +69,7 @@ namespace Nox.CI
         private int GetFile(string Url, NetworkCredential credentials, Stream outStream)
         {
             // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Url, credentials, outStream);
-            _logger?.LogMessage($"get web file to stream: {Url ?? ""}", Log4.Log4LevelEnum.Info);
+            _logger?.LogMessage(LogLevelEnum.Info, $"get web file to stream");
 
             try
             {
@@ -92,7 +91,7 @@ namespace Nox.CI
                         stream.Wait();
                         var content = stream.Result;
 
-                        _logger?.LogMessage($"read content stream", Log4.Log4LevelEnum.Trace);
+                        _logger?.LogMessage(LogLevelEnum.Trace, $"read content stream");
                         while ((read = content.Read(data, 0, MAX_BLOCK_SIZE)) > 0)
                         {
                             outStream.Write(data, 0, read);
@@ -101,7 +100,7 @@ namespace Nox.CI
                     }
                 }
 
-                _logger?.LogMessage($"{total} bytes read", Log4.Log4LevelEnum.Trace);
+                _logger?.LogMessage(LogLevelEnum.Trace, $"{total} bytes read");
 
                 return total;
             }
@@ -116,9 +115,7 @@ namespace Nox.CI
 
         private int GetFile(string Url, NetworkCredential credentials, out string Data)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Url, credentials);
-            _logger?.LogMessage($"get web file to string: {Url ?? ""}", Log4.Log4LevelEnum.Info);
+            _logger?.LogMessage(LogLevelEnum.Info, $"get web file to string: {Url ?? ""}");
 
             Data = "";
             try
@@ -127,12 +124,12 @@ namespace Nox.CI
                 {
                     int FileLength = GetFile(Url, credentials, (Stream)memoryStream);
 
-                    _logger?.LogMessage($"copy stream to string", Log4.Log4LevelEnum.Trace);
+                    _logger?.LogMessage(LogLevelEnum.Trace, $"copy stream to string");
                     memoryStream.Position = 0;
                     using (var streamReader = new StreamReader(memoryStream, true))
                         Data = streamReader.ReadToEnd();
 
-                    _logger?.LogMessage($"{FileLength} bytes read", Log4.Log4LevelEnum.Trace);
+                    _logger?.LogMessage(LogLevelEnum.Trace, $"{FileLength} bytes read");
                     return FileLength;
                 }
             }
@@ -147,9 +144,7 @@ namespace Nox.CI
 
         private int GetFile(string Url, NetworkCredential credentials, string filename)
         {
-            // Log
-            _logger?.LogMethod(Log4.Log4LevelEnum.Trace, Url, credentials);
-            _logger?.LogMessage($"get web file to file: {Url ?? ""}", Log4.Log4LevelEnum.Info);
+            _logger?.LogMessage(LogLevelEnum.Info, $"get web file to file: {Url ?? ""}");
 
             try
             {

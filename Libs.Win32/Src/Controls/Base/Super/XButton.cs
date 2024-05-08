@@ -10,12 +10,22 @@ using System.Windows.Media;
 
 namespace Nox.Win32.Controls.Base.Super
 {
-    public class XButton 
+    public class XButton
         : Button
     {
-        public XButton()
+        private readonly LocaleService _localeService;
+
+        public XButton() 
+            : this(null)
+        {
+
+        }
+
+        public XButton(LocaleService localeService)
             : base()
         {
+            _localeService = localeService;
+            Content = this.Name;
         }
     }
 }
