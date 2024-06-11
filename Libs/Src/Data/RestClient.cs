@@ -6,12 +6,14 @@ using System.Collections.Generic;
 using Nox.WebApi;
 using Newtonsoft.Json;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace Nox.Data;
 
 public class RestClient
 {
     private readonly HttpClient _httpClient;
+    private readonly IXLog _Logger;
 
     public string BaseURL { get; } = null!;
 
@@ -27,11 +29,15 @@ public class RestClient
 
             var response = await _httpClient.SendAsync(request);
 
-
             response.EnsureSuccessStatusCode();
             var data = await response.Content.ReadAsStringAsync();
 
             return await Task.Run(() => Newtonsoft.Json.JsonConvert.DeserializeObject<T>(data)!);
+        }
+        catch (Exception e)
+        {
+            _Logger.LogException(e, DateTime.Now);
+            throw;
         }
         finally
         {
@@ -46,6 +52,8 @@ public class RestClient
     public async Task<T> RestPostAsync<T>(string Path, IPostShell Content, params KeyValue[] CustomHeaders)
         where T : class
     {
+        _Logger?.LogTrace(Path, DateTime.Now);
+
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, Path)
@@ -61,7 +69,12 @@ public class RestClient
             response.EnsureSuccessStatusCode();
             var data = await response.Content.ReadAsStringAsync();
 
-            return await Task.Run(() => Newtonsoft.Json.JsonConvert.DeserializeObject<T>(data)!);
+            return await Task.Run(() => JsonConvert.DeserializeObject<T>(data)!);
+        }
+        catch (Exception e)
+        {
+            _Logger.LogException(e, DateTime.Now);
+            throw;
         }
         finally
         {
@@ -74,12 +87,14 @@ public class RestClient
         where T : class
         => AsyncHelper.RunSync<T>(async () => await RestPostAsync<T>(Path, content, CustomHeaders));
 
-    public RestClient(string baseURL)
+    public RestClient(string BaseURL, IXLog Logger)
     {
-        this.BaseURL = baseURL;
+        this.BaseURL = BaseURL;
+        
+        this._Logger = Logger;
         _httpClient = new()
         {
-            BaseAddress = new Uri(baseURL),
+            BaseAddress = new Uri(BaseURL),
             Timeout = TimeSpan.FromSeconds(30)
         };
 

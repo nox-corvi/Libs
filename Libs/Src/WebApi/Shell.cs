@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,6 +30,58 @@ public class KeyValue(string key = "", string value = "")
     public override string ToString()
         => $"{Key}:{Value ?? "<null>"}";
 }
+
+public interface IConfig
+{
+    ILogger Logger { get; }    
+
+    string URL { get; }
+}
+
+public class Config
+    : IConfig
+{
+    private readonly ILogger _Logger;
+    private readonly string _URL;
+
+    public ILogger Logger { get => _Logger; }
+    public string URL { get => _URL; }
+
+    public Config(ILogger Logger, string URL)
+    {
+        this._Logger = Logger;
+        this._URL = URL;
+    }
+}
+
+public class TokenConfig
+    : Config
+{
+    private readonly KeyValue _Token;
+
+    public KeyValue Token { get => _Token; }
+
+    public TokenConfig(ILogger Logger, string URL)
+        : base(Logger, URL) { }
+
+    public TokenConfig(ILogger Logger, string URL, string Token)
+        : base(Logger, URL) => this._Token = new KeyValue("Token", Token);
+}
+
+public class TokenSecretConfig
+    : Nox.WebApi.TokenConfig
+{
+    private readonly KeyValue _Secret;
+
+    public KeyValue Secret { get => _Secret; }
+
+    public TokenSecretConfig(ILogger Logger, string URL)
+        : base(Logger, URL) { }
+
+    public TokenSecretConfig(ILogger Logger, string URL, string Token, string Secret)
+        : base(Logger, URL, Token) => this._Secret = new KeyValue("Secret", Secret);
+}
+
 
 #region Interface
 public interface IShell
@@ -381,6 +434,51 @@ public class Shell
         return new T() { State = StateEnum.Success };
     }
 
+    public static async Task<T> SuccessAndHandlerAsync<T>(
+       params Func<Task<T>>[] Shells)
+       where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = await Shells[i]();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                    continue;
+                default:
+                    return await Task.FromResult(new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    });
+            }
+        }
+
+        return new T() { State = StateEnum.Success };
+    }
+    public static T SuccessAndHandler<T, U>(
+        params Func<T>[] Shells)
+        where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = Shells[i].Invoke();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                    continue;
+                default:
+                    return new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    };
+            }
+        }
+
+        return new T() { State = StateEnum.Success };
+    }
+
     public static async Task<T> OrHandlerAsync<T>(
         params Func<Task<T>>[] Shells)
        where T : IShell, new()
@@ -428,6 +526,53 @@ public class Shell
 
         return new T() { State = StateEnum.Failure, Message = $"no success" };
     }
+
+    public static async Task<T> SuccessOrHandlerAsync<T>(
+        params Func<Task<T>>[] Shells)
+       where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = await Shells[i].Invoke();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                    return await Task.FromResult(new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    });
+                default:
+                    continue;
+            }
+        }
+
+        return new T() { State = StateEnum.Failure, Message = $"no success" };
+    }
+
+    public static T SuccessOrHandler<T>(
+        params Func<T>[] Shells)
+        where T : IShell, new()
+    {
+        for (int i = 0; i < Shells.Length; i++)
+        {
+            var Result = Shells[i].Invoke();
+            switch (Result.State)
+            {
+                case StateEnum.Success:
+                    return new T()
+                    {
+                        State = Result.State,
+                        Message = Result.Message
+                    };
+                default:
+                    continue;
+            }
+        }
+
+        return new T() { State = StateEnum.Failure, Message = $"no success" };
+    }
+
     public static async Task<T> ForHandlerAsync<T>(
         int Start, int Count, Func<int, Task<T>> For)
        where T : IShell, new()

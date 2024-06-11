@@ -20,7 +20,7 @@ using System.Xml.Linq;
 
 namespace Nox;
 
-public enum LogLevelEnum
+public enum Log4LevelEnum
 {
     Fatal,
     Error,
@@ -49,7 +49,7 @@ public class Log4
     public string LogFile { get; protected set; } = null;
     public string LogFileExtension { get; protected set; } = null!;
 
-    public LogLevelEnum LogLevel { get; set; } = LogLevelEnum.Trace;
+    public Log4LevelEnum LogLevel { get; set; } = Log4LevelEnum.Trace;
 
     public bool EchoEnabled { get; set; } = true;
     //public bool EchoSingleLine { get; set; } = true;
@@ -74,40 +74,40 @@ public class Log4
     public static string LogClassName(Type type) =>
         $"{type.Assembly.GetName().Name}::{type.Name}";
 
-    private static int GetSeverity(LogLevelEnum LogLevel)
+    private static int GetSeverity(Log4LevelEnum LogLevel)
         // 'Syslog Message Severities' from https://tools.ietf.org/html/rfc5424.
         => LogLevel switch
         {
-            LogLevelEnum.Trace => 7,
-            LogLevelEnum.Debug => 7,
-            LogLevelEnum.Info => 6,
-            LogLevelEnum.Warning => 4,
-            LogLevelEnum.Error => 3,
-            LogLevelEnum.Fatal => 2,
+            Log4LevelEnum.Trace => 7,
+            Log4LevelEnum.Debug => 7,
+            Log4LevelEnum.Info => 6,
+            Log4LevelEnum.Warning => 4,
+            Log4LevelEnum.Error => 3,
+            Log4LevelEnum.Fatal => 2,
             _ => throw new ArgumentOutOfRangeException(nameof(LogLevel))
         };
 
-    public static string GetLogLevelText(LogLevelEnum LogLevel)
+    public static string GetLogLevelText(Log4LevelEnum LogLevel)
         => LogLevel switch
         {
-            LogLevelEnum.Fatal => "FATAL",
-            LogLevelEnum.Error => "ERROR",
-            LogLevelEnum.Warning => "WARN",
-            LogLevelEnum.Info => "INFO",
-            LogLevelEnum.Debug => "DEBUG",
-            LogLevelEnum.Trace => "TRACE",
+            Log4LevelEnum.Fatal => "FATAL",
+            Log4LevelEnum.Error => "ERROR",
+            Log4LevelEnum.Warning => "WARN",
+            Log4LevelEnum.Info => "INFO",
+            Log4LevelEnum.Debug => "DEBUG",
+            Log4LevelEnum.Trace => "TRACE",
             _ => throw new ArgumentOutOfRangeException(nameof(LogLevel))
         };
 
-    private ConsoleColors GetLogLevelConsoleColors(LogLevelEnum LogLevel)
+    private ConsoleColors GetLogLevelConsoleColors(Log4LevelEnum LogLevel)
         => LogLevel switch
         {
-            LogLevelEnum.Fatal => new ConsoleColors(ConsoleColor.White, ConsoleColor.DarkRed),
-            LogLevelEnum.Error => new ConsoleColors(ConsoleColor.Black, ConsoleColor.DarkRed),
-            LogLevelEnum.Warning => new ConsoleColors(ConsoleColor.Yellow, ConsoleColor.Black),
-            LogLevelEnum.Info => new ConsoleColors(ConsoleColor.DarkGreen, ConsoleColor.Black),
-            LogLevelEnum.Debug => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
-            LogLevelEnum.Trace => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
+            Log4LevelEnum.Fatal => new ConsoleColors(ConsoleColor.White, ConsoleColor.DarkRed),
+            Log4LevelEnum.Error => new ConsoleColors(ConsoleColor.Black, ConsoleColor.DarkRed),
+            Log4LevelEnum.Warning => new ConsoleColors(ConsoleColor.Yellow, ConsoleColor.Black),
+            Log4LevelEnum.Info => new ConsoleColors(ConsoleColor.DarkGreen, ConsoleColor.Black),
+            Log4LevelEnum.Debug => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
+            Log4LevelEnum.Trace => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
             _ => new ConsoleColors(null, null)
         };
 
@@ -123,7 +123,7 @@ public class Log4
     }
     #endregion
 
-    protected async Task ConsoleWriterAsync(LogLevelEnum LogLevel, DateTime Timestamp, 
+    protected async Task ConsoleWriterAsync(Log4LevelEnum LogLevel, DateTime Timestamp, 
         string Source, 
         string Text)
     {
@@ -328,7 +328,7 @@ public class Log4
         => AppendToLogFile(Filename, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{AppDomain.CurrentDomain.FriendlyName}\t{Message}\r\n");
 
     #region Log Methods
-    public void Echo(LogLevelEnum LogLevel, string timestamp, string Message)
+    public void Echo(Log4LevelEnum LogLevel, string timestamp, string Message)
     {
         if (EchoEnabled)
         {
@@ -407,7 +407,7 @@ public class Log4
     //    }
     //}
 
-    public bool LogMessage(LogLevelEnum LogLevel, string Message)
+    public bool LogMessage(Log4LevelEnum LogLevel, string Message)
     {
         try
         {
@@ -442,7 +442,7 @@ public class Log4
     //    [CallerMemberName] string memberName = "") 
     //    => LogMessage(LogLevel, "", null, sourceFilePath, sourceLineNumber, memberName);
 
-    public bool LogException(LogLevelEnum LogLevel, Exception ex)
+    public bool LogException(Log4LevelEnum LogLevel, Exception ex)
         => LogMessage(LogLevel, Helpers.SerializeException(ex));
     #endregion
 
@@ -457,12 +457,12 @@ public class Log4
             ?? $"{new StackFrame(1).GetMethod().DeclaringType.FullName}.log";
 
 #if NETCOREAPP
-        if (Enum.TryParse(typeof(LogLevelEnum), configuration["Log4:Level"], out object level))
+        if (Enum.TryParse(typeof(Log4LevelEnum), configuration["Log4:Level"], out object level))
 #elif NETFRAMEWORK
-        if (Enum.TryParse<LogLevelEnum>(configuration["Log4:Level"], out LogLevelEnum level))
+        if (Enum.TryParse<Log4LevelEnum>(configuration["Log4:Level"], out Log4LevelEnum level))
 #endif
         {
-            LogLevel = (LogLevelEnum)level;
+            LogLevel = (Log4LevelEnum)level;
         }
 
 
