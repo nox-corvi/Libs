@@ -1,4 +1,5 @@
-﻿using Nox.CI;
+﻿using Microsoft.Extensions.Logging;
+using Nox.CI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +8,12 @@ using System.Threading.Tasks;
 
 namespace Nox.Win32.CI
 {
-    public class WinUpdateControl
-        : CIBase
+    public class WinUpdateControl(Nox.CI.CI CI, ILogger Logger)
+        : CIBase(CI, Logger)
     {
-        public WinUpdateControl(Nox.CI.CI CI)
-            : base(CI) { }
-
-        public WinUpdateControl(Nox.CI.CI CI, Log4 logger)
-            : base(CI, logger) { }
+       
+        // DI-Constructor
+        public WinUpdateControl(Nox.CI.CI CI, ILogger<WinUpdateControl> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 }

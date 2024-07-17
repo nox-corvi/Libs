@@ -1,4 +1,5 @@
-﻿using Nox;
+﻿using Microsoft.Extensions.Logging;
+using Nox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace Nox.Win32.CI
 {
-    public class CI
-        : Nox.CI.CI
+    public class CI(ILogger Logger)
+        : Nox.CI.CI(Logger)
     {
         protected RegistryHandler _Registry1 = null!;
         protected WinUpdateControl _WinUpdateControl = null!;
@@ -21,8 +22,8 @@ namespace Nox.Win32.CI
             {
                 if (_Process1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create process handler");
-                    _Process1 = new ProcessHandler(this, _logger);
+                    Logger?.LogInformation("create process handler");
+                    _Process1 = new ProcessHandler(this, Logger);
                 }
                 return _Process1 as ProcessHandler;
             }
@@ -34,8 +35,8 @@ namespace Nox.Win32.CI
             {
                 if (_Security1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create security2 handler");
-                    _Security1 = new SecurityHandler(this, _logger);
+                    Logger?.LogInformation("create security2 handler");
+                    _Security1 = new SecurityHandler(this, Logger);
                 }
                 return _Security1 as SecurityHandler;
             }
@@ -59,8 +60,8 @@ namespace Nox.Win32.CI
             {
                 if (_Registry1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create registry1 handler");
-                    _Registry1 = new RegistryHandler(this, _logger);
+                    Logger?.LogInformation("create registry1 handler");
+                    _Registry1 = new RegistryHandler(this, Logger);
                 }
                 return _Registry1;
             }
@@ -72,8 +73,8 @@ namespace Nox.Win32.CI
             {
                 if (_WinUpdateControl == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create winupdatecontrol handler");
-                    _WinUpdateControl = new WinUpdateControl(this, _logger);
+                    Logger?.LogInformation("create winupdatecontrol handler");
+                    _WinUpdateControl = new WinUpdateControl(this, Logger);
                 }
 
                 return _WinUpdateControl;
@@ -86,8 +87,8 @@ namespace Nox.Win32.CI
             {
                 if (_Helpers1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create helper2 object");
-                    _Helpers1 = new Helpers(this, _logger);
+                    Logger?.LogInformation("create helper2 object");
+                    _Helpers1 = new Helpers(this, Logger);
                 }
 
                 return _Helpers1 as Helpers;
@@ -95,10 +96,7 @@ namespace Nox.Win32.CI
         }
         #endregion
 
-        public CI() 
-        : base() { } 
-
-        public CI(Log4 logger) 
-            : base(logger) { }
+        public CI(ILogger<CI> Logger) 
+            : this((ILogger)Logger) { }
     }
 }

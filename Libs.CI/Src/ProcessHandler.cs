@@ -1,4 +1,5 @@
-﻿using Nox;
+﻿using Microsoft.Extensions.Logging;
+using Nox;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace Nox.CI
 {
-    public class ProcessHandler 
-        : CIBase
+    public class ProcessHandler(CI CI, ILogger Logger)
+        : CIBase(CI, Logger)
     {
         const int EXIT_SUCCESS = 0;
         const int EXIT_INVALID_ARGUMENT = 1;
@@ -20,7 +21,7 @@ namespace Nox.CI
         #region Process Handling
         public Process CreateProcess(string Filename, string Arguments)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, "create process");
+            Logger?.LogTrace($"create process {Filename}");
 
             return new Process()
             {
@@ -36,8 +37,7 @@ namespace Nox.CI
 
         public int RunProcessEx(Process myProcess, StreamWriter standardOutput, StreamReader standardInput, StreamWriter standardError)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug,
-                $"run process ex {myProcess?.StartInfo?.FileName ?? "<null>"}");
+            Logger?.LogDebug($"run process ex {myProcess?.StartInfo?.FileName ?? "<null>"}");
 
             int Result = EXIT_UNKNOWN;
 
@@ -45,14 +45,12 @@ namespace Nox.CI
             {
                 if (standardOutput != null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Trace, 
-                        $"redirect standard output");
+                    Logger?.LogTrace($"redirect standard output");
 
                     myProcess.StartInfo.RedirectStandardOutput = true;
                     myProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
                     {
-                        _logger?.LogMessage(LogLevelEnum.Trace, 
-                            $"receive data on output-stream: {e.Data ?? ""}");
+                        Logger?.LogTrace($"receive data on output-stream: {e.Data ?? ""}");
 
                         standardOutput.WriteLine(e.Data);
                     };
@@ -60,22 +58,19 @@ namespace Nox.CI
 
                 if (standardInput != null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Trace, 
-                        $"redirect standard input");
+                    Logger?.LogTrace($"redirect standard input");
 
                     myProcess.StartInfo.RedirectStandardInput = true;
                 }
 
                 if (standardError != null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Trace,
-                        $"redirect standard error");
+                    Logger.LogTrace($"redirect standard error");
 
                     myProcess.StartInfo.RedirectStandardError = true;
                     myProcess.ErrorDataReceived += (object sender, DataReceivedEventArgs e) => 
                     {
-                        _logger?.LogMessage(LogLevelEnum.Trace, 
-                            $"receive data on error-stream: {e.Data ?? ""}");
+                        Logger?.LogTrace($"receive data on error-stream: {e.Data ?? ""}");
 
                         standardError.WriteLine(e.Data);
                     };
@@ -92,28 +87,23 @@ namespace Nox.CI
 
                 if (myProcess.StartInfo.RedirectStandardInput)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Trace, 
-                        $"start write standard output stream");
+                    Logger?.LogTrace($"start write standard output stream");
 
                     myProcess.StandardInput.Write(standardInput.ReadToEnd());
-                    _logger?.LogMessage(LogLevelEnum.Trace, 
-                        $"end write standard output stream");
+                    Logger?.LogTrace($"end write standard output stream");
 
                     myProcess.StandardInput.Dispose();
                 }
 
-                _logger?.LogMessage(LogLevelEnum.Trace, 
-                    $"wait for exit");
+                Logger?.LogTrace($"wait for exit");
 
                 myProcess.WaitForExit();
 
-                _logger?.LogMessage(LogLevelEnum.Trace, 
-                    $"wait for exit done");
+                Logger?.LogTrace($"wait for exit done");
 
                 standardOutput.Flush();
 
-                _logger?.LogMessage(LogLevelEnum.Debug, 
-                    $"done with {myProcess.ExitCode}");
+                Logger?.LogDebug($"done with {myProcess.ExitCode}");
 
                 Result = myProcess.ExitCode;
             }
@@ -130,23 +120,21 @@ namespace Nox.CI
 
         public int RunProcess(string Filename, string Arguments, StreamWriter standardOutput, StreamReader standardInput)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, "");
+            Logger?.LogTrace($"run process {Filename}");
 
             return RunProcessEx(CreateProcess(Filename, Arguments), standardOutput, standardInput, null);
         }
 
         public int RunProcess(string Filename, string Arguments, StreamWriter standardOutput, StreamReader standardInput, StreamWriter standardError)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, "");
+            Logger?.LogTrace($"run process {Filename}");
 
             return RunProcessEx(CreateProcess(Filename, Arguments), standardOutput, standardInput, standardError);
         }
         #endregion
 
-        public ProcessHandler(CI CI) 
-            : base(CI) { }
-        
-        public ProcessHandler(CI CI, Log4 logger) 
-            : base(CI, logger) { }
+        // DI-Constructor
+        public ProcessHandler(CI CI, ILogger<CI> Logger) 
+            : this(CI, (ILogger)Logger) { }
     }
 }

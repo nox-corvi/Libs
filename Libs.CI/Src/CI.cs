@@ -9,9 +9,8 @@ using System.Threading.Tasks;
 
 namespace Nox.CI
 {
-    public partial class CI
+    public partial class CI(ILogger Logger)
     {
-        protected Log4 _logger = null!;
         protected ConPrint _Con1 = null!;
 
         protected ProcessHandler _Process1 = null!;
@@ -29,8 +28,8 @@ namespace Nox.CI
             {
                 if (_Process1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create process1 handler");
-                    _Process1 = new ProcessHandler(this, _logger);
+                    Logger?.LogInformation("create process1 handler");
+                    _Process1 = new ProcessHandler(this, Logger);
                 }
                 return _Process1;
             }
@@ -42,8 +41,8 @@ namespace Nox.CI
             {
                 if (_Security1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create security1 handler");
-                    _Security1 = new SecurityHandler(this, _logger);
+                    Logger?.LogInformation("create security1 handler");
+                    _Security1 = new SecurityHandler(this, Logger);
                 }
                 return _Security1;
             }
@@ -55,8 +54,8 @@ namespace Nox.CI
             {
                 if (_IaC1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create iac1 handler");
-                    _IaC1 = new IaCHandler(this, _logger);
+                    Logger?.LogInformation("create iac1 handler");
+                    _IaC1 = new IaCHandler(this, Logger);
                 }
                 return _IaC1;
             }
@@ -68,8 +67,8 @@ namespace Nox.CI
             {
                 if (_Helpers1 == null)
                 {
-                    _logger?.LogMessage(LogLevelEnum.Info, "create helper1 object");
-                    _Helpers1 = new Helpers(this, _logger);
+                    Logger?.LogInformation("create helper1 object");
+                    _Helpers1 = new Helpers(this, Logger);
                 }
 
                 return _Helpers1;
@@ -78,23 +77,20 @@ namespace Nox.CI
         #endregion
 
         #region Con
-        public bool CancelWithMessage(string Message, LogLevelEnum LogLevel = LogLevelEnum.Error)
+        public bool CancelWithMessage(string Message, LogLevel LogLevel = LogLevel.Error)
         {
-            _logger?.LogMessage(LogLevel, Message);
+            Logger?.Log((LogLevel)LogLevel, Message);
             return false;
         }
         #endregion
 
-        public CI() { }
-
-        public CI(Log4 logger)
-        {
-            _logger = logger;
-        }
+        // DI-Constructor
+        public CI(ILogger<CI> Logger)
+            : this((ILogger)Logger) { }
     }
 
 
-    public class CIBase
+    public class CIBase(CI CI, ILogger Logger)
         : IDisposable
 
     {
@@ -121,8 +117,7 @@ namespace Nox.CI
             _calc_crc_fail = 0x3A, _encode_fail = 0x3B, _decode_fail = 0x3C
         }
 
-        protected CI _CI;
-        protected Log4 _logger = null!;
+        protected CI _CI = CI;
 
         #region Properties
         protected CI CI => _CI;
@@ -250,11 +245,8 @@ namespace Nox.CI
 
         public virtual void Dispose() { }
 
-        public CIBase(CI CI) =>
-            this._CI = CI;
-
-        public CIBase(CI CI, Log4 logger) :
-            this(CI) =>
-            _logger = logger;
+        // DI-Constructor
+        public CIBase(CI CI, ILogger<CIBase> Logger) 
+            : this(CI, (ILogger)Logger) { }
     }
 }

@@ -13,18 +13,18 @@ using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using Nox.CI;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Nox.Win32.CI
 {
-    public class RegistryHandler
-        : CIBase
+    public class RegistryHandler(Nox.CI.CI CI, ILogger Logger)
+        : CIBase(CI, Logger)
     { 
-
         #region Registry
         private bool RegValueExist(ProcessCredential Credential, string RegRoot, string Key, string Value, string Pattern)
         {
             // Log
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check reg value exists");
+            Logger?.LogDebug($"check reg value exists");
 
             string OutMessage, ErrMessage;
             try
@@ -33,8 +33,8 @@ namespace Nox.Win32.CI
                     .GetProcessHandler
                     .RunCliApplication("regquery.exe", $"query --root:{RegRoot} --key \"{Key}\" --value {Value} \"{Pattern}\"", Credential, out OutMessage, out ErrMessage);
 
-                _logger?.LogMessage(LogLevelEnum.Debug, "RegValueExists->Out: " + OutMessage);
-                _logger?.LogMessage(LogLevelEnum.Debug, "RegValueExists->Err: " + OutMessage);
+                Logger?.LogDebug("RegValueExists->Out: " + OutMessage);
+                Logger?.LogDebug("RegValueExists->Err: " + OutMessage);
                 if (Result < 0)
                     return false;
                 else if (Result == 0)
@@ -53,11 +53,7 @@ namespace Nox.Win32.CI
         }
         #endregion
 
-
-        public RegistryHandler(Nox.CI.CI CI) 
-            : base(CI) { }
-
-        public RegistryHandler(Nox.CI.CI CI, Log4 logger) 
-            : base(CI, logger) { }
+        public RegistryHandler(Nox.CI.CI CI, ILogger<Nox.CI.CI> Logger) 
+            : this((CI)CI, (ILogger)Logger) { }
     }
 }

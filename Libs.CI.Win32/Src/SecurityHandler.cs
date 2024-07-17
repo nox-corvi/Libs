@@ -13,11 +13,12 @@ using Nox.CI.CID;
 using System.DirectoryServices;
 //using System.DirectoryServices.ActiveDirectory;
 using System.DirectoryServices.AccountManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Nox.Win32.CI
 {
-    public class SecurityHandler 
-        : Nox.CI.SecurityHandler
+    public class SecurityHandler(CI CI, ILogger Logger)
+        : Nox.CI.SecurityHandler(CI, Logger)
     {
         /// <summary>
         /// validate a given sid
@@ -26,7 +27,7 @@ namespace Nox.Win32.CI
         /// <returns>true if valid, false if not</returns>
         public bool ValidateSID(string input)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"validate sid {input}");
+            Logger?.LogDebug($"validate sid {input}");
 
             return Regex.IsMatch(input, @"^S-\d-\d+-(\d+-){1,14}\d+$");
         }
@@ -42,7 +43,7 @@ namespace Nox.Win32.CI
         /// <exception cref="ApplicationException"></exception>
         public bool NetExecute(string Command, ProcessCredential Credential, Func<string, bool> ParseResult, Func<int, string, bool> EvaluateExitCode)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"execute net.exe");
+            Logger?.LogDebug($"execute net.exe");
 
             try
             {
@@ -71,7 +72,7 @@ namespace Nox.Win32.CI
 
         public ProcessCredential GetProcessCredentials(CID CID, string Key, string Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"get process credentials");
+            Logger?.LogDebug($"get process credentials");
             try
             {
                 var c = CID.Credentials;
@@ -107,7 +108,7 @@ namespace Nox.Win32.CI
         }
         public string DetermineDomainFromCredential(Nox.CI.CID.CID CID, CredentialType Type)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"get domain from credential");
+            Logger?.LogDebug($"get domain from credential");
             switch (Type)
             {
                 case CredentialType._domain:  // check in the domain ..
@@ -122,7 +123,7 @@ namespace Nox.Win32.CI
 
         public bool UserExists(CID CID, ProcessCredential CR, CredentialType Type, string User)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check if user {User ?? "<null>"} exists ");
+            Logger?.LogDebug($"check if user {User ?? "<null>"} exists ");
 
             try
             {
@@ -148,7 +149,7 @@ namespace Nox.Win32.CI
                         throw new ApplicationException(ErrMsg);
                 }
 
-                _logger?.LogMessage(LogLevelEnum.Trace, "umodexec with " + Command);
+                Logger?.LogTrace("umodexec with " + Command);
                 if ((Result = (_CI as CI)
                     .GetHelper
                     .UModExec(Command, CR, out OutMessage, out ErrMessage)) != 0)
@@ -176,7 +177,7 @@ namespace Nox.Win32.CI
 
         public string GetUserSID(CID CID, ProcessCredential CR, CredentialType Type, string User)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"get user {User ?? "<null>"} sid");
+            Logger?.LogDebug($"get user {User ?? "<null>"} sid");
             try
             {
                 //var CR = GetProcessCredentials(Credential);
@@ -252,7 +253,7 @@ namespace Nox.Win32.CI
 
         public bool UserInGroup(string User, string Group, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check if user {User ?? "<null>"} in group {Group ?? ""}");
+            Logger?.LogDebug($"check if user {User ?? "<null>"} in group {Group ?? ""}");
             try
             {
                 int Result;
@@ -298,7 +299,7 @@ namespace Nox.Win32.CI
         public bool GroupExists(string Group, ProcessCredential Credential)
         {
             // Log
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check if group {Group ?? "<null>"} exists");
+            Logger?.LogDebug($"check if group {Group ?? "<null>"} exists");
             try
             {
                 int Result;
@@ -342,7 +343,7 @@ namespace Nox.Win32.CI
 
         public bool CreateGroup(string Group, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"create group {Group ?? "<null>"}");
+            Logger?.LogDebug($"create group {Group ?? "<null>"}");
             try
             {
                 int Result;
@@ -382,7 +383,7 @@ namespace Nox.Win32.CI
 
         public bool AddUserLocalGroup(string User, string Group, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"add user {User ?? "<null>"} to local group {Group ?? "<null>"}");
+            Logger?.LogDebug($"add user {User ?? "<null>"} to local group {Group ?? "<null>"}");
             try
             {
                 int Result;
@@ -423,7 +424,7 @@ namespace Nox.Win32.CI
 
         public void ChangePass(CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"change pass of {User ?? "<null>"}");
+            Logger?.LogDebug($"change pass of {User ?? "<null>"}");
             try
             {
                 //var CR = GetProcessCredentials(Credential);
@@ -470,7 +471,7 @@ namespace Nox.Win32.CI
 
         public bool ValidatePass(CID CID, ProcessCredential CR, CredentialType Type, string User, string Pass, string Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"validate pass of user {User ?? "<null>"}");
+            Logger?.LogDebug($"validate pass of user {User ?? "<null>"}");
             try
             {
                 switch (Credential.ToLower())
@@ -500,7 +501,7 @@ namespace Nox.Win32.CI
 
         public void CreateUser(CID CID, ProcessCredential CR, CredentialType Type, string User, string DisplayName, string Pass, string OU)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"create user {User ?? "<null>"} ({DisplayName ?? "<null>"})");
+            Logger?.LogDebug($"create user {User ?? "<null>"} ({DisplayName ?? "<null>"})");
             try
             {
                 int Result;
@@ -548,7 +549,7 @@ namespace Nox.Win32.CI
 
         public bool ShareExists(string Share, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check if share {Share ?? "<null>"} exists");
+            Logger?.LogDebug($"check if share {Share ?? "<null>"} exists");
 
             return NetExecute($"share {Share}", Credential, (string Out) =>
             {
@@ -576,7 +577,7 @@ namespace Nox.Win32.CI
 
         public bool ShareMatch(string Share, string Destination, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check if share {Share ?? "<null>"} matches destination {Destination ?? "<null>"}");
+            Logger?.LogDebug($"check if share {Share ?? "<null>"} matches destination {Destination ?? "<null>"}");
 
             return NetExecute($"share {Share}", Credential, (string Out) =>
             {
@@ -609,7 +610,7 @@ namespace Nox.Win32.CI
 
         public bool CreateShare(string Share, string Destination, string Grant, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"check if share {Share ?? "<null>"} exists");
+            Logger?.LogDebug($"check if share {Share ?? "<null>"} exists");
 
             string Command = $"share {Share}={Destination} {Grant} /REMARK:\"Created by NUVTY\"";
 
@@ -634,7 +635,7 @@ namespace Nox.Win32.CI
 
         public bool DeleteShare(string Share, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"delete share {Share ?? "<null>"}");
+            Logger?.LogDebug($"delete share {Share ?? "<null>"}");
 
             return NetExecute($"share {Share} /delete /yes", Credential, (string Out) =>
             {
@@ -655,12 +656,9 @@ namespace Nox.Win32.CI
             });
         }
 
-
-        public SecurityHandler(CI CI)
-            : base(CI) { }
-
-        public SecurityHandler(CI CI, Log4 logger)
-            : base(CI, logger) { }
+        // DI-Constructor
+        public SecurityHandler(CI CI, ILogger<SecurityHandler> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 
     

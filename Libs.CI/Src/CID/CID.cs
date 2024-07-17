@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +9,8 @@ using System.Xml.Linq;
 
 namespace Nox.CI.CID
 {
-    public sealed class CID 
-        : CIBase
+    public sealed class CID(CI CI, ILogger Logger)
+        : CIBase(CI, Logger)
     {
         //protected const string ERR_UNHANDLED_EXCEPTION = "error: unhandled exception";
 
@@ -25,11 +26,11 @@ namespace Nox.CI.CID
         public Credentials Credentials { get; internal set; } = null;
         #endregion
 
-        public static CID FromXDocument(CI CI, XDocument doc)
+        public static CID FromXDocument(CI CI, ILogger Logger, XDocument doc)
         {
             var e = doc.Elements("installer").First();
 
-            var Result = new CID(CI)
+            var Result = new CID(CI, Logger)
             {
                 Version = (string)e.Attribute("ver") ?? "",
             };
@@ -56,11 +57,8 @@ namespace Nox.CI.CID
             throw new NotImplementedException();
         }
 
-        public CID(CI CI)
-            : base(CI) { }
-
-        public CID(CI CI, Log4 logger)
-            : base(CI, logger) { }
+        public CID(CI CI, ILogger<CID> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 
     public class CIDBase : IDisposable

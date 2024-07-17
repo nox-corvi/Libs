@@ -1,4 +1,5 @@
-﻿using Nox;
+﻿using Microsoft.Extensions.Logging;
+using Nox;
 using Nox.Security;
 using System;
 using System.Collections.Generic;
@@ -9,15 +10,15 @@ using System.Threading.Tasks;
 
 namespace Nox.CI
 {
-    public class IaCHandler
-        : CIBase
+    public class IaCHandler(CI CI, ILogger Logger)
+       : CIBase(CI, Logger)
     {
         const int MAX_BLOCK_SIZE = 1024;
 
         // get the crc of a stream
         public uint CalculateCRC(Stream stream, bool Rewind)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._calc_crc));
+            Logger?.LogDebug(Message(ResEnum._calc_crc));
 
             try
             {
@@ -32,8 +33,7 @@ namespace Nox.CI
                 while ((read = stream.Read(data, 0, MAX_BLOCK_SIZE)) > 0)
                     t.Push(data, 0, read);
 
-                _logger?.LogMessage(LogLevelEnum.Debug, 
-                    Message(ResEnum._calc_crc_done, t.CRC32.ToString()));
+                Logger?.LogDebug(Message(ResEnum._calc_crc_done, t.CRC32.ToString()));
                 
                 return t.CRC32;
             }
@@ -48,7 +48,7 @@ namespace Nox.CI
 
         public bool ValidateFileCRC(string Filename, uint crc32value)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._validate_file_crc, crc32value.ToString()));
+            Logger?.LogDebug(Message(ResEnum._validate_file_crc, crc32value.ToString()));
 
             try
             {
@@ -56,7 +56,7 @@ namespace Nox.CI
                 {
                     uint crc32 = CalculateCRC((Stream)file, false);
 
-                    _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._calc_crc_done, crc32.ToString()));
+                    Logger?.LogDebug(Message(ResEnum._calc_crc_done, crc32.ToString()));
 
                     return (crc32 == crc32value);
                 }
@@ -72,8 +72,7 @@ namespace Nox.CI
 
         private bool ValidateFileCRC(string Filename, string crc32string)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, 
-                Message(ResEnum._validate_file_crc, NullStr(crc32string)));
+            Logger?.LogDebug(Message(ResEnum._validate_file_crc, NullStr(crc32string)));
 
             try
             {
@@ -99,8 +98,7 @@ namespace Nox.CI
 
         public bool Encode(Stream inputStream, Stream outputStream, string Key, string Salt)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, 
-                Message(ResEnum._encode));
+            Logger?.LogDebug(Message(ResEnum._encode));
 
             try
             {
@@ -118,7 +116,7 @@ namespace Nox.CI
 
         public bool Decode(Stream inputStream, Stream outputStream, string Key, string Salt)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._decode));
+            Logger?.LogDebug(Message(ResEnum._decode));
 
             try
             {
@@ -136,7 +134,7 @@ namespace Nox.CI
 
         public string EncodeString(string Key, string Salt, string Value)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._encode_laverna, NullStr(Value)));
+            Logger?.LogDebug(Message(ResEnum._encode_laverna, NullStr(Value)));
 
             try
             {
@@ -154,7 +152,7 @@ namespace Nox.CI
 
         public string DecodeString(string Key, string Salt, string Value)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, Message(ResEnum._decode_laverna, [Value]));
+            Logger?.LogDebug(Message(ResEnum._decode_laverna, [Value]));
 
             try
             {
@@ -170,10 +168,8 @@ namespace Nox.CI
             }
         }
 
-        public IaCHandler(CI CI)
-            : base(CI) { }
-
-        public IaCHandler(CI CI, Log4 logger)
-            : base(CI, logger) { }
+        // DI-Constructor
+        public IaCHandler(CI CI, ILogger<IaCHandler> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 }

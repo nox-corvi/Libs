@@ -1,4 +1,5 @@
-﻿using Nox;
+﻿using Microsoft.Extensions.Logging;
+using Nox;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +10,8 @@ using System.Xml.Linq;
 
 namespace Nox.CI
 {
-    public class Helpers
-        : CIBase
+    public class Helpers(CI CI, ILogger Logger)
+        : CIBase(CI, Logger)
     {
         //private NVI_Xml ParseInstaller(string XmlValue)
         //{
@@ -87,10 +88,7 @@ namespace Nox.CI
             new string('.', Pass.Length);
 
 
-        public Helpers(CI CI)
-    :       base(CI) { }
-
-        public Helpers(CI CI, Log4 logger)
-            : base(CI, logger) { }
+        public Helpers(CI CI, ILogger<Helpers> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 }

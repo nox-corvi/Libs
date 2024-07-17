@@ -94,7 +94,7 @@ public class DataShell<T>
 
     public int Update(T Data)
         => Operate.Update(Data);
-    
+
     public int Delete(T Data)
         => Operate.Delete(Data);
 

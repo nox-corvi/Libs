@@ -1,4 +1,5 @@
-﻿using Nox;
+﻿using Microsoft.Extensions.Logging;
+using Nox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace Nox.CI
 {
-    public class SecurityHandler
-        : CIBase
+    public class SecurityHandler(CI CI, ILogger Logger)
+        : CIBase(CI, Logger)
     {
         protected const string ERR_UNHANDLED_EXCEPTION = "error: unhandled exception";
 
@@ -27,8 +28,7 @@ namespace Nox.CI
         /// <returns>password string</returns>
         public string PassGen(int Length)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, 
-                $"pass gen using length {Length}");
+            Logger?.LogDebug($"pass gen using length {Length}");
 
             var r = new Random((int)(DateTime.Now.Ticks & 0xFFFF));
 
@@ -64,10 +64,7 @@ namespace Nox.CI
             return result.ToString();
         }
 
-        public SecurityHandler(CI CI)
-            : base(CI) { }
-
-        public SecurityHandler(CI CI, Log4 logger)
-            : base(CI, logger) { }
+        public SecurityHandler(CI CI, ILogger<SecurityHandler> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 }

@@ -4,18 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data;
-using System.Data.SqlClient;
+using MySql.Data;
+using MySql.Data.MySqlClient;
 
-namespace Nox.Data.SqlServer
+
+namespace Nox.Data.PostgreSQL
 {
-	public class SqlDbAccess : IDisposable
+	public class MaDbAccess : IDisposable
 	{
 		protected string  _ConnectionString = "";
         protected int _SqlCommandTimeout = 300;
 
-		protected SqlConnection _DatabaseConnection;
+		protected MySqlConnection _DatabaseConnection;
 
-        protected SqlTransaction _Transaction;
+        protected MySqlTransaction _Transaction;
 
 		#region Properties
 		public string ConnectionString
@@ -38,7 +40,7 @@ namespace Nox.Data.SqlServer
 			}
 		}
 
-		public SqlTransaction Transaction
+		public MySqlTransaction Transaction
 		{
 			get
 			{
@@ -92,14 +94,14 @@ namespace Nox.Data.SqlServer
         protected void EnsureConnectionEstablished()
         {
             if ((_DatabaseConnection == null) || _DatabaseConnection.State != ConnectionState.Open)
-                _DatabaseConnection = new SqlConnection(_ConnectionString);
+                _DatabaseConnection = new MySqlConnection(_ConnectionString);
 
             switch (_DatabaseConnection.State)
             {
                 case ConnectionState.Broken:
                     // dispose and create new ...
                     _DatabaseConnection.Dispose();
-                    _DatabaseConnection = new SqlConnection(_ConnectionString);
+                    _DatabaseConnection = new MySqlConnection(_ConnectionString);
 
                     break;
                 case ConnectionState.Open:
@@ -124,12 +126,12 @@ namespace Nox.Data.SqlServer
                 _DatabaseConnection.Open();
         }
 
-        public SqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, 
-			CommandBehavior commandBehavior = CommandBehavior.CloseConnection, params SqlParameter[] Parameters)
+        public MySqlDataReader GetReader(string SQL, CommandType commandType = CommandType.Text, 
+			CommandBehavior commandBehavior = CommandBehavior.CloseConnection, params MySqlParameter[] Parameters)
 		{
             EnsureConnectionEstablished();
 
-            SqlCommand c = new(SQL, _DatabaseConnection)
+            MySqlCommand c = new(SQL, _DatabaseConnection)
 			{
 				CommandTimeout = SqlCommandTimeout,
 				Transaction = _Transaction,
@@ -139,31 +141,31 @@ namespace Nox.Data.SqlServer
             OpenDatabaseConnection();
 
 			if (Parameters != null)
-				foreach (SqlParameter Param in Parameters)
+				foreach (MySqlParameter Param in Parameters)
 					c.Parameters.AddWithValue(Param.ParameterName, Param.Value);
 
 			return c.ExecuteReader(commandBehavior);
 		}
-        public SqlDataReader GetReader(string SQL, CommandType commandType, params SqlParameter[] Parameters) =>
+        public MySqlDataReader GetReader(string SQL, CommandType commandType, params MySqlParameter[] Parameters) =>
             GetReader(SQL, commandType, CommandBehavior.CloseConnection, Parameters);
 
-        public SqlDataReader GetReader(string SQL, params SqlParameter[] Parameters) =>
+        public MySqlDataReader GetReader(string SQL, params MySqlParameter[] Parameters) =>
             GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, Parameters);
 
-        public SqlDataReader GetReader(string SQL) =>
+        public MySqlDataReader GetReader(string SQL) =>
             GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection);
 
 
-        public SqlDataReader GetSchema(string Table)
+        public MySqlDataReader GetSchema(string Table)
             => GetReader($"SELECT * FROM [{Table}]", CommandType.Text, CommandBehavior.SchemaOnly, null);
 
-        public bool Exists(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
+        public bool Exists(string SQL, CommandType commandType = CommandType.Text, params MySqlParameter[] Parameters)
         {
 			using var Reader = GetReader(SQL, commandType, CommandBehavior.CloseConnection, Parameters);
             return Reader.Read();
         }
 
-        public bool Exists(string SQL, params SqlParameter[] Parameters)
+        public bool Exists(string SQL, params MySqlParameter[] Parameters)
         {
             using var Reader = GetReader(SQL, CommandType.Text, CommandBehavior.CloseConnection, Parameters);
             return (Reader.Read());
@@ -175,11 +177,11 @@ namespace Nox.Data.SqlServer
             return (Reader.Read());
         }
 
-        public long Execute(string SQL, CommandType commandType = CommandType.Text, params SqlParameter[] Parameters)
+        public long Execute(string SQL, CommandType commandType = CommandType.Text, params MySqlParameter[] Parameters)
 		{
             EnsureConnectionEstablished();
 
-            using SqlCommand CMD = new(SQL, _DatabaseConnection)
+            using MySqlCommand CMD = new(SQL, _DatabaseConnection)
             {
                 CommandTimeout = SqlCommandTimeout,
                 CommandType = commandType,
@@ -188,20 +190,20 @@ namespace Nox.Data.SqlServer
             OpenDatabaseConnection();
 
             if (Parameters != null)
-                foreach (SqlParameter Param in Parameters)
+                foreach (MySqlParameter Param in Parameters)
                     CMD.Parameters.AddWithValue(Param.ParameterName, Param.Value);
 
             var Result = CMD.ExecuteNonQuery();
             return Result;
         }
 
-        public long Execute(string SQL, params SqlParameter[] Parameters) =>
+        public long Execute(string SQL, params MySqlParameter[] Parameters) =>
             Execute(SQL, CommandType.Text, Parameters);
 
         public long Execute(string SQL) =>
             Execute(SQL, CommandType.Text, null);
 
-        public T GetValue<T>(string SQL, SqlParameter[] Parameters, T Default = default) where T : IComparable
+        public T GetValue<T>(string SQL, MySqlParameter[] Parameters, T Default = default) where T : IComparable
 		{
 			using (var Reader = GetReader(SQL, Parameters))
 				if (Reader.Read())
@@ -226,7 +228,7 @@ namespace Nox.Data.SqlServer
 		}
 
 		//[System.Diagnostics.DebuggerStepThrough()]
-		public List<T> GetValues<T>(string SQL, SqlParameter[] Parameters, T Default = default) where T : IComparable
+		public List<T> GetValues<T>(string SQL, MySqlParameter[] Parameters, T Default = default) where T : IComparable
 		{
 			var Result = new List<T>();
 
@@ -255,7 +257,7 @@ namespace Nox.Data.SqlServer
 		public List<T> GetValues<T>(string SQL, T Default = default) where T : IComparable =>
 			GetValues<T>(SQL, null, Default);
 
-		public SqlDbAccess(string ConnectionString)
+		public MaDbAccess(string ConnectionString)
 		{
 			_ConnectionString = ConnectionString;
 		}

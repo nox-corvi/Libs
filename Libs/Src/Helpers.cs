@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -490,6 +491,21 @@ namespace Nox
 
             // Gib die Liste als IEnumerable zurück
             return list;
+        }
+
+        public static T ParseEnum<T>(string Value, T DefaultValue = default)
+            where T : struct, Enum
+        {
+#if NETCOREAPP
+            if (Enum.TryParse(typeof(T), Value, out object EnumValue))
+#elif NETFRAMEWORK
+        if (Enum.TryParse<T>(Value, out T EnumValue))
+#endif
+            {
+                return (T)EnumValue;
+            }
+            else
+                return DefaultValue;
         }
     }
 }

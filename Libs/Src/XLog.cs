@@ -2,222 +2,197 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging.Console;
-using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using Nox.Cli;
-using Nox.Data;
-using Nox.IO;
-using Nox.Net;
 using Nox.WebApi;
+using Org.BouncyCastle.Asn1.BC;
+using Org.BouncyCastle.Asn1.X509;
 using System;
-using System.Collections.Concurrent;
-using System.Data;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.IO.Compression;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Nox;
 
-public enum LogLevelEnum
+[Flags]
+public enum LogTargetEnum
 {
-    Fatal,
-    Error,
-    Warning,
-    Info,
-    Debug,
-    Trace,
-}
-
-public interface IXLog
-{
-    SingleDataResponseShell CreateLogApplication(string LogSource, int TTL, DateTime Expiration);
-
-    ResponseShell Log(LogLevelEnum LogLevel, DateTime Timestamp, string Message, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-    
-    ResponseShell LogException(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-
-    ResponseShell LogTrace(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-    ResponseShell LogDebug(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-    ResponseShell LogInfo(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-    ResponseShell LogWarning(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-    ResponseShell LogError(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
-    ResponseShell LogFatal(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0);
+    None = 0,
+    Echo = 1,
+    File = 2,
+    WebApi = 4,
 }
 
 public class XLog
-    : IXLog
+    : ILogger//, IXLogger
 {
-    private ConPrint Con1 = new();
+    private HttpClient _httpClient;
 
-    private RestClient RestClient;
     private string _Token;
-    private string _Source;
+
+    private string _Application = null!;
+    private string _CategoryName;
 
     private static readonly object _lock = new object();
 
     #region Properties
-    public LogLevelEnum LogLevel { get; set; } = LogLevelEnum.Error;
+    public LogTargetEnum LogTarget { get; set; } = LogTargetEnum.Echo;
 
+    public LogLevel LogLevel { get; set; } = LogLevel.Error;
+
+    // Echo
     public bool EchoEnabled { get; set; } = true;
 
     public bool EchoColorized { get; set; } = true;
 
+    // File
     public virtual int LogWriterWaitTimeout { get; private set; } = 30;
+
+
     #endregion
 
     #region Helpers
-    public static string LogClassName(Type type) =>
+    protected static string LogClassName(Type type) =>
         $"{type.Assembly.GetName().Name}::{type.Name}";
 
-    private static int GetSeverity(LogLevelEnum LogLevel)
+    protected static int GetSeverity(LogLevel LogLevel)
         // 'Syslog Message Severities' from https://tools.ietf.org/html/rfc5424.
         => LogLevel switch
         {
-            LogLevelEnum.Trace => 7,
-            LogLevelEnum.Debug => 7,
-            LogLevelEnum.Info => 6,
-            LogLevelEnum.Warning => 4,
-            LogLevelEnum.Error => 3,
-            LogLevelEnum.Fatal => 2,
+            LogLevel.Trace => 7,
+            LogLevel.Debug => 7,
+            LogLevel.Information => 6,
+            LogLevel.Warning => 4,
+            LogLevel.Error => 3,
+            LogLevel.Critical => 2,
             _ => throw new ArgumentOutOfRangeException(nameof(LogLevel))
         };
 
-    public static string GetLogLevelText(LogLevelEnum LogLevel)
+    protected static string GetLogLevelText(LogLevel LogLevel)
         => LogLevel switch
         {
-            LogLevelEnum.Fatal => "FATAL",
-            LogLevelEnum.Error => "ERROR",
-            LogLevelEnum.Warning => "WARN",
-            LogLevelEnum.Info => "INFO",
-            LogLevelEnum.Debug => "DEBUG",
-            LogLevelEnum.Trace => "TRACE",
+            LogLevel.Critical => "CRIT",
+            LogLevel.Error => "ERROR",
+            LogLevel.Warning => "WARN",
+            LogLevel.Information => "INFO",
+            LogLevel.Debug => "DEBUG",
+            LogLevel.Trace => "TRACE",
             _ => throw new ArgumentOutOfRangeException(nameof(LogLevel))
         };
 
-    private ConsoleColors GetLogLevelConsoleColors(LogLevelEnum LogLevel)
+    protected ConsoleColors GetLogLevelConsoleColors(LogLevel LogLevel)
         => LogLevel switch
         {
-            LogLevelEnum.Fatal => new ConsoleColors(ConsoleColor.White, ConsoleColor.DarkRed),
-            LogLevelEnum.Error => new ConsoleColors(ConsoleColor.Black, ConsoleColor.DarkRed),
-            LogLevelEnum.Warning => new ConsoleColors(ConsoleColor.Yellow, ConsoleColor.Black),
-            LogLevelEnum.Info => new ConsoleColors(ConsoleColor.DarkGreen, ConsoleColor.Black),
-            LogLevelEnum.Debug => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
-            LogLevelEnum.Trace => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
+            LogLevel.Critical => new ConsoleColors(ConsoleColor.White, ConsoleColor.DarkRed),
+            LogLevel.Error => new ConsoleColors(ConsoleColor.Black, ConsoleColor.DarkRed),
+            LogLevel.Warning => new ConsoleColors(ConsoleColor.Yellow, ConsoleColor.Black),
+            LogLevel.Information => new ConsoleColors(ConsoleColor.DarkGreen, ConsoleColor.Black),
+            LogLevel.Debug => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
+            LogLevel.Trace => new ConsoleColors(ConsoleColor.Gray, ConsoleColor.Black),
             _ => new ConsoleColors(null, null)
         };
     #endregion
 
+    #region Rest Methods
+    protected async Task<T> RestGetAsync<T>(string Path, params KeyValue[] CustomHeaders)
+        where T : IShell, new()
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, Path);
+
+            foreach (var Item in CustomHeaders)
+                request.Headers.Add(Item.Key, Item.Value);
+
+            var response = await _httpClient.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+            var data = await response.Content.ReadAsStringAsync();
+
+            return await Task.Run(() => Newtonsoft.Json.JsonConvert.DeserializeObject<T>(data)!);
+        }
+        catch (Exception e)
+        {
+            EchoException(LogLevel.Error, e);
+            return Shell.Error<T>(e.Message);
+        }
+        finally
+        {
+            foreach (var Item in CustomHeaders)
+                _httpClient.DefaultRequestHeaders.Remove(Item.Key);
+        }
+    }
+
+    protected T RestGet<T>(string Path, params KeyValue[] CustomHeaders)
+       where T : IShell, new()
+        => AsyncHelper.RunSync<T>(async () => await RestGetAsync<T>(Path, CustomHeaders));
+    #endregion
+
     public async Task<SingleDataResponseShell> GetLogApplicationNameAsync()
-        => await RestClient.RestGetAsync<SingleDataResponseShell>($"/XLog/GetLogApplicationName", new KeyValue("Token", _Token));
+        => await RestGetAsync<SingleDataResponseShell>($"/Api/GetLogApplicationName", new KeyValue("Token", _Token));
     public SingleDataResponseShell GetLogApplicationName()
-        => RestClient.RestGet<SingleDataResponseShell>($"/XLog/GetLogApplicationName", new KeyValue("Token", _Token));
+        => RestGet<SingleDataResponseShell>($"/Api/GetLogApplicationName", new KeyValue("Token", _Token));
 
     public async Task<SingleDataResponseShell> CreateLogApplicationAsync(string Application, int TTL, DateTime Expiration)
-        => await RestClient.RestGetAsync<SingleDataResponseShell>($"/XLog/CreateLogApplication?Application={Application}&TTL={TTL}&Expiration={Expiration:u}",
+        => await RestGetAsync<SingleDataResponseShell>($"/Api/CreateLogApplication?Application={Application}&TTL={TTL}&Expiration={Expiration:u}",
             new KeyValue("Token", _Token));
     public SingleDataResponseShell CreateLogApplication(string Application, int TTL, DateTime Expiration)
-        => RestClient.RestGet<SingleDataResponseShell>($"/XLog/CreateLogApplication?Application={Application}&TTL={TTL}&Expiration={Expiration:u}",
+        => RestGet<SingleDataResponseShell>($"/Api/CreateLogApplication?Application={Application}&TTL={TTL}&Expiration={Expiration:u}",
             new KeyValue("Token", _Token));
 
-    public async Task<SingleDataResponseShell> CreateLogApplicationAsync(string LogSource, int TTL)
-        => await CreateLogApplicationAsync(LogSource, TTL, DateTime.Now.AddYears(3));
-    public SingleDataResponseShell CreateLogApplication(string LogSource, int TTL)
-        => CreateLogApplication(LogSource, TTL, DateTime.Now.AddYears(3));
+    public async Task<ResponseShell> LogAsync(LogLevel LogLevel, DateTime Timestamp, string Message)
+    {
+        ResponseShell Result = Shell.Success<ResponseShell>("Ok");
 
-    public async Task<SingleDataResponseShell> CreateLogApplicationAsync(string LogSource)
-        => await CreateLogApplicationAsync(LogSource, 30);
-    public SingleDataResponseShell CreateLogApplication(string LogSource)
-        => CreateLogApplication(LogSource, 30);
-
-    public async Task<ResponseShell> LogAsync(LogLevelEnum LogLevel, DateTime Timestamp, string Message, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-      {
-        if (this.LogLevel < LogLevel)
-            return Shell.Success<ResponseShell>("ok");
+        if (LogLevel < this.LogLevel)
+            return Result;
 
         string ts = $"{Timestamp:u}";
-        string LogLevelText = GetLogLevelText(LogLevel);
 
-        Echo(LogLevel, ts, Message, MemberName, SourceFile, SourceLine);
-        string URL = $"/XLog/Log?LogLevel={LogLevel}&Timestamp={ts}&Message={Message}";
-        if (MemberName != null)
+        if (LogTarget.HasFlag(LogTargetEnum.Echo))
+            Echo(LogLevel, ts, Message);
+
+        if (LogTarget.HasFlag(LogTargetEnum.WebApi))
         {
-            URL += $"&MemberName={MemberName}";
-        }
-        if (SourceFile != null)
-        {
-            URL += $"&SourceFile={SourceFile}";
-        }
-        if (SourceLine != 0)
-        {
-            URL += $"&SourceLine={SourceLine}";
+            //LogLevel LogLevel, DateTime Timestamp, string Message
+            string URL = $"/Api/Log?LogLevel={LogLevel}&Timestamp={ts}&Message={Message}";
+            Result = await RestGetAsync<ResponseShell>(URL, new KeyValue("Token", _Token));
+
+            if (Result.State != StateEnum.Success)
+            {
+                if (LogTarget.HasFlag(LogTargetEnum.Echo))
+                    Echo(LogLevel.Error, ts, Result.Message);
+            }
         }
 
-        return await RestClient.RestGetAsync<ResponseShell>(URL, new KeyValue("Token", _Token));
+        return Result;
     }
-    public virtual ResponseShell Log(LogLevelEnum LogLevel, DateTime Timestamp, string Message, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => AsyncHelper.RunSync(() => LogAsync(LogLevel, Timestamp, Message, MemberName, SourceFile, SourceLine));
 
-    public async Task<ResponseShell> LogExceptionAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Error, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
+    public ResponseShell Log(LogLevel LogLevel, DateTime Timestamp, string Message)
+        => AsyncHelper.RunSync(() => LogAsync(LogLevel, Timestamp, Message));
 
-    public ResponseShell LogException(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Error, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-
-    public async Task<ResponseShell> LogTraceAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Trace, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-    public virtual ResponseShell LogTrace(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Trace, Timestamp, Message, MemberName, SourceFile, SourceLine);
-
-    public async Task<ResponseShell> LogDebugAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Debug, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-    public virtual ResponseShell LogDebug(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Debug, Timestamp, Message, MemberName, SourceFile, SourceLine);
-
-    public async Task<ResponseShell> LogInfoAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Info, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-    public virtual ResponseShell LogInfo(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Info, Timestamp, Message, MemberName, SourceFile, SourceLine);
-
-    public async Task<ResponseShell> LogWarningAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Warning, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-    public virtual ResponseShell LogWarning(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Warning, Timestamp, Message, MemberName, SourceFile, SourceLine);
-
-    public async Task<ResponseShell> LogErrorAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Error, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-    public virtual ResponseShell LogError(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Error, Timestamp, Message, MemberName, SourceFile, SourceLine);
-
-    public async Task<ResponseShell> LogFatalAsync(Exception ex, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => await LogAsync(LogLevelEnum.Fatal, Timestamp, Helpers.SerializeException(ex), MemberName, SourceFile, SourceLine);
-    public virtual ResponseShell LogFatal(string Message, DateTime Timestamp, [CallerMemberName] string MemberName = "", [CallerFilePath] string SourceFile = "", [CallerLineNumber] int SourceLine = 0)
-        => Log(LogLevelEnum.Fatal, Timestamp, Message, MemberName, SourceFile, SourceLine);
-
-    protected async Task EchoAsync(LogLevelEnum LogLevel, DateTime Timestamp, string Message, string MemberName = null!, string SourceFile = null!, int SourceLine = 0)
-        => await Task.Run(() => { Echo(LogLevel, Timestamp.ToString("u"), Message, MemberName, SourceFile, SourceLine); });
-    public void Echo(LogLevelEnum LogLevel, string Timestamp, string Message, string MemberName = null!, string SourceFile = null!, int SourceLine = 0)
+    public void Echo(LogLevel LogLevel, string Timestamp, string Message)
     {
-
         if (EchoEnabled)
         {
             lock (_lock)
             {
-
-                Console.ResetColor();
-                Console.Write(_Source);
+                Console.Write(Timestamp);
                 Console.Write(" ");
 
-                Console.Write(Timestamp);
+                Console.Write(_CategoryName);
+                Console.Write(" ");
+
+                if (LogTarget.HasFlag(LogTargetEnum.WebApi))
+                {
+                    if (EchoColorized)
+                        Console.ForegroundColor = ConsoleColor.Blue;
+
+                    Console.Write(_Application);
+                    Console.Write(" ");
+
+                    Console.ResetColor();
+                }
 
                 Console.Write(" [ ");
                 if (EchoColorized)
@@ -230,37 +205,20 @@ public class XLog
 
                 Console.Write(" ] ");
 
-                if (SourceFile != null)
-                {
-                    Console.Write($"{Message}\r\n\t:{SourceFile}");
-                    if (SourceLine != 0)
-                    {
-                        Console.Write($" ({SourceLine}) ");
-                    }
-                    if (MemberName != null)
-                    {
-                        Console.Write($"::{MemberName} ");
-                    }
-
-                    Console.WriteLine();
-                }
-                else if (MemberName != null)
-                {
-                    Console.WriteLine($" ::{MemberName} {Message}");
-                }
+                Console.WriteLine($"{Message}");
             }
         }
     }
 
-    public Exception EchoException(LogLevelEnum LogLevel, Exception e, string MemberName = null!, string SourceFile = null!, int SourceLine = 0)
+    public Exception EchoException(LogLevel LogLevel, Exception e)
     {
         try
         {
-            Echo(LogLevel, $"{DateTime.UtcNow:u}", Helpers.SerializeException(e), MemberName, SourceFile, SourceLine);
+            Echo(LogLevel, $"{DateTime.Now:u}", Helpers.SerializeException(e));
         }
         catch (Exception ex)
         {
-            Echo(LogLevel, $"{DateTime.UtcNow:u}", Helpers.SerializeException(ex));
+            Echo(LogLevel, $"{DateTime.Now:u}", Helpers.SerializeException(ex));
         }
         finally
         {
@@ -270,46 +228,121 @@ public class XLog
         return e;
     }
 
-    private void ConfigureLogger(IConfiguration configuration)
+    private ResponseShell CompleteApplicationInit()
     {
-        RestClient = new(configuration["XLog:URL"]
-            ?? throw EchoException(LogLevelEnum.Fatal, new ArgumentNullException("XLog:URL")), this);
-        
-        _Token = configuration["XLog:Token"]
-            ?? throw EchoException(LogLevelEnum.Fatal, new ArgumentNullException("XLog:Token"));
+        if (_Application != null)
+            return Shell.Success<ResponseShell>("Ok");
 
         var LogSourceResult = GetLogApplicationName();
         switch (LogSourceResult.State)
         {
             case StateEnum.Success:
-                _Source = LogSourceResult.AdditionalData1;
+                _Application = LogSourceResult.AdditionalData1;
                 break;
             default:
-                throw EchoException(LogLevelEnum.Fatal, new Exception("unable to determin log source"));
+                //LogTarget &= ~LogTargetEnum.WebApi;
+                break;
         }
 
-#if NETCOREAPP
-        if (Enum.TryParse(typeof(LogLevelEnum), configuration["XLog:Level"], out object level))
-#elif NETFRAMEWORK
-        if (Enum.TryParse<LogLevelEnum>(configuration["XLog:Level"], out LogLevelEnum level))
-#endif
-        {
-            LogLevel = (LogLevelEnum)level;
-        }
-
-        if (bool.TryParse(configuration["XLog:Echo:Enabled"], out bool EchoEnabled))
-            this.EchoEnabled = EchoEnabled;
-
-        if (bool.TryParse(configuration["XLog:Echo:Colorized"], out bool EchoColorized))
-            this.EchoColorized = EchoColorized;
-
-        if (int.TryParse(configuration["XLog:LogWriterWaitTimeout"], out int LogWriterWaitTimeout))
-            this.LogWriterWaitTimeout = LogWriterWaitTimeout;
+        return LogSourceResult;
     }
 
-    public XLog(IConfiguration configuration)
+    private void ConfigureLogger(IConfiguration configuration)
+    {
+        // no log if no target is specified
+        LogTarget = Helpers.ParseEnum<LogTargetEnum>(configuration["XLog:Target"], LogTargetEnum.None);
+
+        if (LogTarget.HasFlag(LogTargetEnum.Echo))
+        {
+            if (bool.TryParse(configuration["XLog:Echo:Enabled"], out bool EchoEnabled))
+                this.EchoEnabled = EchoEnabled;
+
+            if (bool.TryParse(configuration["XLog:Echo:Colorized"], out bool EchoColorized))
+                this.EchoColorized = EchoColorized;
+        }
+
+        if (LogTarget.HasFlag(LogTargetEnum.File))
+        {
+            // not now
+
+            if (int.TryParse(configuration["XLog:File:LogWriterWaitTimeout"], out int LogWriterWaitTimeout))
+                this.LogWriterWaitTimeout = LogWriterWaitTimeout;
+        }
+
+        if (LogTarget.HasFlag(LogTargetEnum.WebApi))
+        {
+            // token must be set
+            _Token = configuration["XLog:WebApi:Token"];
+
+            // create client with 
+            _httpClient = new()
+            {
+                BaseAddress = new Uri(configuration["XLog:WebApi:URL"]
+                ?? throw EchoException(LogLevel.Critical, new ArgumentNullException("XLog:URL"))),
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+
+            _httpClient.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
+        }
+
+        // parse vom string, use initial value if not set 
+        LogLevel = Helpers.ParseEnum<LogLevel>(configuration["XLog:Level"], LogLevel);
+    }
+
+    #region ILogger:Interface 
+    public bool IsEnabled(LogLevel logLevel)
+    {
+        return logLevel >= (LogLevel)LogLevel;
+    }
+
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull
+    {
+        // No-op implementation
+        return new NoOpDisposable();
+    }
+
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+    {
+        if (!IsEnabled(logLevel))
+            return;
+
+        if (formatter == null)
+            throw new ArgumentNullException(nameof(formatter));
+
+        Log(logLevel, DateTime.UtcNow, formatter(state, exception));
+    }
+
+    private class NoOpDisposable : IDisposable
+    {
+        public void Dispose() { }
+    }
+    #endregion
+
+    public XLog(IConfiguration configuration, string CategoryName)
     {
         ConfigureLogger(configuration);
+        this._CategoryName = CategoryName;
+    }
+}
+
+public class XLogProvider : ILoggerProvider
+{
+    private readonly IConfiguration _configuration;
+
+    public XLogProvider(IConfiguration configuration)
+    {
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    }
+
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new XLog(_configuration, categoryName);
+    }
+
+    public void Dispose()
+    {
+        // Dispose resources if needed
     }
 }
 
@@ -317,10 +350,10 @@ public static class XLogExtension
 {
     public static IServiceCollection AddXLog(this IServiceCollection services)
     {
-        return AddXLog(services, builder => { });
+        return AddXLogger(services, builder => { });
     }
 
-    public static IServiceCollection AddXLog(this IServiceCollection services, Action<ILoggingBuilder> configure)
+    public static IServiceCollection AddXLogger(this IServiceCollection services, Action<ILoggingBuilder> configure)
     {
         //ThrowHelper.ThrowIfNull(services);
 
@@ -329,7 +362,7 @@ public static class XLogExtension
         services.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>());
         //services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
 
-        services.TryAdd(ServiceDescriptor.Singleton<IXLog, XLog>());
+        services.TryAdd(ServiceDescriptor.Singleton<ILogger, XLog>());
 
         //services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
         //    new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
@@ -338,4 +371,75 @@ public static class XLogExtension
         return services;
     }
 
+#nullable enable
+    public static void LogException(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => logger.Log(LogLevel.Error, exception, message, args);
+
+    public static async Task LogExceptionAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Error, exception, message, args));
+
+    public static async Task LogAsync(this ILogger logger, LogLevel logLevel, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(logLevel, message, args));
+    public static async Task LogAsync(this ILogger logger, LogLevel logLevel, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(logLevel, eventId, message, args));
+    public static async Task LogAsync(this ILogger logger, LogLevel logLevel, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(logLevel, exception, message, args));
+    public static async Task LogAsync(this ILogger logger, LogLevel logLevel, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(logLevel, message, args));
+
+    public static async Task LogCriticalAsync(this ILogger logger, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Critical, eventId, exception, message, args));
+    public static async Task LogCriticalAsync(this ILogger logger, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Critical, eventId, message, args));
+    public static async Task LogCriticalAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Critical, exception, message, args));
+    public static async Task LogCriticalAsync(this ILogger logger, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Critical, message, args));
+
+
+    public static async Task LogDebugAsync(this ILogger logger, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Debug, eventId, exception, message, args));
+    public static async Task LogDebugAsync(this ILogger logger, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Debug, eventId, message, args));
+    public static async Task LogDebugAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Debug, exception, message, args));
+    public static async Task LogDebugAsync(this ILogger logger, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Debug, message, args));
+    public static async Task LogErrorAsync(this ILogger logger, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Debug, null, message, args));
+
+    public static async Task LogErrorAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Error, exception, message, args));
+    public static async Task LogErrorAsync(this ILogger logger, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Error, eventId, message, args));
+    public static async Task LogErrorAsync(this ILogger logger, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Error, eventId, exception, message, args));
+
+    public static async Task LogInformationAsync(this ILogger logger, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Information, eventId, exception, message, args));
+    public static async Task LogInformationAsync(this ILogger logger, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Information, message, args));
+    public static async Task LogInformationAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Information, exception, message, args));
+    public static async Task LogInformationAsync(this ILogger logger, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Information, message, args));
+
+    public static async Task LogTraceAsync(this ILogger logger, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Trace, eventId, exception, message, args));
+    public static async Task LogTraceAsync(this ILogger logger, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Trace, eventId, message, args));
+    public static async Task LogTraceAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Trace, exception, message, args));
+    public static async Task LogTraceAsync(this ILogger logger, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Trace, message, args));
+
+    public static async Task LogWarningAsync(this ILogger logger, EventId eventId, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Warning, eventId, exception, message, args));
+    public static async Task LogWarningAsync(this ILogger logger, EventId eventId, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Warning, eventId, message, args));
+    public static async Task LogWarningAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Warning, exception, message, args));
+    public static async Task LogWarningAsync(this ILogger logger, string? message, params object?[] args)
+        => await Task.Run(() => logger.Log(LogLevel.Warning, message, args));
+#nullable restore
 }

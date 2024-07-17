@@ -13,15 +13,16 @@ using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using Nox.CI;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Nox.Win32.CI
 {
-    public class ProcessHandler
-        : Nox.CI.ProcessHandler
+    public class ProcessHandler(CI CI, ILogger Logger)
+        : Nox.CI.ProcessHandler(CI, Logger)
     {
         public Process CreateForeignProcess(string Filename, string Arguments, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, "create foreign process");
+            Logger?.LogTrace("create foreign process");
 
             var myProcess = CreateProcess(Filename, Arguments);
 
@@ -37,29 +38,29 @@ namespace Nox.Win32.CI
 
         public int RunProcess(string Filename, string Arguments, ProcessCredential Credential)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, Filename);
+            Logger?.LogTrace(Filename);
 
             return RunProcessEx(CreateForeignProcess(Filename, Arguments, Credential), null, null, null);
         }
 
         public int RunProcess(string Filename, string Arguments, ProcessCredential Credential, StreamWriter standardOutput, StreamReader standardInput)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, Filename);
+            Logger?.LogTrace(Filename);
 
             return RunProcessEx(CreateForeignProcess(Filename, Arguments, Credential), standardOutput, standardInput, null);
         }
 
         public int RunProcess(string Filename, string Arguments, ProcessCredential Credential, StreamWriter standardOutput, StreamReader standardInput, StreamWriter standardError)
         {
-            _logger?.LogMessage(LogLevelEnum.Trace, Filename);
+            Logger?.LogTrace(Filename);
 
             return RunProcessEx(CreateForeignProcess(Filename, Arguments, Credential), standardOutput, standardInput, standardError);
         }
 
         public int RunCliApplication(string Application, ProcessCredential Credential, string InMessage, out string OutMessage, out string ErrMessage)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"run cli application {Application}");
-            _logger?.LogMessage(LogLevelEnum.Trace, $"read streams");
+            Logger?.LogDebug($"run cli application {Application}");
+            Logger?.LogTrace($"read streams");
 
             OutMessage = ErrMessage = "";
             try
@@ -99,7 +100,7 @@ namespace Nox.Win32.CI
 
         public int RunCliApplication(string Application, string Arguments, ProcessCredential Credential, out string OutMessage, out string ErrMessage)
         {
-            _logger?.LogMessage(LogLevelEnum.Debug, $"run cli application {Application}");
+            Logger?.LogDebug($"run cli application {Application}");
 
             OutMessage = ErrMessage = "";
             try
@@ -112,7 +113,7 @@ namespace Nox.Win32.CI
                     OutMessage = ErrMessage = "";
                     var Result = RunProcess(Application, Arguments, Credential, memOutWriter, null, memErrWriter);
 
-                    _logger?.LogMessage(LogLevelEnum.Trace, $"read streams");
+                    Logger?.LogTrace($"read streams");
                     // read error stream ... 
                     memErr.Position = 0;
                     using (var memErrReader = new StreamReader(memErr, true))
@@ -135,10 +136,7 @@ namespace Nox.Win32.CI
             }
         }
 
-        public ProcessHandler(CI CI)
-            : base(CI) { }
-
-        public ProcessHandler(CI CI, Log4 logger)
-            : base(CI, logger) { }
+        public ProcessHandler(CI CI, ILogger<ProcessHandler> Logger)
+            : this(CI, (ILogger)Logger) { }
     }
 }

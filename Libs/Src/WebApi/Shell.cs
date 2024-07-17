@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MySqlX.XDevAPI.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,6 +8,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -169,8 +172,8 @@ public class Shell
     public string Message { get; set; } = "";
     #endregion
 
-    public T Pass<T>()
-        where T : IShell, new()
+    public virtual TResult Pass<TResult>()
+        where TResult : IShell, new()
         => new() { State = State, Message = Message };
 
     public static async Task<T> SwitchHandlerAsync<T, U>(U Shell,
@@ -180,7 +183,6 @@ public class Shell
     {
         try
         {
-            //var SyncShell = await Shell;
             return Shell.State switch
             {
                 StateEnum.Success => await OnSuccess(Shell),
@@ -710,6 +712,14 @@ public class Shell<T>
 {
     public List<T> Data { get; set; } = [];
 
+    //public override TResult Pass<TResult>()
+    //{
+    //    var Result = base.Pass<TResult>();
+    //    (T)Result.Data = Data;
+
+    //    return Result;
+    //}
+
     public T First()
         => Data.First();
 
@@ -730,6 +740,41 @@ public class Shell<T>
     public Shell(StateEnum State, string Message)
         : base(State, Message) { }
 }
+
+public static class XLogExtension
+{
+    //public static T SuccessHandler<T, U>(U Shell, Func<U, T> OnSuccess,
+    //    string FailureMessage = null, string ErrorMessage = null)
+    //    where T : IShell, new()
+    //    where U : IShell
+
+    public static T LogShell<T>(this ILogger Logger, T Shell,
+        string FailureMessage = null, string ErrorMessage = null, [CallerMemberName] string CallerMember = "")
+        where T : IShell
+    {
+        string Message = $"{CallerMember}-Shell: {Shell.State} -> {Shell.Message}";
+        switch (Shell.State)
+        {
+            case StateEnum.Success:
+                Logger.LogDebug(Message);
+                break;
+            case StateEnum.Failure:
+                Logger.LogWarning(FailureMessage ?? Shell.Message);
+                break;
+            case StateEnum.Error:
+                Logger.LogError(ErrorMessage ?? Shell.Message);
+                break;
+        }
+
+        return Shell;
+    }
+
+    public static async Task<T> LogShellAsync<T>(this ILogger Logger, T Shell,
+        string FailureMessage = null, string ErrorMessage = null, [CallerMemberName] string CallerMember = "")
+        where T : IShell
+        => await Task.Run(() => LogShell(Logger, Shell, FailureMessage, ErrorMessage, CallerMember));
+}
+
 
 /// <summary>
 /// Basisklasse für Antwortobjekte, die den Zustand und die Nachricht einer Antwort kapselt.
