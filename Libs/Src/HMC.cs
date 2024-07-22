@@ -147,11 +147,12 @@ namespace Nox.HMC
 
     public class HMCore0
     {
-        private const string HMC_BASE_URL = "http://<IP>/config/xmlapi/*";
+        private const string HMC_BASE_URL = "http://<IP>/config/xmlapi/";
 
         //private readonly ILogger _logger = null!;
 
         private string _IP = "";
+        private string _Token = "";
         private string _Version = "";
 
         #region Properties
@@ -168,14 +169,28 @@ namespace Nox.HMC
         }
         #endregion
 
+        public HMCore0(string IP, string Token)
+            : this(IP) =>
+            this._Token = Token;
+
         public HMCore0(string IP) =>
             _IP = IP;
 
         #region Query-Tools 
-        private string BaseUri(string Query)
+        private string BaseUri(string Query, params string[] Args)
         {
-            if (string.IsNullOrEmpty(Query)) throw new ArgumentNullException(nameof(Query));
-            return HMC_BASE_URL.Replace("<IP>", _IP).Replace("*", Query);
+            if (string.IsNullOrEmpty(Query)) 
+                throw new ArgumentNullException(nameof(Query));
+
+            string ReturnUrl = HMC_BASE_URL.Replace("<IP>", _IP);
+
+            ReturnUrl += Query;
+            ReturnUrl += $"?sid={_Token}";
+
+            foreach (var Item in Args)
+                ReturnUrl += $"&{Item}";
+
+            return ReturnUrl;
         }
 
         private string HttpRequest(string Uri)
@@ -333,7 +348,7 @@ namespace Nox.HMC
         {
             try
             {
-                var content = HttpRequest(BaseUri("protocol.cgi?clear=1"));
+                var content = HttpRequest(BaseUri("protocol.cgi", "clear=1"));
                 if (content != null)
                     return XDocument.Parse(content).Root.Elements("cleared_protocol").FirstOrDefault() != null;
                 else
@@ -394,7 +409,7 @@ namespace Nox.HMC
         {
             try
             {
-                var content = HttpRequest(BaseUri($"state.cgi?device_id={device_id}"));
+                var content = HttpRequest(BaseUri($"state.cgi", $"device_id={device_id}"));
                 if (content != null)
                     return XDocument.Parse(content).Root.Elements("device")
                 .Select(x => new DeviceStateDescriptor()
@@ -439,7 +454,7 @@ namespace Nox.HMC
         {
             try
             {
-                var content = HttpRequest(BaseUri($"state.cgi?datapoint_id={Id}"));
+                var content = HttpRequest(BaseUri($"state.cgi", $"datapoint_id={Id}"));
                 if (content != null)
                     return XDocument.Parse(content).Root.Elements("datapoint")
                     .Select(x => new DatapointDescriptor()
@@ -460,7 +475,7 @@ namespace Nox.HMC
         {
             try
             {
-                var content = HttpRequest(BaseUri($"state.cgi?datapoint_id={Id}"));
+                var content = HttpRequest(BaseUri($"state.cgi", $"datapoint_id={Id}"));
                 if (content != null)
                 {
                     var f = XDocument.Parse(content);
@@ -540,10 +555,10 @@ namespace Nox.HMC
         {
             try
             {
-                var content = HttpRequest(BaseUri($"state.cgi?datapoint_id={Id}"));
+                var content = HttpRequest(BaseUri($"state.cgi", $"datapoint_id={Id}"));
                 if (content != null)
                 {
-                    var Response = XDocument.Parse(HttpRequest(BaseUri($"statechange.cgi?ise_id={Id}&new_value={NewValue}"))).Root;
+                    var Response = XDocument.Parse(HttpRequest(BaseUri($"statechange.cgi", $"ise_id={Id}", $"new_value={NewValue}"))).Root;
 
                     if (Response.Elements("not_found").FirstOrDefault() != null)
                         return false;
