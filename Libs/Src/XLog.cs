@@ -26,6 +26,9 @@ public enum LogTargetEnum
 public class XLog
     : ILogger//, IXLogger
 {
+    private const string API_BASE_URL = "/Api";
+    private const string API_VERSION = "v1";
+
     private HttpClient _httpClient;
 
     private string _Token;
@@ -128,14 +131,28 @@ public class XLog
         => AsyncHelper.RunSync<T>(async () => await RestGetAsync<T>(Path, CustomHeaders));
     #endregion
 
+    private string BuildApiPath(string URL, params string[] Args)
+    {
+        string ReturnUrl = $"{API_BASE_URL}/{API_VERSION}/{URL}";
+
+        if (Args.Length > 0)
+            ReturnUrl += "?" + Args[0];
+
+        if (Args.Length > 1)
+            for (int i = 1; i < Args.Length; i++)
+                ReturnUrl += "&" + Args[i];
+
+        return ReturnUrl;
+    }
+
     public async Task<SingleDataResponseShell> GetLogApplicationNameAsync()
-        => await RestGetAsync<SingleDataResponseShell>($"/Api/GetLogApplicationName", new KeyValue("Token", _Token));
+        => await RestGetAsync<SingleDataResponseShell>(BuildApiPath("GetLogApplicationName"), new KeyValue("Token", _Token));
     public SingleDataResponseShell GetLogApplicationName()
-        => RestGet<SingleDataResponseShell>($"/Api/GetLogApplicationName", new KeyValue("Token", _Token));
+        => RestGet<SingleDataResponseShell>(BuildApiPath("GetLogApplicationName"), new KeyValue("Token", _Token));
 
     public async Task<SingleDataResponseShell> CreateLogApplicationAsync(string Application, int TTL, DateTime Expiration)
-        => await RestGetAsync<SingleDataResponseShell>($"/Api/CreateLogApplication?Application={Application}&TTL={TTL}&Expiration={Expiration:u}",
-            new KeyValue("Token", _Token));
+        => await RestGetAsync<SingleDataResponseShell>(BuildApiPath("CreateLogApplication", 
+            $"Application={Application}", $"TTL={TTL}", $"Expiration={Expiration:u}"), new KeyValue("Token", _Token));
     public SingleDataResponseShell CreateLogApplication(string Application, int TTL, DateTime Expiration)
         => RestGet<SingleDataResponseShell>($"/Api/CreateLogApplication?Application={Application}&TTL={TTL}&Expiration={Expiration:u}",
             new KeyValue("Token", _Token));
@@ -154,8 +171,7 @@ public class XLog
 
         if (LogTarget.HasFlag(LogTargetEnum.WebApi))
         {
-            //LogLevel LogLevel, DateTime Timestamp, string Message
-            string URL = $"/Api/Log?LogLevel={LogLevel}&Timestamp={ts}&Message={Message}";
+            string URL = BuildApiPath("Log", $"LogLevel={LogLevel}", $"Timestamp={ts}", $"Message={Message}");
             Result = await RestGetAsync<ResponseShell>(URL, new KeyValue("Token", _Token));
 
             if (Result.State != StateEnum.Success)
