@@ -113,7 +113,6 @@ namespace Nox.Data.SqlServer
                 case ConnectionState.Executing:
                 case ConnectionState.Fetching:
                     // already in use, quit
-                    
                     throw new InvalidOperationException("connection already in use");
             }
         }

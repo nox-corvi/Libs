@@ -26,7 +26,7 @@ public enum LogTargetEnum
 public class XLog
     : ILogger//, IXLogger
 {
-    private const string API_BASE_URL = "/Api";
+    private const string API_BASE_URL = "/api";
     private const string API_VERSION = "v1";
 
     private HttpClient _httpClient;
