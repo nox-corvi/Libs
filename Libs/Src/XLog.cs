@@ -26,9 +26,6 @@ public enum LogTargetEnum
 public class XLog
     : ILogger//, IXLogger
 {
-    private const string API_BASE_URL = "/api";
-    private const string API_VERSION = "v1";
-
     private HttpClient _httpClient;
 
     private string _Token;
@@ -39,6 +36,9 @@ public class XLog
     private static readonly object _lock = new object();
 
     #region Properties
+    public string ApiBaseUrl { get; set; } = "/api";
+    public string ApiVersion { get; set; } = "v1";
+
     public LogTargetEnum LogTarget { get; set; } = LogTargetEnum.Echo;
 
     public LogLevel LogLevel { get; set; } = LogLevel.Error;
@@ -50,7 +50,6 @@ public class XLog
 
     // File
     public virtual int LogWriterWaitTimeout { get; private set; } = 30;
-
 
     #endregion
 
@@ -133,7 +132,7 @@ public class XLog
 
     private string BuildApiPath(string URL, params string[] Args)
     {
-        string ReturnUrl = $"{API_BASE_URL}/{API_VERSION}/{URL}";
+        string ReturnUrl = $"{ApiBaseUrl}/{ApiVersion}/{URL}";
 
         if (Args.Length > 0)
             ReturnUrl += "?" + Args[0];
@@ -265,6 +264,19 @@ public class XLog
 
     private void ConfigureLogger(IConfiguration configuration)
     {
+        var _ApiBaseUrl = configuration["Api:BaseUrl"] ?? ApiBaseUrl;
+        if (!_ApiBaseUrl.StartsWith("/"))
+        {
+            _ApiBaseUrl = "/" + _ApiBaseUrl;
+        }
+        ApiBaseUrl = _ApiBaseUrl;
+
+        var _ApiVersion = configuration["Api:Version"] ?? ApiVersion;
+        if (_ApiVersion.StartsWith("v"))
+        {
+            ApiVersion = _ApiVersion;
+        }
+
         // no log if no target is specified
         LogTarget = Helpers.ParseEnum<LogTargetEnum>(configuration["XLog:Target"], LogTargetEnum.None);
 
