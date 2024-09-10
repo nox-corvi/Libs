@@ -264,18 +264,24 @@ public class XLog
 
     private void ConfigureLogger(IConfiguration configuration)
     {
-        var _ApiBaseUrl = configuration["Api:BaseUrl"] ?? ApiBaseUrl;
-        if (!_ApiBaseUrl.StartsWith("/"))
+        var ApiBaseUrl = configuration["XLog:WebApi:BaseUrl"] ?? this.ApiBaseUrl;
+        if (!ApiBaseUrl.StartsWith("/"))
         {
-            _ApiBaseUrl = "/" + _ApiBaseUrl;
-        }
-        ApiBaseUrl = _ApiBaseUrl;
+            if (!string.IsNullOrEmpty(ApiBaseUrl))
+            { 
+                ApiBaseUrl = "/" + ApiBaseUrl;
+            }
+        } 
 
-        var _ApiVersion = configuration["Api:Version"] ?? ApiVersion;
-        if (_ApiVersion.StartsWith("v"))
+        this.ApiBaseUrl = ApiBaseUrl;
+
+        var ApiVersion = configuration["XLog:WebApi:Version"] ?? this.ApiVersion;
+        if (!ApiVersion.StartsWith("v"))
         {
-            ApiVersion = _ApiVersion;
+            ApiVersion = "v" + ApiVersion;
         }
+        this.ApiVersion = ApiVersion;
+
 
         // no log if no target is specified
         LogTarget = Helpers.ParseEnum<LogTargetEnum>(configuration["XLog:Target"], LogTargetEnum.None);

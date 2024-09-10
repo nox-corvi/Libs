@@ -157,6 +157,8 @@ public interface IQuadeDataPostShell
 public class Shell
     : IShell
 {
+    public static string OK { get; } = "ok";
+
     public static string NO_RESULT { get; } = "no result";
     public static string NOT_AUTHORIZED { get; } = "not authorized";
 
@@ -169,7 +171,7 @@ public class Shell
     /// <summary>
     /// Gibt eine Statusnachricht zurück.
     /// </summary>
-    public string Message { get; set; } = "";
+    public string Message { get; set; } = OK;
     #endregion
 
     public virtual TResult Pass<TResult>()
