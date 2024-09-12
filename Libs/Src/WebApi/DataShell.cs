@@ -12,7 +12,7 @@ public class DataShell<T>
     : Shell, IDataShell<T>
     where T : DataRow, new()
 {
-    //private ILogger _logger = Hosting.Hosting.CreateDefaultLogger<DataShell<T>>();
+    private readonly ILogger Logger;
 
     private DataModel _DataModel = null!;
     private Operate<T> _Operate = null!;
@@ -20,7 +20,7 @@ public class DataShell<T>
     internal DataModel DataModel
     {
         get => _DataModel;
-        set => _Operate = new Operate<T>(_DataModel = value);
+        set => _Operate = new Operate<T>(_DataModel = value, Hosting.Hosting.CreateDefaultLogger<Operate>());
     }
 
     internal Operate<T> Operate
@@ -86,8 +86,8 @@ public class DataShell<T>
         }
     }
 
-    public List<T> Get() =>
-        Operate.Load("", null);
+    public List<T> Get()
+        => Operate.Load("", null);
 
     public int Insert(T Data)
         => Operate.Insert(Data);
@@ -105,8 +105,8 @@ public class DataShell<T>
     {
         try
         {
-            //_logger.LogInformation(WhereCondition);
-            var Result = new DataShell<T>()
+            Logger.LogDebug(WhereCondition);
+            var Result = new DataShell<T>(Logger)
             {
                 Data = Operate.Load(WhereCondition, Parameters)
             };
@@ -123,7 +123,7 @@ public class DataShell<T>
         }
         catch (Exception ex)
         {
-            return new DataShell<T>()
+            return new DataShell<T>(Logger)
             {
                 State = StateEnum.Error,
                 Message = Helpers.SerializeException(ex)
@@ -142,16 +142,32 @@ public class DataShell<T>
             Data = Data
         };
 
+    public DataShell()
+        : base() { }
+
     public DataShell(DataModel dataModel)
-    : this()
+        : base()
     {
-        //_logger.LogInformation("blub");
+        this.DataModel = dataModel;
+    }
+
+    public DataShell(ILogger Logger)
+        : base()
+    {
+        this.Logger = Logger ?? (ILogger)Hosting.Hosting.CreateDefaultLogger<DataShell<T>>();
+    }
+
+    // DI Constructor
+    public DataShell(ILogger<DataShell<T>> Logger)
+        : this((ILogger)Logger) { }
+
+    public DataShell(ILogger Logger, DataModel dataModel)
+    : this(Logger)
+    {
         DataModel = dataModel;
     }
 
-    public DataShell()
-        : base()
-    {
-
-    }
+    // DI Constructor
+    public DataShell(ILogger<DataShell<T>> Logger, DataModel dataModel)
+        : this((ILogger)Logger, dataModel) { }
 }

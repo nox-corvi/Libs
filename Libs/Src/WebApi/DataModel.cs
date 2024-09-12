@@ -8,7 +8,8 @@ namespace Nox.WebApi;
 public abstract class DataModel
     : IDisposable
 {
-    //private readonly ILogger<DataModel> _Logger = null!;
+    private readonly ILogger<DataModel> Logger;
+
     private Assembly _Assembly = null!;
     private string _Namespace = "";
 
@@ -20,10 +21,16 @@ public abstract class DataModel
 
     #region Cache Methods
     public void CacheAttributes()
-        => CacheAttributes(_Assembly, _Namespace);
+    {   
+        Logger.LogDebug(nameof(CacheAttributes));
+
+        CacheAttributes(_Assembly, _Namespace);
+    }
 
     private void CacheAttributes(Assembly assembly, string Namespace = "")
     {
+        Logger.LogDebug($"{nameof(CacheAttributes)}({assembly}), {Namespace})");
+
         foreach (var dataModelType in assembly.GetTypes())
         {
             if (dataModelType.IsSubclassOf(typeof(DataModel)))
@@ -99,12 +106,14 @@ public abstract class DataModel
     public TableDescriptor GetTableDescriptor(string Key)
         => TableDesciptors.GetCacheValue(Key);
 
-    public DataModel(string ConnectionString, string Namespace = "")
+    public DataModel(string ConnectionString, ILogger<DataModel> Logger, string Namespace = "")
     {
-        CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
         this.ConnectionString = ConnectionString;
+        this.Logger = Logger ?? throw new ArgumentNullException(nameof(Logger));
 
-        this.Operate = new Operate(ConnectionString);
+        this.Operate = new Operate(ConnectionString, Logger);
+
+        CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
     }
 
     public virtual void Dispose()

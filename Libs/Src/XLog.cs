@@ -360,20 +360,17 @@ public class XLog
     }
 }
 
-public class XLogProvider : ILoggerProvider
+public class XLogProvider
+    : ILoggerProvider
 {
     private readonly IConfiguration _configuration;
 
     public XLogProvider(IConfiguration configuration)
-    {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-    }
-
+        => _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    
     public ILogger CreateLogger(string categoryName)
-    {
-        return new XLog(_configuration, categoryName);
-    }
-
+        => new XLog(_configuration, categoryName);
+    
     public void Dispose()
     {
         // Dispose resources if needed
@@ -382,26 +379,16 @@ public class XLogProvider : ILoggerProvider
 
 public static class XLogExtension
 {
-    public static IServiceCollection AddXLog(this IServiceCollection services)
-    {
-        return AddXLogger(services, builder => { });
-    }
+    //public static IServiceCollection AddXLog(this IServiceCollection services)
+    //{
+    //    return AddXLogger(services, builder => { });
+    //}
 
     public static IServiceCollection AddXLogger(this IServiceCollection services, Action<ILoggingBuilder> configure)
     {
-        //ThrowHelper.ThrowIfNull(services);
-
-        //services.AddOptions();
-
         services.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>());
-        //services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
-
         services.TryAdd(ServiceDescriptor.Singleton<ILogger, XLog>());
 
-        //services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
-        //    new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
-
-        //configure(new LoggingBuilder(services));
         return services;
     }
 

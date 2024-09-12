@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlX.XDevAPI.Common;
+using Org.BouncyCastle.Asn1.Mozilla;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +16,6 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Nox.WebApi;
-
 
 public enum StateEnum
 {
@@ -85,13 +85,11 @@ public class TokenSecretConfig
         : base(Logger, URL, Token) => this._Secret = new KeyValue("Secret", Secret);
 }
 
-
 #region Interface
 public interface IShell
 {
     StateEnum State { get; set; }
     string Message { get; set; }
-
 }
 
 public interface IDataShell<T>
@@ -158,7 +156,6 @@ public class Shell
     : IShell
 {
     public static string OK { get; } = "ok";
-
     public static string NO_RESULT { get; } = "no result";
     public static string NOT_AUTHORIZED { get; } = "not authorized";
 
@@ -241,7 +238,6 @@ public class Shell
         where T : IShell, new()
         where U : IShell
         => SwitchHandler(Shell, OnSuccess, OnFailure, (s) => new T() { State = StateEnum.Error, Message = s });
-
 
     /// <summary>
     /// Verarbeitet eine Shell-Instanz und führt bei Erfolg eine gegebene Funktion aus.
@@ -662,16 +658,6 @@ public class Shell
         }
     }
 
-    //public static void ErrorHandlerAsync<U>(U Shell,
-    //    Action<U> Error)
-    //    where U : IShell
-    //{
-    //    if (Shell.State == StateEnum.Error)
-    //    {
-    //        Error.Invoke(Shell);
-    //    }
-    //}
-
     public static void ErrorHandler<U>(U Shell,
         Action<U> Error)
         where U : IShell
@@ -701,7 +687,9 @@ public class Shell
     public Shell() { }
 
     public Shell(StateEnum State)
+        : this()
         => this.State = State;
+
 
     public Shell(StateEnum State, string Message)
         : this(State)
@@ -714,60 +702,53 @@ public class Shell<T>
 {
     public List<T> Data { get; set; } = [];
 
-    //public override TResult Pass<TResult>()
-    //{
-    //    var Result = base.Pass<TResult>();
-    //    (T)Result.Data = Data;
-
-    //    return Result;
-    //}
-
     public T First()
         => Data.First();
-
-    //public Shell ToShell()
-    //    => new Shell()
-    //    {
-    //        State = this.State,
-    //        Message = this.Message,
-    //    };
-
 
     public Shell()
         : base() { }
 
     public Shell(StateEnum State)
-        : base(State, null) { }
+        : base(State, "") { }
 
+    
     public Shell(StateEnum State, string Message)
         : base(State, Message) { }
 }
 
 public static class XLogExtension
 {
-    //public static T SuccessHandler<T, U>(U Shell, Func<U, T> OnSuccess,
-    //    string FailureMessage = null, string ErrorMessage = null)
-    //    where T : IShell, new()
-    //    where U : IShell
-
-    public static T LogShell<T>(this ILogger Logger, T Shell,
-        string FailureMessage = null, string ErrorMessage = null, [CallerMemberName] string CallerMember = "")
+    public static T LogShell<T>(this ILogger Logger,// string Message, 
+        T Shell,
+        string FailureMessage = null, string ErrorMessage = null, 
+        [CallerMemberName] string CallerMember = "",
+        [CallerFilePath] string CallerFilePath = "",
+        [CallerLineNumber] int Line = 0)
         where T : IShell
     {
-        string Message = $"{CallerMember}-Shell: {Shell.State} -> {Shell.Message}";
-        switch (Shell.State)
+        try
         {
-            case StateEnum.Success:
-                Logger.LogDebug(Message);
-                break;
-            case StateEnum.Failure:
-                Logger.LogWarning(FailureMessage ?? Shell.Message);
-                break;
-            case StateEnum.Error:
-                Logger.LogError(ErrorMessage ?? Shell.Message);
-                break;
-        }
+            //Logger.LogDebug(Message);
+            Logger.LogTrace($"@{CallerFilePath}:{Line}");
+            Logger.LogDebug($"LogShell: {CallerMember} with '{Shell.State}'");
 
+            switch (Shell.State)
+            {
+                case StateEnum.Success:
+                    // all good, no futher logging 
+                    break;
+                case StateEnum.Failure:
+                    Logger.LogWarning(FailureMessage ?? Shell.Message);
+                    break;
+                case StateEnum.Error:
+                    Logger.LogError(ErrorMessage ?? Shell.Message);
+                    break;
+            }
+        }
+        finally
+        {
+        }
+        
         return Shell;
     }
 
@@ -776,7 +757,6 @@ public static class XLogExtension
         where T : IShell
         => await Task.Run(() => LogShell(Logger, Shell, FailureMessage, ErrorMessage, CallerMember));
 }
-
 
 /// <summary>
 /// Basisklasse für Antwortobjekte, die den Zustand und die Nachricht einer Antwort kapselt.
@@ -827,8 +807,8 @@ public class SingleDataResponseShell
     public SingleDataResponseShell(StateEnum State, string Message)
         : base(State, Message) { }
 
-    public SingleDataResponseShell(StateEnum state, string Message, string additionalData1)
-        : base(state, Message)
+    public SingleDataResponseShell(StateEnum State, string Message, string additionalData1)
+        : base(State, Message)
     {
         AdditionalData1 = additionalData1;
     }
@@ -870,14 +850,14 @@ public class DoubleDataResponseShell
     public DoubleDataResponseShell(StateEnum State, string Message)
         : base(State, Message) { }
 
-    public DoubleDataResponseShell(StateEnum state, string Message, string additionalData1)
-        : base(state, Message, additionalData1)
+    public DoubleDataResponseShell(StateEnum State, string Message, string additionalData1)
+        : base(State, Message, additionalData1)
     {
         AdditionalData1 = additionalData1;
     }
 
-    public DoubleDataResponseShell(StateEnum state, string Message, string additionalData1, string additionalData2)
-        : base(state, Message, additionalData1)
+    public DoubleDataResponseShell(StateEnum State, string Message, string additionalData1, string additionalData2)
+        : base(State, Message, additionalData1)
     {
         AdditionalData2 = additionalData2;
     }
@@ -947,7 +927,6 @@ public class QuadDataResponseShell
         AdditionalData4 = additionalData4;
     }
 }
-
 
 public class QuadDataPostShell
     : DoubleDataPostShell, IPostShell

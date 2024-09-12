@@ -7,7 +7,6 @@ using System.Reflection;
 
 namespace Nox.WebApi;
 
-
 public class PropertyDescriptor
 {
     private bool _IsPrimaryKey = default;

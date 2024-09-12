@@ -6,12 +6,15 @@ using System.Linq;
 using System.Text;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 
 namespace Nox.WebApi;
 
 public class Operate
     : IDisposable
 {
+    public readonly ILogger Logger;
+
     public string ConnectionString { get; set; } = "";
     public int SqlCommandTimeout { get; } = 300;
 
@@ -168,7 +171,6 @@ public class Operate
 
         var Result = CMD.ExecuteNonQuery();
         return Result;
-
     }
 
     public long Execute(string SQL, params SqlParameter[] Parameters) =>
@@ -205,20 +207,28 @@ public class Operate
         GetValue<K>(SQL, CommandType.Text, null, default);
     #endregion
 
-    public Operate(string ConnectionString)
+    public Operate(string ConnectionString, ILogger Logger)
         : base()
     {
         this.ConnectionString = ConnectionString;
+        this.Logger = Logger;
     }
 
-    public Operate Clone(Operate operate)
-        => new(operate.ConnectionString)
+    // DI Constructor
+    public Operate(string ConnectionString, ILogger<Operate> Logger)
+        : this(ConnectionString, (ILogger)Logger) { }
+
+    public Operate Clone(Operate operate, ILogger Logger)
+        => new(operate.ConnectionString, Logger)
         {
             _DatabaseConnection = operate._DatabaseConnection,
             _Transaction = operate._Transaction,
         };
 
-    public Operate(Operate operate)
+    public Operate Clone(Operate operate, ILogger<Operate> Logger)
+        => Clone(operate, (ILogger)Logger);
+
+    public Operate(Operate operate, ILogger Logger)
     {
         ConnectionString = operate.ConnectionString;
         SqlCommandTimeout = operate.SqlCommandTimeout;
@@ -226,6 +236,10 @@ public class Operate
         _DatabaseConnection = operate._DatabaseConnection;
         _Transaction = operate._Transaction;
     }
+
+    // DI Constructor
+    public Operate(Operate operate, ILogger<Operate> Logger)
+        : this(operate, (ILogger)Logger) { }
 
     public virtual void Dispose()
     {
@@ -273,6 +287,8 @@ public class Operate<T>
     : Operate//, ISeed 
     where T : DataRow
 {
+    public readonly ILogger<Operate<T>> Logger;
+
     //public Guid ObjectId { get; } = Guid.NewGuid();
     protected string _TableSource;
     protected string _PrimaryKeyField;
@@ -497,6 +513,8 @@ public class Operate<T>
     {
         var Result = new List<T>();
 
+        Logger.LogDebug($"{nameof(Operate)}::Load({WhereCondition})");
+       
         using (var r = GetReader(CreateSelectStmt(WhereCondition), Parameters))
             while (r.Read())
             {
@@ -524,8 +542,8 @@ public class Operate<T>
     }
 
 
-    public Operate(DataModel dataModel)
-        : base(dataModel.Operate)
+    public Operate(DataModel dataModel, ILogger Logger)
+        : base(dataModel.Operate, Logger)
     {
         var data = dataModel.GetType();
 
@@ -536,4 +554,8 @@ public class Operate<T>
 
         _PrimaryKeyPropertyDescriptor = _TableDescriptor.Where(f => f.IsPrimaryKey).FirstOrDefault();
     }
+
+    // DI Constructor
+    public Operate(DataModel dataModel, ILogger<Operate> Logger)
+        : this(dataModel, (ILogger)Logger) { }
 }

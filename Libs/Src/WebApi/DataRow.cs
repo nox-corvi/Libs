@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.ComponentModel;
+using System.IO;
 using System.Reflection;
 
 
@@ -18,22 +20,32 @@ public interface IDataRow
 
 public abstract class DataRow
 {
+    private readonly ILogger<DataRow> Logger;
+
     public abstract Guid Id { get; set; }
 
     #region Helpers
     public object GetPropertyValue(PropertyInfo info)
     {
+        Logger.LogTrace($"{nameof(GetPropertyValue)}: {info}");
+
         if (info != null)
             return info.GetValue(this, null);
         else
             return null;
     }
 
-    public object GetPropertyValue(string PropertyName) =>
-        GetPropertyValue(this.GetType().GetProperty(PropertyName));
+    public object GetPropertyValue(string PropertyName)
+    {
+        Logger.LogDebug($"{nameof(GetPropertyValue)}: {PropertyName}");
+
+        return GetPropertyValue(this.GetType().GetProperty(PropertyName));
+    }
 
     public T GetPropertyValue<T>(PropertyInfo info)
     {
+        Logger.LogTrace($"{nameof(GetPropertyValue)}<{nameof(T)}>: {info}");
+        
         var value = GetPropertyValue(info);
         if (value != null)
             if (!Convert.IsDBNull(value))
@@ -52,7 +64,18 @@ public abstract class DataRow
             return default;
     }
 
-    public T GetPropertyValue<T>(string PropertyName) =>
-        GetPropertyValue<T>(this.GetType().GetProperty(PropertyName));
+    public T GetPropertyValue<T>(string PropertyName)
+    {
+        Logger.LogTrace($"{nameof(GetPropertyValue)}<{nameof(T)}>: {PropertyName}");
+
+        return GetPropertyValue<T>(this.GetType().GetProperty(PropertyName));
+    }
     #endregion
+
+    public DataRow(ILogger<DataRow> Logger)
+    {
+        this.Logger = Logger ?? throw new ArgumentNullException(nameof(Logger));
+    }
+
+    public DataRow() { }
 }
