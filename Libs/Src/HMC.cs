@@ -149,7 +149,7 @@ namespace Nox.HMC
     {
         private const string HMC_BASE_URL = "http://<IP>/config/xmlapi/";
 
-        //private readonly ILogger _logger = null!;
+        private readonly ILogger _logger = null!;
 
         private string _IP = "";
         private string _Token = "";
@@ -596,6 +596,6 @@ namespace Nox.HMC
         #endregion
 
         public HMCore0()
-            => Hosting.Hosting.CreateDefaultLogger<HMCore0>();
+            => _logger = Global.CreateLogger<HMCore0>();
     }
 }

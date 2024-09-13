@@ -39,7 +39,7 @@ namespace Nox.IO.DF;
 
 public interface IGuardian
 {
-    ILogger Log { get;  }
+    ILogger Logger { get;  }
     Laverna Laverna { get;  }
 
     string Filename { get;  }
@@ -358,7 +358,7 @@ public abstract class ContainerFree<T>
         }
         catch (Exception ex)
         {
-            GuardianGet.Log?.LogError($"{ex}");
+            GuardianGet.Logger?.LogError($"{ex}");
 
             throw;
         }
@@ -1023,7 +1023,7 @@ public class DF<T>
         #region Properties
         public uint FileSignature { get; set; }
 
-        public ILogger Log { get; set; }
+        public ILogger Logger { get; set; }
         public Laverna Laverna { get; set; }
 
         public string Filename { get; set; }
@@ -1067,7 +1067,7 @@ public class DF<T>
         protected DFGuardian()
         {
             Laverna = new Laverna(_DF_KEY, _DF_IV);
-            Log = Hosting.Hosting.CreateDefaultLogger<DF<T>>();
+            Logger = Global.CreateLogger<DFGuardian>();
         }
 
         public DFGuardian(uint FileSignature)

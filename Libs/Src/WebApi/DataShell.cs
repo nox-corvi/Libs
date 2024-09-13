@@ -12,7 +12,7 @@ public class DataShell<T>
     : Shell, IDataShell<T>
     where T : DataRow, new()
 {
-    private readonly ILogger Logger;
+    private readonly ILogger<DataShell<T>> Logger = Global.CreateLogger<DataShell<T>>();
 
     private DataModel _DataModel = null!;
     private Operate<T> _Operate = null!;
@@ -20,7 +20,7 @@ public class DataShell<T>
     internal DataModel DataModel
     {
         get => _DataModel;
-        set => _Operate = new Operate<T>(_DataModel = value, Hosting.Hosting.CreateDefaultLogger<Operate>());
+        set => _Operate = new Operate<T>(_DataModel = value);
     }
 
     internal Operate<T> Operate
@@ -106,7 +106,7 @@ public class DataShell<T>
         try
         {
             Logger.LogDebug(WhereCondition);
-            var Result = new DataShell<T>(Logger)
+            var Result = new DataShell<T>()
             {
                 Data = Operate.Load(WhereCondition, Parameters)
             };
@@ -123,7 +123,7 @@ public class DataShell<T>
         }
         catch (Exception ex)
         {
-            return new DataShell<T>(Logger)
+            return new DataShell<T>()
             {
                 State = StateEnum.Error,
                 Message = Helpers.SerializeException(ex)
@@ -150,24 +150,4 @@ public class DataShell<T>
     {
         this.DataModel = dataModel;
     }
-
-    public DataShell(ILogger Logger)
-        : base()
-    {
-        this.Logger = Logger ?? (ILogger)Hosting.Hosting.CreateDefaultLogger<DataShell<T>>();
-    }
-
-    // DI Constructor
-    public DataShell(ILogger<DataShell<T>> Logger)
-        : this((ILogger)Logger) { }
-
-    public DataShell(ILogger Logger, DataModel dataModel)
-    : this(Logger)
-    {
-        DataModel = dataModel;
-    }
-
-    // DI Constructor
-    public DataShell(ILogger<DataShell<T>> Logger, DataModel dataModel)
-        : this((ILogger)Logger, dataModel) { }
 }

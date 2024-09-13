@@ -1340,7 +1340,7 @@ public class FS<T>
             : base(FileSignature) 
         {
             // overwrite
-            Log = Hosting.Hosting.CreateDefaultLogger<FS>();
+            Logger = Global.CreateLogger<FSGuardian>();
         }
 
         public int NodeSize { get; set; } = 128;

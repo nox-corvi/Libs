@@ -366,7 +366,9 @@ public class XLogProvider
     private readonly IConfiguration _configuration;
 
     public XLogProvider(IConfiguration configuration)
-        => _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    {
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    }
     
     public ILogger CreateLogger(string categoryName)
         => new XLog(_configuration, categoryName);

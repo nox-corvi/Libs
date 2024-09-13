@@ -8,7 +8,7 @@ namespace Nox.WebApi;
 public abstract class DataModel
     : IDisposable
 {
-    private readonly ILogger<DataModel> Logger;
+    private readonly ILogger<DataModel> Logger = Global.CreateLogger<DataModel>();
 
     private Assembly _Assembly = null!;
     private string _Namespace = "";
@@ -106,12 +106,10 @@ public abstract class DataModel
     public TableDescriptor GetTableDescriptor(string Key)
         => TableDesciptors.GetCacheValue(Key);
 
-    public DataModel(string ConnectionString, ILogger<DataModel> Logger, string Namespace = "")
+    public DataModel(string ConnectionString, string Namespace = "")
     {
         this.ConnectionString = ConnectionString;
-        this.Logger = Logger ?? throw new ArgumentNullException(nameof(Logger));
-
-        this.Operate = new Operate(ConnectionString, Logger);
+        this.Operate = new Operate(ConnectionString);
 
         CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
     }

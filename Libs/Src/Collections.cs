@@ -58,7 +58,7 @@ namespace Nox
         private Dictionary<string, CacheItem> _Cache = new();
         private bool disposedValue;
 
-        private readonly ILogger _logger = null!;
+        private readonly ILogger<Cache<T>> _logger = null!;
 
         #region Properties
         public int CacheExpirationTime { get; set; } = 300; // in Seconds, 5min default time
@@ -192,7 +192,7 @@ namespace Nox
         #endregion
 
         public Cache() =>
-             _logger = Hosting.Hosting.CreateDefaultLogger<Cache<T>>();
+             _logger = Global.CreateLogger<Cache<T>>();
 
         protected virtual void Dispose(bool disposing)
         {
@@ -343,7 +343,7 @@ namespace Nox
     {
         private List<T> _List = new();
 
-        private readonly ILogger _logger = null!;
+        private readonly ILogger<ThreadSafeDataList<T>> _logger = null!;
 
         #region IList
         public T this[int index]
@@ -499,6 +499,6 @@ namespace Nox
 
         public ThreadSafeDataList()
             : base()
-             => _logger = Hosting.Hosting.CreateDefaultLogger<ThreadSafeDataList<T>>();
+             => _logger = Global.CreateLogger<ThreadSafeDataList<T>>();
     }
 }

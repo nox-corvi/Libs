@@ -20,14 +20,14 @@ public interface IDataRow
 
 public abstract class DataRow
 {
-    private readonly ILogger<DataRow> Logger;
+    private ILogger<DataRow> Logger = Global.CreateLogger<DataRow>();
 
     public abstract Guid Id { get; set; }
 
     #region Helpers
     public object GetPropertyValue(PropertyInfo info)
     {
-        Logger.LogTrace($"{nameof(GetPropertyValue)}: {info}");
+        Logger?.LogTrace($"{nameof(GetPropertyValue)}: {info}");
 
         if (info != null)
             return info.GetValue(this, null);
@@ -37,14 +37,14 @@ public abstract class DataRow
 
     public object GetPropertyValue(string PropertyName)
     {
-        Logger.LogDebug($"{nameof(GetPropertyValue)}: {PropertyName}");
+        Logger?.LogDebug($"{nameof(GetPropertyValue)}: {PropertyName}");
 
         return GetPropertyValue(this.GetType().GetProperty(PropertyName));
     }
 
     public T GetPropertyValue<T>(PropertyInfo info)
     {
-        Logger.LogTrace($"{nameof(GetPropertyValue)}<{nameof(T)}>: {info}");
+        Logger?.LogTrace($"{nameof(GetPropertyValue)}<{nameof(T)}>: {info}");
         
         var value = GetPropertyValue(info);
         if (value != null)
@@ -71,11 +71,6 @@ public abstract class DataRow
         return GetPropertyValue<T>(this.GetType().GetProperty(PropertyName));
     }
     #endregion
-
-    public DataRow(ILogger<DataRow> Logger)
-    {
-        this.Logger = Logger ?? throw new ArgumentNullException(nameof(Logger));
-    }
 
     public DataRow() { }
 }
