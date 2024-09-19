@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Web;
@@ -15,6 +16,27 @@ namespace Nox
 {
     public static class Helpers
     {
+        public static T NNV<T>(T Value, [CallerMemberName] string CallerMember = "")
+            where T : class
+        {
+            Func<string, string> ExMsg = (s) 
+                => $"{nameof(T)}@{CallerMember} is {s}";
+            
+            // check null
+            if (Value == null)
+            {
+                throw new ArgumentNullException(ExMsg("Null")); 
+            } 
+
+            // check dbnull
+            if (Value.Equals(DBNull.Value))
+            {
+                throw new ArgumentException(ExMsg("DBNull"));
+            }
+
+            return Value;
+        }
+
         public static Exception Oops() { return new Exception("Oops"); }
 
         public static void Nope() { return; }

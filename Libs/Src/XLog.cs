@@ -8,6 +8,7 @@ using Nox.WebApi;
 using Org.BouncyCastle.Asn1.BC;
 using Org.BouncyCastle.Asn1.X509;
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -170,7 +171,7 @@ public class XLog
 
         if (LogTarget.HasFlag(LogTargetEnum.WebApi))
         {
-            string URL = BuildApiPath("Log", $"LogLevel={LogLevel}", $"Timestamp={ts}", $"Message={Message}");
+            string URL = BuildApiPath("Log", $"LogLevel={LogLevel}", $"Timestamp={ts}", $"Category={_CategoryName}", $"Message={Message}");
             Result = await RestGetAsync<ResponseShell>(URL, new KeyValue("Token", _Token));
 
             if (Result.State != StateEnum.Success)
@@ -320,8 +321,27 @@ public class XLog
                 new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        // parse vom string, use initial value if not set 
-        LogLevel = Helpers.ParseEnum<LogLevel>(configuration["XLog:Level"], LogLevel);
+        var logLevelString = configuration.GetSection("Logging:LogLevel")
+                                          .GetChildren()
+                                          .FirstOrDefault(x => _CategoryName.StartsWith(x.Key))?.Value;
+
+        if (Enum.TryParse(logLevelString, out LogLevel logLevel))
+        {
+            LogLevel = logLevel;
+        }
+        else
+        {
+            logLevelString = configuration.GetValue<string>("Logging:LogLevel:Default");
+
+            // Fallback-LogLevel, falls die Kategorie nicht konfiguriert ist
+            if (Enum.TryParse(logLevelString, out LogLevel logLevel2))
+            {
+                LogLevel = logLevel2;
+            } else
+                LogLevel = LogLevel.Information; // oder ein anderer Standardwert
+        }
+
+        //LogLevel = Helpers.ParseEnum<LogLevel>(configuration["XLog:Level"], LogLevel);
     }
 
     #region ILogger:Interface 
@@ -355,8 +375,8 @@ public class XLog
 
     public XLog(IConfiguration configuration, string CategoryName)
     {
-        ConfigureLogger(configuration);
         this._CategoryName = CategoryName;
+        ConfigureLogger(configuration);
     }
 }
 
@@ -368,8 +388,10 @@ public class XLogProvider
     public XLogProvider(IConfiguration configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+
+        
     }
-    
+
     public ILogger CreateLogger(string categoryName)
         => new XLog(_configuration, categoryName);
     
@@ -386,17 +408,18 @@ public static class XLogExtension
     //    return AddXLogger(services, builder => { });
     //}
 
-    public static IServiceCollection AddXLogger(this IServiceCollection services, Action<ILoggingBuilder> configure)
+    public static IServiceCollection AddXLog(this IServiceCollection services)
     {
-        services.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>());
-        services.TryAdd(ServiceDescriptor.Singleton<ILogger, XLog>());
+        services.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>(c => (LoggerFactory)Global.LoggerFactory));
+        services.TryAdd(ServiceDescriptor.Singleton<ILoggerProvider, XLogProvider>());
+        //services.TryAdd(ServiceDescriptor.Singleton<ILogger, XLog>());
 
         return services;
     }
 
 #nullable enable
     public static void LogException(this ILogger logger, Exception? exception, string? message, params object?[] args)
-        => logger.Log(LogLevel.Error, exception, message, args);
+        => logger.Log(LogLevel.Error, $"{message}: {Helpers.SerializeException(exception)}", args);
 
     public static async Task LogExceptionAsync(this ILogger logger, Exception? exception, string? message, params object?[] args)
         => await Task.Run(() => logger.Log(LogLevel.Error, exception, message, args));

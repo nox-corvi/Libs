@@ -92,8 +92,8 @@ public class RestClient
     public RestClient(string BaseURL, ILogger Logger)
     {
         this.BaseURL = BaseURL;
-
         this._Logger = Logger;
+
         _httpClient = new()
         {
             BaseAddress = new Uri(BaseURL),
@@ -101,7 +101,6 @@ public class RestClient
         };
 
         //        _httpClient.DefaultRequestHeaders.Accept.Clear();
-
         _httpClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
         //_httpClient.DefaultRequestHeaders.Accept.Add(

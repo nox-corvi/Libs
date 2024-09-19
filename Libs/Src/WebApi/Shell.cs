@@ -36,7 +36,7 @@ public class KeyValue(string key = "", string value = "")
 
 public interface IConfig
 {
-    ILogger Logger { get; }    
+    ILogger Logger { get; }
 
     string URL { get; }
 }
@@ -121,7 +121,7 @@ public interface ISingleDataPostShell
     : IPostShell
 {
     string Value1 { get; }
-} 
+}
 
 
 public interface IDoubleDataResponseShell
@@ -711,7 +711,7 @@ public class Shell<T>
     public Shell(StateEnum State)
         : base(State, "") { }
 
-    
+
     public Shell(StateEnum State, string Message)
         : base(State, Message) { }
 }
@@ -720,7 +720,7 @@ public static class XLogExtension
 {
     public static T LogShell<T>(this ILogger Logger,// string Message, 
         T Shell,
-        string FailureMessage = null, string ErrorMessage = null, 
+        string FailureMessage = null, string ErrorMessage = null,
         [CallerMemberName] string CallerMember = "",
         [CallerFilePath] string CallerFilePath = "",
         [CallerLineNumber] int Line = 0)
@@ -748,7 +748,7 @@ public static class XLogExtension
         finally
         {
         }
-        
+
         return Shell;
     }
 

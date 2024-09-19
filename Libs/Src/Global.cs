@@ -24,7 +24,9 @@ namespace Nox
         protected ILogger<Global> _logger;
 
         #region Properties
-        public static IConfiguration Configuration { get => _self._configuration; }
+        public static IConfiguration Configuration { get => Self._configuration; }
+        
+        public static ILoggerFactory LoggerFactory { get => Self._LoggerFactory; }
         public static ILogger Logger { get => _self._logger; }
 
         public static Global Self
@@ -66,7 +68,7 @@ namespace Nox
                  .AddJsonFile("appsettings.json")
                  .Build();
 
-            _LoggerFactory = LoggerFactory.Create(configure =>
+            _LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(configure =>
             {
                 configure.ClearProviders();
 
