@@ -283,7 +283,6 @@ public class XLog
         }
         this.ApiVersion = ApiVersion;
 
-
         // no log if no target is specified
         LogTarget = Helpers.ParseEnum<LogTargetEnum>(configuration["XLog:Target"], LogTargetEnum.None);
 
@@ -324,6 +323,11 @@ public class XLog
         var logLevelString = configuration.GetSection("Logging:LogLevel")
                                           .GetChildren()
                                           .FirstOrDefault(x => _CategoryName.StartsWith(x.Key))?.Value;
+
+        if (_CategoryName.StartsWith("Radzen"))
+        {
+            Helpers.Nope();
+        }
 
         if (Enum.TryParse(logLevelString, out LogLevel logLevel))
         {
@@ -388,8 +392,6 @@ public class XLogProvider
     public XLogProvider(IConfiguration configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-
-        
     }
 
     public ILogger CreateLogger(string categoryName)

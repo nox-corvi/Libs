@@ -13,6 +13,8 @@ namespace Nox.Data;
 
 public class RestClient
 {
+    private ILogger<RestClient> Logger = Global.CreateLogger<RestClient>();
+
     private readonly HttpClient _httpClient;
     private readonly ILogger _Logger;
 
@@ -23,6 +25,7 @@ public class RestClient
     {
         try
         {
+            await Logger.LogDebugAsync($"{nameof(RestGetAsync)}: {Path}");
             using var request = new HttpRequestMessage(HttpMethod.Get, Path);
 
             foreach (var Item in CustomHeaders)
@@ -49,12 +52,15 @@ public class RestClient
 
     public T RestGet<T>(string Path, params KeyValue[] CustomHeaders)
         where T : class
-        => AsyncHelper.RunSync<T>(async () => await RestGetAsync<T>(Path, CustomHeaders));
+    {
+        Logger.LogDebug($"{nameof(RestGet)}: {Path}");
+        return AsyncHelper.RunSync<T>(async () => await RestGetAsync<T>(Path, CustomHeaders));
+    }
 
     public async Task<T> RestPostAsync<T>(string Path, IPostShell Content, params KeyValue[] CustomHeaders)
         where T : class
     {
-        _Logger?.LogTrace(Path, nameof(RestPostAsync));
+        await Logger.LogDebugAsync($"{nameof(RestPostAsync)}: {Path}");
 
         try
         {
@@ -87,7 +93,10 @@ public class RestClient
 
     public T RestPost<T>(string Path, IPostShell content, params KeyValue[] CustomHeaders)
         where T : class
-        => AsyncHelper.RunSync<T>(async () => await RestPostAsync<T>(Path, content, CustomHeaders));
+    {
+        Logger.LogDebug($"{nameof(RestGetAsync)}: {Path}");
+        return AsyncHelper.RunSync<T>(async () => await RestPostAsync<T>(Path, content, CustomHeaders));
+    }
 
     public RestClient(string BaseURL, ILogger Logger)
     {

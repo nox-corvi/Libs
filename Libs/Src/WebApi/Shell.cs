@@ -175,6 +175,20 @@ public class Shell
         where TResult : IShell, new()
         => new() { State = State, Message = Message };
 
+
+    public static TResult Execute<TResult>(Func<TResult> func)
+        where TResult : IShell, new()
+    {
+        try
+        {
+            return func.Invoke();
+        }
+        catch (Exception ex)
+        {
+            return Shell.Error<TResult>(Helpers.SerializeException(ex));
+        }
+    }
+
     public static async Task<T> SwitchHandlerAsync<T, U>(U Shell,
         Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFailure, Func<string, Task<T>> OnError)
         where T : IShell, new()
@@ -753,9 +767,12 @@ public static class XLogExtension
     }
 
     public static async Task<T> LogShellAsync<T>(this ILogger Logger, T Shell,
-        string FailureMessage = null, string ErrorMessage = null, [CallerMemberName] string CallerMember = "")
+        string FailureMessage = null, string ErrorMessage = null, 
+        [CallerMemberName] string CallerMember = "",
+        [CallerFilePath] string CallerFilePath = "",
+        [CallerLineNumber] int Line = 0)
         where T : IShell
-        => await Task.Run(() => LogShell(Logger, Shell, FailureMessage, ErrorMessage, CallerMember));
+        => await Task.Run(() => LogShell(Logger, Shell, FailureMessage, ErrorMessage, CallerMember, CallerFilePath, Line));
 }
 
 /// <summary>
