@@ -795,6 +795,8 @@ public class SingleDataResponseShell
     /// </summary>
     public string AdditionalData1 { get; set; } = "";
 
+    public List<Object> AdditionalData2 { get; set; } = new List<Object>();
+
     public static SingleDataResponseShell FromShell(IShell Shell, string additionalData1 = "")
         => new SingleDataResponseShell(Shell.State, Shell.Message, additionalData1);
 
@@ -811,6 +813,12 @@ public class SingleDataResponseShell
         : base(State, Message)
     {
         AdditionalData1 = additionalData1;
+    }
+
+    public SingleDataResponseShell(StateEnum State, string Message, List<Object> additionalData2)
+    : base(State, Message)
+    {
+        AdditionalData2 = additionalData2;
     }
 }
 

@@ -25,6 +25,8 @@ public class RestClient
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, Path);
 
+            
+
             foreach (var Item in CustomHeaders)
                 request.Headers.Add(Item.Key, Item.Value);
 

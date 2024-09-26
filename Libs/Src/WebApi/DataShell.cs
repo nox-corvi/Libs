@@ -111,6 +111,7 @@ public class DataShell<T>
                 Data = Operate.Load(WhereCondition, Parameters)
             };
 
+            //HACK: wieso muss 0 einen fehler auslösen? erschwert das einzeigen von leeren grids 
             if (Result.Data.Count != 0)
                 Result.State = StateEnum.Success;
             else

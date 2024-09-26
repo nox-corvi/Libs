@@ -8,6 +8,7 @@ using Nox.WebApi;
 using Org.BouncyCastle.Asn1.BC;
 using Org.BouncyCastle.Asn1.X509;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -131,6 +132,7 @@ public class XLog
         => AsyncHelper.RunSync<T>(async () => await RestGetAsync<T>(Path, CustomHeaders));
     #endregion
 
+ 
     private string BuildApiPath(string URL, params string[] Args)
     {
         string ReturnUrl = $"{ApiBaseUrl}/{ApiVersion}/{URL}";
