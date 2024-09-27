@@ -142,7 +142,11 @@ public class Operate
             foreach (SqlParameter Param in Parameters)
                 CMD.Parameters.Add(Param);
 
-        return CMD.ExecuteReader(CommandBehavior.CloseConnection);
+     
+        DateTime dtStart = DateTime.Now;    
+        SqlDataReader rReturn = CMD.ExecuteReader(CommandBehavior.CloseConnection);
+        Logger.LogDebug("Execute Time (sec): " + (DateTime.Now - dtStart).TotalSeconds + "\n" + SQL);
+        return rReturn;
     }
 
     public SqlDataReader GetReader(string SQL, params SqlParameter[] Parameters) =>
@@ -304,9 +308,28 @@ public class Operate<T>
     private string CreateExistsSelect(string SubSelect) =>
         $"SELECT CASE WHEN EXISTS ({SubSelect}) THEN 1 ELSE 0 END";
 
-    private string CreateSelectStmt(string Suffix)
+
+    private string CreateSelectStmt(string WhereCondition)
     {
-        var stmt = new StringBuilder($"SELECT * FROM {TableSource}");
+        return CreateSelectStmt(WhereCondition);
+    }
+
+
+
+    private string CreateSelectStmt(string WhereCondition, string order, int limit)
+    {
+
+        String TopTemplate = "";
+
+        String sTemplate = ($"SELECT * FROM {TableSource} ");
+
+        if (limit >= 0)
+        {
+            TopTemplate = " TOP " + limit.ToString() + " ";
+            sTemplate = ($"SELECT {TopTemplate} * FROM {TableSource} ");
+        }
+
+        var stmt = new StringBuilder(sTemplate);
         //if (Suffix.StartsWith("LEFT JOIN", StringComparison.InvariantCultureIgnoreCase) ||
         //    Suffix.StartsWith("LEFT OUTER JOIN", StringComparison.InvariantCultureIgnoreCase) ||
         //    Suffix.StartsWith("RIGHT JOIN", StringComparison.InvariantCultureIgnoreCase) ||
@@ -318,11 +341,21 @@ public class Operate<T>
         //else
         //    stmt.Append(" WHERE ").Append(Suffix);
 
-        if (!Suffix.StartsWith("WHERE", StringComparison.InvariantCultureIgnoreCase))
-            if (!string.IsNullOrEmpty(Suffix))
-                stmt.Append(" WHERE ");
+        if (!WhereCondition.Trim().StartsWith("WHERE", StringComparison.InvariantCultureIgnoreCase))
+            if (!string.IsNullOrEmpty(WhereCondition))
+            {
+                    stmt.Append(" WHERE ");            
+            }
+        stmt.Append(WhereCondition);
 
-        stmt.Append(Suffix);
+
+        if (!order.Trim().StartsWith("ORDER", StringComparison.InvariantCultureIgnoreCase))
+            if (!string.IsNullOrEmpty(order))
+            {  
+                    stmt.Append(" ORDER "); 
+            }
+
+        stmt.Append(order);
 
         return stmt.ToString();
     }
@@ -500,11 +533,16 @@ public class Operate<T>
 
     public List<T> Load(string WhereCondition, params SqlParameter[] Parameters)
     {
+        return Load(WhereCondition, "", -1, Parameters);
+    }
+
+    public List<T> Load(string WhereCondition, string Order, int limit, params SqlParameter[] Parameters)
+    {
         var Result = new List<T>();
 
-        Logger.LogDebug($"{nameof(Operate)}::Load({WhereCondition})");
-       
-        using (var r = GetReader(CreateSelectStmt(WhereCondition), Parameters))
+        Logger.LogDebug($"{nameof(Operate)}::Load({WhereCondition}{Order})");
+
+        using (var r = GetReader(CreateSelectStmt(WhereCondition, Order, limit), Parameters))
             while (r.Read())
             {
                 var NewRow = (T)Activator.CreateInstance(typeof(T));
@@ -529,7 +567,6 @@ public class Operate<T>
 
         return Result;
     }
-
 
     public Operate(DataModel dataModel)
         : base(dataModel.Operate)

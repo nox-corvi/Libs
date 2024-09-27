@@ -87,7 +87,7 @@ public class DataShell<T>
     }
 
     public List<T> Get()
-        => Operate.Load("", null);
+        => Operate.Load("","",-1 ,null);
 
     public int Insert(T Data)
         => Operate.Insert(Data);
@@ -103,12 +103,22 @@ public class DataShell<T>
 
     public DataShell<T> Select(string WhereCondition, params SqlParameter[] Parameters)
     {
+        return Select(WhereCondition, "",-1, Parameters);
+    }
+
+    public DataShell<T> Select(string WhereCondition, string order, params SqlParameter[] Parameters)
+    {
+        return Select(WhereCondition, order, -1, Parameters);
+    }
+
+    public DataShell<T> Select(string WhereCondition, string order, int limit, params SqlParameter[] Parameters)
+    {
         try
         {
             Logger.LogDebug(WhereCondition);
             var Result = new DataShell<T>()
             {
-                Data = Operate.Load(WhereCondition, Parameters)
+                Data = Operate.Load(WhereCondition, order, limit, Parameters)
             };
 
             //HACK: wieso muss 0 einen fehler auslösen? erschwert das einzeigen von leeren grids 
@@ -131,6 +141,14 @@ public class DataShell<T>
             };
         }
     }
+
+
+
+
+
+
+
+
 
     public ResponseShell Exists(string WhereCondition, params SqlParameter[] Parameters)
         => ExecuteHandler(() => Select(WhereCondition, Parameters).Data.Count());
