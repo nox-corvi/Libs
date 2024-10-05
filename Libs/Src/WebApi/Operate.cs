@@ -568,6 +568,42 @@ public class Operate<T>
         return Result;
     }
 
+
+
+    public List<T> LoadRAW(string SQL)
+    {
+        var Result = new List<T>();
+
+        Logger.LogDebug($"{nameof(Operate)}::Load({SQL})");
+
+        using (var r = GetReader(SQL))
+            while (r.Read())
+            {
+                var NewRow = (T)Activator.CreateInstance(typeof(T));
+                // add primary key ..
+                _PrimaryKeyPropertyDescriptor.Property.SetValue(NewRow, (r.GetValue(r.GetOrdinal(_PrimaryKeyPropertyDescriptor.Name))));
+
+                // add data ... 
+                foreach (var md in _TableDescriptor.Where(f => !f.IsPrimaryKey))
+                {
+                    var data = r.GetValue(r.GetOrdinal(md.Source));
+
+                    // Test if DBNull, use null instead ...
+                    if (!Convert.IsDBNull(data))
+                        md.Property.SetValue(NewRow, data);
+                    else
+                        md.Property.SetValue(NewRow, null);
+                }
+                //NewRow.AcceptChanges();
+
+                Result.Add(NewRow);
+            }
+
+        return Result;
+    }
+
+
+
     public Operate(DataModel dataModel)
         : base(dataModel.Operate)
     {
