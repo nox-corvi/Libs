@@ -27,7 +27,7 @@ public abstract class DataRow
     #region Helpers
     public object GetPropertyValue(PropertyInfo info)
     {
-        Logger?.LogTrace($"{nameof(GetPropertyValue)}: {info}");
+        Logger.LogTrace($"{nameof(GetPropertyValue)}: {info}");
 
         if (info != null)
             return info.GetValue(this, null);
@@ -37,14 +37,14 @@ public abstract class DataRow
 
     public object GetPropertyValue(string PropertyName)
     {
-        Logger?.LogDebug($"{nameof(GetPropertyValue)}: {PropertyName}");
+        Logger.LogTrace($"{nameof(GetPropertyValue)}: {PropertyName}");
 
         return GetPropertyValue(this.GetType().GetProperty(PropertyName));
     }
 
     public T GetPropertyValue<T>(PropertyInfo info)
     {
-        Logger?.LogTrace($"{nameof(GetPropertyValue)}<{nameof(T)}>: {info}");
+        Logger.LogTrace($"{nameof(GetPropertyValue)}<{nameof(T)}>: {info}");
         
         var value = GetPropertyValue(info);
         if (value != null)

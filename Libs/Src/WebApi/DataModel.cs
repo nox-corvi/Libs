@@ -21,7 +21,7 @@ public abstract class DataModel
 
     #region Cache Methods
     public void CacheAttributes()
-    {   
+    {
         Logger.LogDebug(nameof(CacheAttributes));
 
         CacheAttributes(_Assembly, _Namespace);
@@ -103,17 +103,42 @@ public abstract class DataModel
     }
     #endregion
 
-    public TableDescriptor GetTableDescriptor(string Key)
-        => TableDesciptors.GetCacheValue(Key);
-
-    public DataModel(string ConnectionString, string Namespace = "")
+    public T Transaction<T>(Func<T> func, Func<Exception, T> OnError)
+        where T : class, new()
     {
-        this.ConnectionString = ConnectionString;
-        this.Operate = new Operate(ConnectionString);
+        Operate.BeginTransaction();
 
-        CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
+        try
+        {
+            var Result = func.Invoke();
+
+            Operate.Commit();
+            
+            return Result;
+        }
+        catch (Exception ex)
+        {
+            Operate.Rollback();
+
+            return OnError.Invoke(ex);
+        }
+        finally
+        {
+        }
     }
+}
 
-    public virtual void Dispose()
-        => TableDesciptors.Dispose();
+public TableDescriptor GetTableDescriptor(string Key)
+    => TableDesciptors.GetCacheValue(Key);
+
+public DataModel(string ConnectionString, string Namespace = "")
+{
+    this.ConnectionString = ConnectionString;
+    this.Operate = new Operate(ConnectionString);
+
+    CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
+}
+
+public virtual void Dispose()
+    => TableDesciptors.Dispose();
 }

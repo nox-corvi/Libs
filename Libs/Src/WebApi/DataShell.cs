@@ -105,7 +105,7 @@ public class DataShell<T>
     {
         try
         {
-            Logger.LogDebug(WhereCondition);
+            Logger.LogDebug($"{nameof(Select)} with {WhereCondition}");
             var Result = new DataShell<T>()
             {
                 Data = Operate.Load(WhereCondition, Parameters)

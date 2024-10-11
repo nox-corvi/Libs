@@ -101,7 +101,7 @@ public class RestClient
     public RestClient(string BaseURL, ILogger Logger)
     {
         this.BaseURL = BaseURL;
-        this._Logger = Logger;
+        this._Logger = Logger ?? throw new ArgumentNullException(nameof(Logger));
 
         _httpClient = new()
         {
@@ -109,11 +109,8 @@ public class RestClient
             Timeout = TimeSpan.FromSeconds(30)
         };
 
-        //        _httpClient.DefaultRequestHeaders.Accept.Clear();
         _httpClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
-        //_httpClient.DefaultRequestHeaders.Accept.Add(
-        //    new MediaTypeWithQualityHeaderValue("text/plain"));
     }
 
     // DI-Constructor
