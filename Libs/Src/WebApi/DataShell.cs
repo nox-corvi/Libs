@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Nox.WebApi;
 
@@ -33,6 +34,61 @@ public class DataShell<T>
     public T First()
         => Data.First();
 
+    //public async Task<U> UniqueAsync<U>(this U Shell,
+    // Func<U, Task<U>> OnSuccess,
+    // string FailureMessage = null, string ErrorMessage = null)
+    // where U : DataShell<T>, new()
+    // => await SuccessHandlerAsync(Shell,
+    //     (q) =>
+    //     {
+    //         if (q.Data.Count > 1)
+    //         {
+    //             return Task.FromResult(new U()
+    //             {
+    //                 State = StateEnum.Failure,
+    //                 Message = NOT_UNIQUE
+    //             });
+    //         }
+    //         else if (q.Data.Count == 0)
+    //         {
+    //             return Task.FromResult(new U()
+    //             {
+    //                 State = StateEnum.Failure,
+    //                 Message = NO_RESULT
+    //             });
+    //         }
+    //         else
+    //             return Task.FromResult(q);
+
+    //     }, FailureMessage, ErrorMessage);
+
+    //public U Unique<U>(this U Shell, Func<U, U> OnSuccess,
+    //    string FailureMessage = null, string ErrorMessage = null)
+    //    where U : DataShell<T>, new()
+    //    => SuccessHandler(Shell,
+    //        (q) =>
+    //        {
+    //            if (q.Data.Count > 1)
+    //            {
+    //                return new U()
+    //                {
+    //                    State = StateEnum.Failure,
+    //                    Message = NOT_UNIQUE
+    //                };
+    //            }
+    //            else if (q.Data.Count == 0)
+    //            {
+    //                return new U()
+    //                {
+    //                    State = StateEnum.Failure,
+    //                    Message = NO_RESULT
+    //                };
+    //            }
+    //            else
+    //                return q;
+    //        }, FailureMessage, ErrorMessage);
+
+
     public static ResponseShell ExecuteHandler(Func<int> Execute, string FailureMessage = null, string ErrorMessage = null)
     {
         try
@@ -50,7 +106,7 @@ public class DataShell<T>
                 ?? Helpers.SerializeException(e));
         }
     }
-    
+
     public DataShell<T> GetWhereId(Guid Id) 
         => Select("id = @id", new SqlParameter("id", Id));
 

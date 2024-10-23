@@ -123,7 +123,6 @@ public interface ISingleDataPostShell
     string Value1 { get; }
 }
 
-
 public interface IDoubleDataResponseShell
     : ISingleDataResponseShell
 {
@@ -142,13 +141,13 @@ public interface IQuadDataResponseShell
     string AdditionalData3 { get; }
     string AdditionalData4 { get; }
 }
+
 public interface IQuadeDataPostShell
     : IDoubleDataResponseShell
 {
     string Value3 { get; }
     string Value4 { get; }
 }
-
 #endregion
 
 [Serializable()]
@@ -158,6 +157,8 @@ public class Shell
     public static string OK { get; } = "ok";
     public static string NO_RESULT { get; } = "no result";
     public static string NOT_AUTHORIZED { get; } = "not authorized";
+
+    public static string NOT_UNIQUE { get; } = "result is not unique";
 
     #region Properties
     /// <summary>
@@ -301,6 +302,37 @@ public class Shell
                 Message = ErrorMessage ?? s
             });
 
+    public static async Task<U> VoidHandlerAsync<U>(U Shell,
+        Action<U> Execute)
+        where U : IShell, new()
+    {
+        try
+        {
+            await Task.Run(() => Execute.Invoke(Shell));
+
+            return Success<U>();
+        }
+        catch (Exception e)
+        {
+            return Error<U>(Helpers.SerializeException(e));
+        }
+    }
+
+    public static U VoidHandler<U>(U Shell, Action<U> Execute)
+        where U : IShell, new()
+    {
+        try
+        {
+            Execute.Invoke(Shell);
+
+            return Success<U>();
+        }
+        catch (Exception e)
+        {
+            return Error<U>(Helpers.SerializeException(e));
+        }
+    }
+
     public static async Task<T> FixFailureHandlerAsync<T, U>(Task<U> Shell,
         Func<U, Task<T>> OnSuccess, Func<U, Task<T>> OnFixFailure, string ErrorMessage = null!)
         where T : IShell, new()
@@ -424,7 +456,7 @@ public class Shell
 
         return new T() { State = StateEnum.Success };
     }
-    public static T AndHandler<T, U>(
+    public static T AndHandler<T>(
         params Func<T>[] Shells)
         where T : IShell, new()
     {

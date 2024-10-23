@@ -11,7 +11,23 @@ using Nox;
 
 namespace Nox.Data;
 
+
+public interface IRestClient
+{
+    public Task<T> RestGetAsync<T>(string Path, params KeyValue[] CustomHeaders)
+        where T : class;
+    public T RestGet<T>(string Path, params KeyValue[] CustomHeaders)
+        where T : class;
+
+    public Task<T> RestPostAsync<T>(string Path, IPostShell Content, params KeyValue[] CustomHeaders)
+        where T : class;
+    public T RestPost<T>(string Path, IPostShell content, params KeyValue[] CustomHeaders)
+        where T : class;
+
+}
+
 public class RestClient
+    : IRestClient
 {
     private ILogger<RestClient> Logger = Global.CreateLogger<RestClient>();
 

@@ -104,7 +104,7 @@ public abstract class DataModel
     #endregion
 
     public T Transaction<T>(Func<T> func, Func<Exception, T> OnError)
-        where T : class, new()
+        where T : IShell, new()
     {
         Operate.BeginTransaction();
 
@@ -112,8 +112,15 @@ public abstract class DataModel
         {
             var Result = func.Invoke();
 
-            Operate.Commit();
-            
+            // not found is okay ...
+            if (Result.State != StateEnum.Error)
+            {
+                Operate.Commit();
+            } else
+            {
+                Operate.Rollback();
+            }
+
             return Result;
         }
         catch (Exception ex)
@@ -126,19 +133,18 @@ public abstract class DataModel
         {
         }
     }
-}
 
-public TableDescriptor GetTableDescriptor(string Key)
-    => TableDesciptors.GetCacheValue(Key);
+    public TableDescriptor GetTableDescriptor(string Key)
+        => TableDesciptors.GetCacheValue(Key);
 
-public DataModel(string ConnectionString, string Namespace = "")
-{
-    this.ConnectionString = ConnectionString;
-    this.Operate = new Operate(ConnectionString);
+    public DataModel(string ConnectionString, string Namespace = "")
+    {
+        this.ConnectionString = ConnectionString;
+        this.Operate = new Operate(ConnectionString);
 
-    CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
-}
+        CacheAttributes(_Assembly = Assembly.GetCallingAssembly(), _Namespace = Namespace);
+    }
 
-public virtual void Dispose()
-    => TableDesciptors.Dispose();
+    public virtual void Dispose()
+        => TableDesciptors.Dispose();
 }

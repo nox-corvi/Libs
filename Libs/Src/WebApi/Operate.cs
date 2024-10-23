@@ -111,6 +111,7 @@ public class Operate
         if (_Transaction != null)
         {
             _Transaction.Rollback();
+            _Transaction.Dispose();
             _Transaction = null;
         }
     }
@@ -121,6 +122,7 @@ public class Operate
     public void Commit()
     {
         _Transaction?.Commit();
+        _Transaction.Dispose();
         _Transaction = null;
     }
 
