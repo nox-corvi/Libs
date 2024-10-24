@@ -568,15 +568,18 @@ public class Operate<T>
         return Result;
     }
 
-
-
     public List<T> LoadRAW(string SQL)
     {
-        var Result = new List<T>();
+        return LoadRAW(SQL, null);
+    }
 
+    public List<T> LoadRAW(string SQL, params SqlParameter[] Parameters)
+    {
+        var Result = new List<T>();
+        
         Logger.LogDebug($"{nameof(Operate)}::Load({SQL})");
 
-        using (var r = GetReader(SQL))
+        using (var r = GetReader(SQL, Parameters))
             while (r.Read())
             {
                 var NewRow = (T)Activator.CreateInstance(typeof(T));

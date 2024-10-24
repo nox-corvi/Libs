@@ -175,7 +175,36 @@ public class DataShell<T>
         }
     }
 
+    public DataShell<T> SelectRAW(string SQL, params SqlParameter[] Parameters)
+    {
+        try
+        {
+            Logger.LogDebug(SQL);
+            var Result = new DataShell<T>()
+            {
+                Data = Operate.LoadRAW(SQL, Parameters)
+            };
 
+            //HACK: wieso muss 0 einen fehler auslösen? erschwert das einzeigen von leeren grids 
+            if (Result.Data.Count != 0)
+                Result.State = StateEnum.Success;
+            else
+            {
+                Result.State = StateEnum.Failure;
+                Result.Message = NO_RESULT;
+            }
+
+            return Result;
+        }
+        catch (Exception ex)
+        {
+            return new DataShell<T>()
+            {
+                State = StateEnum.Error,
+                Message = Helpers.SerializeException(ex)
+            };
+        }
+    }
 
 
 
